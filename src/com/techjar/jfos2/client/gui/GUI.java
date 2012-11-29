@@ -6,6 +6,7 @@ package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.client.Client;
 import java.util.List;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Dimension;
 import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;

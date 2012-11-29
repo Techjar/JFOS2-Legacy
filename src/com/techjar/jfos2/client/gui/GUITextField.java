@@ -143,8 +143,8 @@ public class GUITextField extends GUIText {
             guiBg.setBorderColor(borderColor2);
         }
         else guiBg.render();
-        font.drawString(getPosition().getX() + 5, getPosition().getY() + 5, renderText.toString(), Util.convertColor(color));
-        if (focused && cursorState) RenderHelper.drawSquare(getPosition().getX() + font.getWidth(renderText.toString()) + 5, getPosition().getY() + 4, guiBg.getBorderSize(), dimension.getHeight() - 8, color);
+        font.drawString(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, renderText.toString(), Util.convertColor(color));
+        if (focused && cursorState) RenderHelper.drawSquare(getPosition().getX() + font.getWidth(renderText.toString()) + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 2, guiBg.getBorderSize(), dimension.getHeight() - (guiBg.getBorderSize() * 2 - 4), color);
     }
 
     public GUIBackground getGuiBackground() {

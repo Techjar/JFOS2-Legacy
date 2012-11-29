@@ -16,3 +16,6 @@ manifest.mf
 
 # Misc
 logs/
+
+# Keep This Shit
+!/lib/*.jar

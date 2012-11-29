@@ -1,5 +1,7 @@
 package com.techjar.jfos2.client;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.util.glu.GLU.*;
@@ -55,6 +57,7 @@ public class Client {
     private TextureManager texture;
     private SoundManager sound;
     private DisplayMode displayMode;
+    private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
     private TickCounter tick;
     private List<GUI> guiList;
@@ -74,20 +77,14 @@ public class Client {
     }
     
     public static void run(String[] args) {
+        if (client != null) throw new RuntimeException("Client is already running");
         try {
             client = new Client();
             client.start();
         } catch (Exception ex) {
             ex.printStackTrace();
             try {
-                Display.destroy();
-                if (client.canvas != null && client.frame != null) {
-                    client.frame.setResizable(false);
-                    client.frame.setSize(new Dimension(client.displayMode.getWidth(), client.displayMode.getHeight()));
-                    Graphics g = client.canvas.getGraphics();
-                    g.setFont(new java.awt.Font("Monospaced", Font.BOLD, 50));
-                    g.drawString(Constants.GAME_TITLE + " has crashed!", 55, 50);
-                }
+                crashException(ex);
             }
             catch (Exception ex2) {
                 System.exit(0); // Everything broke, bail!
@@ -97,14 +94,8 @@ public class Client {
     
     public void start() throws LWJGLException, SlickException {
         Runtime.getRuntime().addShutdownHook(new ShutdownThread());
-        
-        for (DisplayMode mode : Display.getAvailableDisplayModes()) {
-            if(mode.getBitsPerPixel() == Display.getDesktopDisplayMode().getBitsPerPixel() && mode.getFrequency() == Display.getDesktopDisplayMode().getFrequency() && mode.getWidth() == 1024 && mode.getHeight() == 768) {
-                displayMode = mode;
-                break;
-            }
-        }
-        if (displayMode == null) displayMode = new DisplayMode(1024, 768);
+        initDisplayModes();
+        initConfig();
         
         PixelFormat format = new PixelFormat(32, 0, 24, 8, 0);
         Pbuffer pb = new Pbuffer(640, 480, format, null);
@@ -115,14 +106,15 @@ public class Client {
         
         frame = new Frame(Constants.GAME_TITLE);
         frame.setLayout(new BorderLayout());
+        frame.setResizable(false);
         canvas = new Canvas();
 
-        canvas.addComponentListener(new ComponentAdapter() {
+        /*canvas.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 newCanvasSize.set(canvas.getSize());
             }
-        });
+        });*/
 
         frame.addWindowFocusListener(new WindowAdapter() {
             @Override
@@ -160,8 +152,6 @@ public class Client {
         font = new FontManager();
         texture = new TextureManager();
         sound = new SoundManager();
-        config = new ConfigManager(new File(dataDir, "options.yml"));
-        config.load();
         preloadData();
         
         GUIWindow slider = new GUIWindow(new GUIBackground());
@@ -179,9 +169,15 @@ public class Client {
         thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
         thing.setPosition(2, 20);
         slider.addComponent(thing);
-        GUI thing2 = new GUISlider(new Color(100, 0, 0), new Color(0, 0, 0));
+        GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
         thing2.setDimension(200, 30);
         thing2.setPosition(40, 800);
+        thing2.setChangeHandler(new GUICallback() {
+            @Override
+            public void run() {
+                Client.client.setDisplayMode(new DisplayMode(800, 600));
+            }
+        });
         thing.addComponent(thing2);
         //sound.playStreamingSound("myass.mp3", false);
         
@@ -190,7 +186,90 @@ public class Client {
         shutdownInternal();
         System.exit(0);
     }
-    
+
+    public static void crashException(Throwable ex) {
+        Display.destroy();
+        if (client.canvas != null && client.frame != null) {
+            client.frame.setResizable(false);
+            client.frame.setSize(new Dimension(client.displayMode.getWidth(), client.displayMode.getHeight()));
+            Graphics g = client.canvas.getGraphics();
+            g.setFont(new java.awt.Font("Monospaced", Font.BOLD, 50));
+            g.drawString(Constants.GAME_TITLE + " has crashed!", 55, 50);
+        }
+    }
+
+    private void initDisplayModes() throws LWJGLException {
+        displayModeList = new ArrayList<DisplayMode>();
+        DisplayMode desktop = Display.getDesktopDisplayMode();
+        for (DisplayMode mode : Display.getAvailableDisplayModes()) {
+            if(mode.getBitsPerPixel() == desktop.getBitsPerPixel() && mode.getFrequency() == desktop.getFrequency()) {
+                displayModeList.add(mode);
+                if (mode.getWidth() == 1024 && mode.getHeight() == 768) displayMode = mode;
+            }
+        }
+        Collections.sort(displayModeList, new ResolutionSorter());
+    }
+
+    private void initConfig() {
+        config = new ConfigManager(new File(dataDir, "options.yml"));
+        config.load();
+        config.defaultProperty("display.width", displayMode.getWidth());
+        config.defaultProperty("display.height", displayMode.getHeight());
+
+        DisplayMode dMode = findDisplayMode((Integer)config.getProperty("display.width"), (Integer)config.getProperty("display.height"));
+        if (dMode != null) displayMode = dMode;
+        else {
+            config.setProperty("display.width", displayMode.getWidth());
+            config.setProperty("display.height", displayMode.getHeight());
+        }
+        
+        config.save();
+    }
+
+    public DisplayMode findDisplayMode(int width, int height) {
+        for (DisplayMode mode : displayModeList) {
+            if(mode.getWidth() == width && mode.getHeight() == height) {
+                return mode;
+            }
+        }
+        return null;
+    }
+
+    public void setDisplayMode(DisplayMode displayMode) {
+        try {
+            this.displayMode = displayMode;
+            Display.setDisplayMode(displayMode);
+            canvas.setPreferredSize(new Dimension(displayMode.getWidth(), displayMode.getHeight()));
+            frame.pack();
+            resizeGL(displayMode.getWidth(), displayMode.getHeight());
+        }
+        catch (LWJGLException ex) {
+            ex.printStackTrace();
+            System.exit(0);
+        }
+    }
+
+    public void setDisplayMode(int width, int height) {
+        DisplayMode mode = findDisplayMode(width, height);
+        if (mode != null) setDisplayMode(mode);
+    }
+
+    public DisplayMode getDisplayMode() {
+        return displayMode;
+    }
+
+    public List<DisplayMode> getDisplayModeList() {
+        return Collections.unmodifiableList(displayModeList);
+    }
+
+    public List<String> getDisplayModeStrings() {
+        List<String> list = new ArrayList<String>(displayModeList.size());
+        for (DisplayMode mode : displayModeList) {
+            list.add(new StringBuilder(mode.getWidth()).append("x").append(mode.getHeight()).toString());
+        }
+        return Collections.unmodifiableList(list);
+    }
+
     private void preloadData() {
         // Preload Textures
         texture.getTexture("ui/windowclose.png");
@@ -270,11 +349,11 @@ public class Client {
             gui.render();
     }
     
-    private void run() {
-        Dimension newDim;
+    private void run() throws LWJGLException {
+        //Dimension newDim;
         while(!Display.isCloseRequested() && !closeRequested) {
-            newDim = newCanvasSize.getAndSet(null);
-            if (newDim != null) glViewport(0, 0, newDim.width, newDim.height);
+            //newDim = newCanvasSize.getAndSet(null);
+            //if (newDim != null) resizeGL(newDim.width, newDim.height);
             
             fps = Math.round(1000000000D / Math.max((double)System.nanoTime() - (double)fpsLastFrame, 1D));
             fpsLastFrame = System.nanoTime(); 
@@ -312,13 +391,19 @@ public class Client {
     public SoundManager getSoundManager() {
         return sound;
     }
+
+    /*public Vector2f getViewportScale() {
+        return new Vector2f((float)canvas.getWidth() / (float)displayMode.getWidth(), (float)canvas.getHeight() / (float)displayMode.getHeight());
+    }*/
     
     public int getMouseX() {
-        return (int)(Mouse.getX() / ((double)canvas.getWidth() / (double)displayMode.getWidth()));
+        //return (int)(Mouse.getX() / ((double)canvas.getWidth() / (double)displayMode.getWidth()));
+        return (int)(Mouse.getX());
     }
     
     public int getMouseY() {
-        return (int)((canvas.getHeight() - Mouse.getY()) / ((double)canvas.getHeight() / (double)displayMode.getHeight()));
+        //return (int)((canvas.getHeight() - Mouse.getY()) / ((double)canvas.getHeight() / (double)displayMode.getHeight()));
+        return (int)(canvas.getHeight() - Mouse.getY());
     }
     
     public Vector2f getMousePos() {

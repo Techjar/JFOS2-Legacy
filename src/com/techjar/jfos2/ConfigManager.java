@@ -89,6 +89,7 @@ public class ConfigManager {
             }
             FileReader fr = new FileReader(file);
             config = (Map)yaml.load(fr);
+            if (config == null) config = new HashMap<String, Object>();
             fr.close();
         }
         catch (IOException ex) {
@@ -99,11 +100,38 @@ public class ConfigManager {
     public void save() {
         try {
             FileWriter fw = new FileWriter(file);
-            yaml.dump(config, fw);
+            yaml.dump(parseMap(config), fw);
             fw.close();
         }
         catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private Map<String, Object> parseMap(Map<String, Object> map) {
+        if (map.isEmpty()) return map;
+        Map<String, Object> retmap = new HashMap<String, Object>();
+        mainloop: for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (key.indexOf('.') == -1) {
+                if (retmap.containsKey(key)) System.out.println("Map already has key '" + key + "'! Value won't be saved!!");
+                else retmap.put(key, value);
+                continue;
+            }
+            Map<String, Object> curmap = retmap;
+            while (key.indexOf('.') != -1) {
+                String subkey = key.substring(0, key.indexOf('.'));
+                key = key.substring(key.indexOf('.') + 1);
+                if (curmap.get(subkey) == null) curmap.put(subkey, new HashMap<String, Object>());
+                if (!(curmap.get(subkey) instanceof Map)) {
+                    System.out.println("Sub-key '" + subkey + "' is not a Map! Value won't be saved!!");
+                    continue mainloop;
+                }
+                curmap = (Map)retmap.get(subkey);
+            }
+            curmap.put(key, value);
+        }
+        return retmap;
     }
 }

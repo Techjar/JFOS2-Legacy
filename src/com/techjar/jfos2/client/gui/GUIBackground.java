@@ -45,7 +45,7 @@ public class GUIBackground extends GUI {
     @Override
     public void render() {
         RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), bgColor);
-        RenderHelper.drawBorder(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), borderSize, borderColor);
+        if (borderSize > 0) RenderHelper.drawBorder(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), borderSize, borderColor);
     }
     
     public Color getBackgroundColor() {
