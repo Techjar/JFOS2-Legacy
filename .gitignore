@@ -12,6 +12,7 @@ dist/
 nbdist/
 nbactions.xml
 nb-con
+manifest.mf
 
 # Misc
 logs/
