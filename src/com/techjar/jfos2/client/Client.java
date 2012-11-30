@@ -67,7 +67,7 @@ public class Client {
     private TickCounter tick;
     private List<GUI> guiList;
     private List<GUICallback> resizeHandlers;
-    private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
+    //private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
     private long fps;
     private long fpsLastFrame;
     private boolean closeRequested;

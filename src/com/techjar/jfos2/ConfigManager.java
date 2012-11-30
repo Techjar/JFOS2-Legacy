@@ -49,8 +49,8 @@ public class ConfigManager {
     }
     
     public Object getProperty(String name, Object def) {
-        if (config.containsKey(name))
-            return config.get(name);
+        if (containsYamlKey(config, name))
+            return getYamlKey(config, name);
         return def;
     }
     
@@ -59,26 +59,94 @@ public class ConfigManager {
     }
     
     public void setProperty(String name, Object value) {
-        config.put(name, value);
+        putYamlKey(config, name, value);
         if (autoSave) save();
     }
     
     public void unsetProperty(String name) {
-        if (config.containsKey(name)) {
-            config.remove(name);
+        if (containsYamlKey(config, name)) {
+            removeYamlKey(config, name);
             if (autoSave) save();
         }
     }
     
     public void defaultProperty(String name, Object value) {
-        if (!config.containsKey(name)) {
-            config.put(name, value);
+        if (!containsYamlKey(config, name)) {
+            putYamlKey(config, name, value);
             if (autoSave) save();
         }
     }
     
     public boolean propertyExists(String name) {
-        return config.containsKey(name);
+        return containsYamlKey(config, name);
+    }
+
+    private Object getYamlKey(Map<String, Object> map, String key) {
+        if (key.indexOf('.') == -1) {
+            return map.get(key);
+        }
+        Map<String, Object> curmap = map;
+        while (key.indexOf('.') != -1) {
+            String subkey = key.substring(0, key.indexOf('.'));
+            key = key.substring(key.indexOf('.') + 1);
+            if (curmap.get(subkey) == null) return null;
+            if (!(curmap.get(subkey) instanceof Map)) {
+                throw new IllegalArgumentException("Key '" + subkey + "' is not a key group!");
+            }
+            curmap = (Map)curmap.get(subkey);
+        }
+        return curmap.get(key);
+    }
+
+    private Object putYamlKey(Map<String, Object> map, String key, Object value) {
+        if (key.indexOf('.') == -1) {
+            return map.put(key, value);
+        }
+        Map<String, Object> curmap = map;
+        while (key.indexOf('.') != -1) {
+            String subkey = key.substring(0, key.indexOf('.'));
+            key = key.substring(key.indexOf('.') + 1);
+            if (curmap.get(subkey) == null) curmap.put(subkey, new HashMap<String, Object>());
+            if (!(curmap.get(subkey) instanceof Map)) {
+                throw new IllegalArgumentException("Key '" + subkey + "' is not a key group!");
+            }
+            curmap = (Map)curmap.get(subkey);
+        }
+        return curmap.put(key, value);
+    }
+
+    private Object removeYamlKey(Map<String, Object> map, String key) {
+        if (key.indexOf('.') == -1) {
+            return map.remove(key);
+        }
+        Map<String, Object> curmap = map;
+        while (key.indexOf('.') != -1) {
+            String subkey = key.substring(0, key.indexOf('.'));
+            key = key.substring(key.indexOf('.') + 1);
+            if (curmap.get(subkey) == null) return null;
+            if (!(curmap.get(subkey) instanceof Map)) {
+                throw new IllegalArgumentException("Key '" + subkey + "' is not a key group!");
+            }
+            curmap = (Map)curmap.get(subkey);
+        }
+        return curmap.remove(key);
+    }
+
+    private boolean containsYamlKey(Map<String, Object> map, String key) {
+        if (key.indexOf('.') == -1) {
+            return map.containsKey(key);
+        }
+        Map<String, Object> curmap = map;
+        while (key.indexOf('.') != -1) {
+            String subkey = key.substring(0, key.indexOf('.'));
+            key = key.substring(key.indexOf('.') + 1);
+            if (curmap.get(subkey) == null) return false;
+            if (!(curmap.get(subkey) instanceof Map)) {
+                throw new IllegalArgumentException("Key '" + subkey + "' is not a key group!");
+            }
+            curmap = (Map)curmap.get(subkey);
+        }
+        return curmap.containsKey(key);
     }
     
     public void load() {
@@ -100,38 +168,11 @@ public class ConfigManager {
     public void save() {
         try {
             FileWriter fw = new FileWriter(file);
-            yaml.dump(parseMap(config), fw);
+            yaml.dump(config, fw);
             fw.close();
         }
         catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private Map<String, Object> parseMap(Map<String, Object> map) {
-        if (map.isEmpty()) return map;
-        Map<String, Object> retmap = new HashMap<String, Object>();
-        mainloop: for (Map.Entry<String, Object> entry : map.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (key.indexOf('.') == -1) {
-                if (retmap.containsKey(key)) System.out.println("Map already has key '" + key + "'! Value won't be saved!!");
-                else retmap.put(key, value);
-                continue;
-            }
-            Map<String, Object> curmap = retmap;
-            while (key.indexOf('.') != -1) {
-                String subkey = key.substring(0, key.indexOf('.'));
-                key = key.substring(key.indexOf('.') + 1);
-                if (curmap.get(subkey) == null) curmap.put(subkey, new HashMap<String, Object>());
-                if (!(curmap.get(subkey) instanceof Map)) {
-                    System.out.println("Sub-key '" + subkey + "' is not a Map! Value won't be saved!!");
-                    continue mainloop;
-                }
-                curmap = (Map)retmap.get(subkey);
-            }
-            curmap.put(key, value);
-        }
-        return retmap;
     }
 }
