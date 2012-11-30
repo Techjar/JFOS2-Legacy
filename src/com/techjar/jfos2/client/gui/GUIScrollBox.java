@@ -68,7 +68,11 @@ public class GUIScrollBox extends GUIContainer {
             else scrolling = 0;
         }
         if (scrolling == 0 && Mouse.getEventDWheel() != 0) {
-            
+            if (checkMouseIntersect(getComponentBox())) {
+                int[] maxScrollOffset = getMaxScrollOffset();
+                if (scrollYIncrement > 0) scrollOffset.setY(MathHelper.clamp(scrollOffset.getY() + (scrollYIncrement -MathHelper.sign(Mouse.getEventDWheel())), 0, maxScrollOffset[1]));
+                else scrollOffset.setY(MathHelper.clamp(scrollOffset.getY() + -Mouse.getEventDWheel(), 0, maxScrollOffset[1]));
+            }
         }
         return true;
     }

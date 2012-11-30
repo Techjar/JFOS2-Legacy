@@ -27,7 +27,9 @@ public class TextureManager {
             File file2 = new File(texturePath, file);
             String path = file2.getAbsolutePath();
             if (cache.containsKey(path)) return cache.get(path);
-            return cache.put(path, TextureLoader.getTexture(path.substring(path.indexOf('.') + 1).toUpperCase(), new FileInputStream(file2), filter));
+            Texture tex = TextureLoader.getTexture(path.substring(path.indexOf('.') + 1).toUpperCase(), new FileInputStream(file2), filter);
+            cache.put(path, tex);
+            return tex;
         }
         catch (IOException ex) {
             ex.printStackTrace();

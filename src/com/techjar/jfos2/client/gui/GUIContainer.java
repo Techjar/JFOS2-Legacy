@@ -63,8 +63,8 @@ public class GUIContainer extends GUI {
     
     @Override
     public void remove() {
-        super.remove();
         this.removeAllComponents();
+        super.remove();
     }
 
     @Override

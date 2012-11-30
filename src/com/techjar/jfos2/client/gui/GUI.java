@@ -17,6 +17,7 @@ public abstract class GUI {
     protected Dimension dimension;
     protected GUICallback dimensionChangeHandler;
     protected GUICallback positionChangeHandler;
+    protected GUICallback removeHandler;
     protected GUIAlignment parentAlign = GUIAlignment.TOP_LEFT;
     protected GUI parent;
     protected boolean removeRequested;
@@ -125,6 +126,14 @@ public abstract class GUI {
     public void setDimensionChangeHandler(GUICallback dimensionChangeHandler) {
         this.dimensionChangeHandler = dimensionChangeHandler;
     }
+
+    public GUICallback getRemoveHandler() {
+        return removeHandler;
+    }
+
+    public void setRemoveHandler(GUICallback removeHandler) {
+        this.removeHandler = removeHandler;
+    }
     
     public boolean checkMouseIntersect(boolean checkParentContainerBox, boolean checkContainerBox, Shape... boxes) {
         boolean intersect1 = true, intersect2 = true;
@@ -190,6 +199,10 @@ public abstract class GUI {
     
     public void remove() {
         this.removeRequested = true;
+        if (removeHandler != null) {
+            removeHandler.setComponent(this);
+            removeHandler.run();
+        }
     }
 
     public boolean isRemoveRequested() {

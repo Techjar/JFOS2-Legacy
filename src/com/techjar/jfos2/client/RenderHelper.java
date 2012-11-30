@@ -20,7 +20,6 @@ public final class RenderHelper {
         if (!textured) glDisable(GL_TEXTURE_2D);
         glTranslatef(x, y, 0);
         if (color != null) {
-            if (textured) glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
             glColor4ub(color.getRedByte(), color.getGreenByte(), color.getBlueByte(), color.getAlphaByte());
         }
         else glColor3f(1, 1, 1);

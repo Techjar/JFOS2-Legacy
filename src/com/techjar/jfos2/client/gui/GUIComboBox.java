@@ -4,6 +4,7 @@ import com.techjar.jfos2.MathHelper;
 import com.techjar.jfos2.Util;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
@@ -18,7 +19,7 @@ public class GUIComboBox extends GUI {
     protected UnicodeFont font;
     protected Color color;
     protected GUIBackground guiBg;
-    protected List<Object> items = new ArrayList<Object>();
+    protected List<GUIComboItem> items = new ArrayList<GUIComboItem>();
     protected int visibleItems = 5;
     
     protected int selectedItem = -1;
@@ -63,30 +64,63 @@ public class GUIComboBox extends GUI {
     public void setSelectedItem(int selectedItem) {
         this.selectedItem = MathHelper.clamp(selectedItem, -1, items.size() - 1);
     }
-    
+
     public void setSelectedItem(Object o) {
-        setSelectedItem(items.indexOf(o));
+        if (o == null) setSelectedItem(-1);
+        else if (o instanceof GUIComboItem) {
+            setSelectedItem(items.indexOf(o));
+        }
+        else {
+            GUIComboItem item = null;
+            for (GUIComboItem item2 : items) {
+                if (o.equals(item2.getValue())) {
+                    item = item2;
+                    break;
+                }
+            }
+            if (item == null) setSelectedItem(-1);
+            else setSelectedItem(items.indexOf(item));
+        }
     }
 
     public Object getSelectedItem() {
         if (selectedItem < 0 || selectedItem >= items.size()) return null;
-        return items.get(selectedItem);
+        return items.get(selectedItem).getValue();
     }
 
-    public boolean addAllItems(int index, Collection<? extends Object> c) {
-        return items.addAll(index, c);
+    public boolean isOpened() {
+        return opened;
     }
 
-    public boolean addAllItems(Collection<? extends Object> c) {
-        return items.addAll(c);
+    public void setOpened(boolean opened) {
+        this.opened = opened;
     }
 
-    public void addItem(int index, Object element) {
-        items.add(index, element);
+    public boolean addAllItems(int index, Collection<? extends Object> items) {
+        boolean modified = false;
+        for (Object o : items) {
+            if (addItem(index++, o)) modified = true;
+        }
+        return modified;
     }
 
-    public boolean addItem(String e) {
-        return items.add(e);
+    public boolean addAllItems(Collection<? extends Object> items) {
+        boolean modified = false;
+        for (Object o : items) {
+            if (addItem(o)) modified = true;
+        }
+        return modified;
+    }
+
+    public boolean addItem(int index, Object item) {
+        if (item == null) return false;
+        items.add(index, new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
+        return true;
+    }
+
+    public boolean addItem(Object item) {
+        if (item == null) return false;
+        return items.add(new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
     }
 
     public int getItemCount() {
@@ -98,7 +132,16 @@ public class GUIComboBox extends GUI {
     }
 
     public boolean removeItem(Object o) {
-        return items.remove(o);
+        if (o == null) return false;
+        Iterator it = items.iterator();
+        while (it.hasNext()) {
+            GUIComboItem item = (GUIComboItem)it.next();
+            if (o.equals(item.getValue())) {
+                it.remove();
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isEmpty() {

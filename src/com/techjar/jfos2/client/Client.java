@@ -29,7 +29,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Controllers;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -38,9 +40,12 @@ import org.lwjgl.opengl.Pbuffer;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.vector.Vector2f;
+import org.newdawn.slick.Image;
 import org.newdawn.slick.SlickException;
+import org.newdawn.slick.geom.Circle;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
+import org.newdawn.slick.geom.ShapeRenderer;
 
 /**
  *
@@ -61,6 +66,7 @@ public class Client {
     private PixelFormat pixelFormat;
     private TickCounter tick;
     private List<GUI> guiList;
+    private List<GUICallback> resizeHandlers;
     private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
     private long fps;
     private long fpsLastFrame;
@@ -74,6 +80,7 @@ public class Client {
         mouseHitbox = new Rectangle(0, 0, 0, 0);
         tick = new TickCounter(Constants.FRAME_RATE);
         guiList = new ArrayList<GUI>();
+        resizeHandlers = new ArrayList<GUICallback>();
     }
     
     public static void run(String[] args) {
@@ -97,7 +104,7 @@ public class Client {
         initDisplayModes();
         initConfig();
         
-        PixelFormat format = new PixelFormat(32, 0, 24, 8, 0);
+        PixelFormat format = new PixelFormat(displayMode.getBitsPerPixel(), 0, 24, 8, 0);
         Pbuffer pb = new Pbuffer(640, 480, format, null);
         pb.makeCurrent();
         arbSupported = GLContext.getCapabilities().GL_ARB_multisample;
@@ -141,16 +148,18 @@ public class Client {
         
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setLocation((dim.width - frame.getSize().width) / 2, (dim.height - frame.getSize().height) / 2);
-        
+
+        texture = new TextureManager();
         Display.create();
         init();
         drawSplash();
+        Display.update();
         
         Keyboard.create();
+        Controllers.create();
         Mouse.create();
         Mouse.setGrabbed(false);
         font = new FontManager();
-        texture = new TextureManager();
         sound = new SoundManager();
         preloadData();
         
@@ -172,12 +181,12 @@ public class Client {
         GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
         thing2.setDimension(200, 30);
         thing2.setPosition(40, 800);
-        thing2.setChangeHandler(new GUICallback() {
+        /*thing2.setChangeHandler(new GUICallback() {
             @Override
             public void run() {
                 Client.client.setDisplayMode(new DisplayMode(800, 600));
             }
-        });
+        });*/
         thing.addComponent(thing2);
         //sound.playStreamingSound("myass.mp3", false);
         
@@ -242,6 +251,9 @@ public class Client {
             canvas.setPreferredSize(new Dimension(displayMode.getWidth(), displayMode.getHeight()));
             frame.pack();
             resizeGL(displayMode.getWidth(), displayMode.getHeight());
+            for (GUICallback callback : resizeHandlers) {
+                callback.run();
+            }
         }
         catch (LWJGLException ex) {
             ex.printStackTrace();
@@ -270,6 +282,14 @@ public class Client {
         return Collections.unmodifiableList(list);
     }
 
+    public void addResizeHandler(GUICallback resizeHandler) {
+        resizeHandlers.add(resizeHandler);
+    }
+
+    public void removeResizeHandler(GUICallback resizeHandler) {
+        resizeHandlers.remove(resizeHandler);
+    }
+
     private void preloadData() {
         // Preload Textures
         texture.getTexture("ui/windowclose.png");
@@ -280,7 +300,10 @@ public class Client {
     }
     
     private void drawSplash() {
-        
+        //Shape shape = new Rectangle(0, 0, displayMode.getWidth(), displayMode.getHeight());
+        //Shape shape = new Rectangle(0, 0, 128, 128);
+        Shape shape = new Rectangle(0, 0, displayMode.getWidth(), displayMode.getHeight());
+        ShapeRenderer.textureFit(shape, new Image(texture.getTexture("background.png")));
     }
     
     private void init() {
@@ -298,7 +321,10 @@ public class Client {
         glEnable(GL_BLEND);
         glAlphaFunc(GL_GREATER, 0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Temp code for Reference
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Temp code for Reference
     }
 
     private void resizeGL(int width, int height) {
@@ -328,6 +354,10 @@ public class Client {
                 if (!gui.processMouseEvent()) break;
         }
     }
+
+    private void processController() {
+        
+    }
     
     private void update() {
         Iterator it = guiList.iterator();
@@ -341,6 +371,8 @@ public class Client {
     private void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         
         //texture.getTexture("pegs/large/red.png").bind();
         //RenderHelper.drawSquare(0, 0, 32, 32, true);
@@ -361,6 +393,7 @@ public class Client {
                 mouseHitbox.setLocation(getMouseX(), getMouseY());
                 this.processKeyboard();
                 this.processMouse();
+                this.processController();
                 this.update();
                 this.render();
                 tick.incTicks();
