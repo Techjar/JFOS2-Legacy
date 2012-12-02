@@ -1,5 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
+import com.techjar.jfos2.Util;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.client.Client;
@@ -13,7 +14,6 @@ import java.util.Queue;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.ScissorRectangle;
 import org.newdawn.slick.geom.Shape;
 
 /**
@@ -57,15 +57,11 @@ public class GUIContainer extends GUI {
 
     @Override
     public void render() {
-        boolean doScissor = true;
-        Rectangle scissor = getScissorBox();
-        Rectangle prevScissor = RenderHelper.getPreviousScissor();
-        if (prevScissor != null) doScissor = prevScissor.contains(scissor);
-        if (doScissor) RenderHelper.beginScissor(scissor);
+        RenderHelper.beginScissor(getScissorBox());
         for (GUI gui : components) {
             gui.render();
         }
-        if (doScissor) RenderHelper.endScissor();
+        RenderHelper.endScissor();
     }
     
     @Override
@@ -80,7 +76,7 @@ public class GUIContainer extends GUI {
     }
     
     protected Rectangle getScissorBox() {
-        return new ScissorRectangle(getContainerBox());
+        return getContainerBox();
     }
     
     public boolean containsComponent(GUI component) {

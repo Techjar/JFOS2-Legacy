@@ -1,19 +1,21 @@
 package com.techjar.jfos2.client;
 
+import com.techjar.jfos2.Util;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Stack;
 import static org.lwjgl.opengl.GL11.*;
 
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.ScissorRectangle;
 
 /**
  *
  * @author Techjar
  */
 public final class RenderHelper {
-    protected static Queue<Rectangle> prevScissor = new LinkedList<Rectangle>();
+    private static final Rectangle NULL_RECTANGLE = new NullRectangle();
+    private static Stack<Rectangle> prevScissor = new ScissorStack<Rectangle>();
     
     public static void drawSquare(float x, float y, float width, float height, Color color, boolean textured) {
         glPushMatrix();
@@ -52,15 +54,30 @@ public final class RenderHelper {
         drawSquare(x, y + height - thickness, width, thickness, color);
     }
     
-    public static void beginScissor(Rectangle rect) {
-        prevScissor.add(rect);
-        glEnable(GL_SCISSOR_TEST);
-        glScissor((int)rect.getX(), Client.client.getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
-        //if (prev != null) glScissor((int)prev.getX(), Client.client.getHeight() - (int)prev.getHeight() - (int)prev.getY(), (int)prev.getWidth(), (int)prev.getHeight());
+    public static boolean beginScissor(Rectangle rect, boolean clipToPrevious) {
+        boolean doScissor = true;
+        if (clipToPrevious) {
+            Rectangle prev = prevScissor.peek();
+            if (prev != null) {
+                doScissor = prev.intersects(rect);
+                if (doScissor) rect = Util.clipRectangle(rect, prev);
+            }
+        }
+        if (doScissor) {
+            prevScissor.push(rect);
+            glEnable(GL_SCISSOR_TEST);
+            glScissor((int)rect.getX(), Client.client.getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
+        }
+        else prevScissor.push(NULL_RECTANGLE);
+        return doScissor;
+    }
+
+    public static boolean beginScissor(Rectangle rect) {
+        return beginScissor(rect, true);
     }
     
     public static void endScissor() {
-        prevScissor.poll();
+        if (prevScissor.pop() instanceof NullRectangle) return;
         Rectangle prev = prevScissor.peek();
         if (prev != null) glScissor((int)prev.getX(), Client.client.getHeight() - (int)prev.getHeight() - (int)prev.getY(), (int)prev.getWidth(), (int)prev.getHeight());
         else glDisable(GL_SCISSOR_TEST);
@@ -68,7 +85,25 @@ public final class RenderHelper {
 
     public static Rectangle getPreviousScissor() {
         Rectangle prev = prevScissor.peek();
-        if (prev != null) return new ScissorRectangle(prev);
+        if (prev != null && !(prev instanceof NullRectangle)) return new Rectangle(prev.getX(), prev.getY(), prev.getWidth(), prev.getHeight());
         return null;
+    }
+
+    public static class ScissorStack<E> extends Stack<E> {
+        @Override
+        public synchronized E peek() {
+            return this.empty() ? null : super.peek();
+        }
+
+        @Override
+        public synchronized E pop() {
+            return this.empty() ? null : super.pop();
+        }
+    }
+
+    private static class NullRectangle extends Rectangle {
+        public NullRectangle() {
+            super(0, 0, 0, 0);
+        }
     }
 }

@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import org.newdawn.slick.geom.Rectangle;
 
 /**
  *
@@ -49,6 +50,15 @@ public final class Util {
         else ip = str;
 
         return new IPInfo(InetAddress.getByName(ip), port, ipv6);
+    }
+
+    public static Rectangle clipRectangle(Rectangle toClip, Rectangle clipTo) {
+        if (!toClip.intersects(clipTo)) return new Rectangle(0, 0, 0, 0);
+        float newX = MathHelper.clamp(toClip.getX(), clipTo.getX(), clipTo.getMaxX());
+        float newY = MathHelper.clamp(toClip.getY(), clipTo.getY(), clipTo.getMaxY());
+        float newWidth = MathHelper.clamp(toClip.getWidth(), 0, clipTo.getWidth() - (newX - clipTo.getX()));
+        float newHeight = MathHelper.clamp(toClip.getHeight(), 0, clipTo.getHeight() - (newY - clipTo.getY()));
+        return new Rectangle(newX, newY, newWidth, newHeight);
     }
 
     public static final class IPInfo {

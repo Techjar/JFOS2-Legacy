@@ -27,11 +27,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Controllers;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -160,6 +162,9 @@ public class Client {
         });*/
         thing.addComponent(thing2);
         //sound.playMusic("test.mp3", true);
+        Stack<Object> stack = new Stack<Object>();
+        stack.push(null);
+        System.out.println(stack.peek());
         
         run();
         shutdownInternal();
@@ -431,8 +436,8 @@ public class Client {
             //newDim = newCanvasSize.getAndSet(null);
             //if (newDim != null) resizeGL(newDim.width, newDim.height);
             
-            fps = Math.round(1000000000D / Math.max((double)System.nanoTime() - (double)fpsLastFrame, 1D));
-            fpsLastFrame = System.nanoTime(); 
+            fps = Math.round((double)Sys.getTimerResolution() / (double)(Sys.getTime() - fpsLastFrame));
+            fpsLastFrame = Sys.getTime();
             if(Display.isVisible()) {
                 mouseHitbox.setLocation(getMouseX(), getMouseY());
                 this.preProcess();
