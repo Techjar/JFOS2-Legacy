@@ -209,11 +209,6 @@ public class GUIWindow extends GUIContainer {
         return new Rectangle(getPosition().getX() + 2, getPosition().getY() + 20, dimension.getWidth() - 4, dimension.getHeight() - 22);
     }
 
-    //@Override
-    protected void doGlScissor() {
-        glScissor((int)getPosition().getX() + 2, Client.client.getHeight() - (dimension.getHeight() - 22) - (int)(getPosition().getY() + 20), dimension.getWidth() - 4, dimension.getHeight() - 22);
-    }
-
     public boolean isMoveable() {
         return canMove;
     }

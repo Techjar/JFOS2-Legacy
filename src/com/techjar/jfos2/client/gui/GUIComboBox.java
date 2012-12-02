@@ -1,14 +1,20 @@
 package com.techjar.jfos2.client.gui;
 
+import static org.lwjgl.opengl.GL11.*;
+
 import com.techjar.jfos2.MathHelper;
 import com.techjar.jfos2.Util;
+import com.techjar.jfos2.client.Client;
+import com.techjar.jfos2.client.RenderHelper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
+import org.lwjgl.util.Dimension;
 import org.newdawn.slick.UnicodeFont;
+import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 
 /**
@@ -25,6 +31,13 @@ public class GUIComboBox extends GUI {
     
     protected int selectedItem = -1;
     protected boolean opened;
+
+    public GUIComboBox(UnicodeFont font, Color color, GUIBackground guiBg) {
+        this.font = font;
+        this.color = color;
+        this.guiBg = guiBg;
+        this.guiBg.setParent(this);
+    }
     
     @Override
     public boolean processKeyboardEvent() {
@@ -41,17 +54,38 @@ public class GUIComboBox extends GUI {
 
     @Override
     public void update() {
-        
+        if (!Mouse.isButtonDown(0)) {
+            if (checkMouseIntersect(getComponentBox())) {
+                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                hovered = true;
+            }
+            else hovered = false;
+        }
     }
 
     @Override
     public void render() {
-        if (getSelectedItem() != null) font.drawString(getPosition().getX() + 5, getPosition().getY() + 5, getSelectedItem().toString(), Util.convertColor(color));
+        guiBg.render();
+        RenderHelper.drawSquare(getPosition().getX() + dimension.getWidth() - 20, getPosition().getY(), 20, dimension.getHeight(), guiBg.getBorderColor());
+        RenderHelper.setGlColor(hovered || opened ? Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)) : guiBg.getBackgroundColor());
+        glDisable(GL_TEXTURE_2D);
+        glBegin(GL_TRIANGLES);
+            glVertex2f(getPosition().getX() + dimension.getWidth() - 16, getPosition().getY() + 3);
+            glVertex2f(getPosition().getX() + dimension.getWidth() - 3.5f, getPosition().getY() + 3);
+            glVertex2f(getPosition().getX() + dimension.getWidth() - 10.25f, getPosition().getY() + dimension.getHeight() - 3);
+        glEnd();
+        glEnable(GL_TEXTURE_2D);
+        if (getSelectedItem() != null) {
+            RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, dimension.getWidth() - 23, dimension.getHeight() - 6));
+            font.drawString(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, getSelectedItem().toString(), Util.convertColor(color));
+            RenderHelper.endScissor();
+        }
     }
 
     @Override
-    public Shape getComponentBox() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void setDimension(Dimension dimension) {
+        super.setDimension(dimension);
+        guiBg.setDimension(dimension);
     }
 
     public int getVisibleItems() {
@@ -86,7 +120,7 @@ public class GUIComboBox extends GUI {
 
     public Object getSelectedItem() {
         if (selectedItem < 0 || selectedItem >= items.size()) return null;
-        return items.get(selectedItem).getValue();
+        return getItem(selectedItem);
     }
 
     public boolean isOpened() {
@@ -116,12 +150,15 @@ public class GUIComboBox extends GUI {
     public boolean addItem(int index, Object item) {
         if (item == null) return false;
         items.add(index, new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
+        scrollBox.setHeight(MathHelper.clamp(dimension.getHeight() * items.size(), dimension.getHeight(), dimension.getHeight() * visibleItems));
         return true;
     }
 
     public boolean addItem(Object item) {
         if (item == null) return false;
-        return items.add(new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
+        boolean ret = items.add(new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
+        scrollBox.setHeight(MathHelper.clamp(dimension.getHeight() * items.size(), dimension.getHeight(), dimension.getHeight() * visibleItems));
+        return ret;
     }
 
     public int getItemCount() {
@@ -129,7 +166,9 @@ public class GUIComboBox extends GUI {
     }
 
     public Object removeItem(int index) {
-        return items.remove(index);
+        Object ret = items.remove(index);
+        scrollBox.setHeight(MathHelper.clamp(dimension.getHeight() * items.size(), dimension.getHeight(), dimension.getHeight() * visibleItems));
+        return ret == null ? null : ((GUIComboItem)ret).getValue();
     }
 
     public boolean removeItem(Object o) {
@@ -150,7 +189,8 @@ public class GUIComboBox extends GUI {
     }
 
     public Object getItem(int index) {
-        return items.get(index);
+        Object item = items.get(index);
+        return item == null ? null : ((GUIComboItem)item).getValue();
     }
 
     public void clearItems() {

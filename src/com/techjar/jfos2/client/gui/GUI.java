@@ -95,8 +95,16 @@ public abstract class GUI {
         setPosition(new Vector2f(x, y));
     }
 
+    public void setX(float x) {
+        setPosition(x, position.getY());
+    }
+
+    public void setY(float y) {
+        setPosition(position.getX(), y);
+    }
+
     public Dimension getDimension() {
-        return dimension;
+        return new Dimension(dimension);
     }
 
     public void setDimension(Dimension dimension) {
@@ -109,6 +117,14 @@ public abstract class GUI {
     
     public void setDimension(int width, int height) {
         setDimension(new Dimension(width, height));
+    }
+
+    public void setWidth(int width) {
+        setDimension(width, dimension.getHeight());
+    }
+
+    public void setHeight(int height) {
+        setDimension(dimension.getWidth(), height);
     }
     
     public GUICallback getPositionChangeHandler() {

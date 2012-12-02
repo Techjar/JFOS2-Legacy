@@ -15,13 +15,17 @@ import org.newdawn.slick.geom.Rectangle;
  */
 public final class RenderHelper {
     private static Stack<Rectangle> prevScissor = new ScissorStack<Rectangle>();
-    
+
+    public static void setGlColor(Color color) {
+        glColor4ub(color.getRedByte(), color.getGreenByte(), color.getBlueByte(), color.getAlphaByte());
+    }
+
     public static void drawSquare(float x, float y, float width, float height, Color color, boolean textured) {
         glPushMatrix();
         if (!textured) glDisable(GL_TEXTURE_2D);
         glTranslatef(x, y, 0);
         if (color != null) {
-            glColor4ub(color.getRedByte(), color.getGreenByte(), color.getBlueByte(), color.getAlphaByte());
+            setGlColor(color);
         }
         else glColor3f(1, 1, 1);
         glBegin(GL_QUADS);
