@@ -1,7 +1,5 @@
 package com.techjar.jfos2.client;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.util.glu.GLU.*;
@@ -24,10 +22,13 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
@@ -62,6 +63,8 @@ public class Client {
     private TextureManager texture;
     private SoundManager sound;
     private DisplayMode displayMode;
+    private boolean borderless;
+    private boolean wasBorderless;
     private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
     private TickCounter tick;
@@ -99,7 +102,7 @@ public class Client {
         }
     }
     
-    public void start() throws LWJGLException, SlickException {
+    public void start() throws LWJGLException, SlickException, IOException {
         Runtime.getRuntime().addShutdownHook(new ShutdownThread());
         initDisplayModes();
         initConfig();
@@ -111,9 +114,64 @@ public class Client {
         if(arbSupported) arbMaxSamples = glGetInteger(GL_MAX_SAMPLES);
         pb.destroy();
         
+        makeFrame(borderless);
+        Display.setDisplayMode(displayMode);
+
+        texture = new TextureManager();
+        Display.create();
+        init();
+        drawSplash();
+        Display.update();
+        
+        Keyboard.create();
+        Controllers.create();
+        Mouse.create();
+        Mouse.setGrabbed(false);
+        font = new FontManager();
+        sound = new SoundManager();
+        sound.setEffectVolume(config.getFloat("sound.effectvolume"));
+        sound.setMusicVolume(config.getFloat("sound.musicvolume"));
+        preloadData();
+        
+        GUIWindow slider = new GUIWindow(new GUIBackground());
+        slider.setDimension(500, 500);
+        slider.setPosition(56, 50);
+        /*slider.setChangeHandler(new GUICallback() {
+            @Override
+            public void run() {
+                GUISlider slid = (GUISlider)this.getComponent();
+                sound.setMasterVolume(slid.getValue());
+            }
+        });*/
+        guiList.add(slider);
+        GUIContainer thing = new GUIScrollBox(new Color(100, 0, 0));
+        thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
+        thing.setPosition(2, 20);
+        slider.addComponent(thing);
+        GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
+        thing2.setDimension(200, 30);
+        thing2.setPosition(40, 800);
+        /*thing2.setChangeHandler(new GUICallback() {
+            @Override
+            public void run() {
+                Client.client.setBorderless(!Client.client.isBorderless());
+                Client.client.useDisplayMode();
+            }
+        });*/
+        thing.addComponent(thing2);
+        //sound.playMusic("test.mp3", true);
+        
+        run();
+        shutdownInternal();
+        System.exit(0);
+    }
+
+    private void makeFrame(boolean undecorated) throws LWJGLException {
         frame = new Frame(Constants.GAME_TITLE);
         frame.setLayout(new BorderLayout());
         frame.setResizable(false);
+        frame.setAlwaysOnTop(false);
+        frame.setUndecorated(undecorated);
         canvas = new Canvas();
 
         /*canvas.addComponentListener(new ComponentAdapter() {
@@ -138,65 +196,17 @@ public class Client {
         });
 
         frame.add(canvas, BorderLayout.CENTER);
-        Display.setParent(canvas);
-        Display.setVSyncEnabled(true);
-        Display.setDisplayMode(displayMode);
-        
+
         canvas.setPreferredSize(new Dimension(displayMode.getWidth(), displayMode.getHeight()));
         frame.pack();
-        frame.setVisible(true);
-        
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setLocation((dim.width - frame.getSize().width) / 2, (dim.height - frame.getSize().height) / 2);
-
-        texture = new TextureManager();
-        Display.create();
-        init();
-        drawSplash();
-        Display.update();
-        
-        Keyboard.create();
-        Controllers.create();
-        Mouse.create();
-        Mouse.setGrabbed(false);
-        font = new FontManager();
-        sound = new SoundManager();
-        preloadData();
-        
-        GUIWindow slider = new GUIWindow(new GUIBackground());
-        slider.setDimension(500, 500);
-        slider.setPosition(56, 50);
-        /*slider.setChangeHandler(new GUICallback() {
-            @Override
-            public void run() {
-                GUISlider slid = (GUISlider)this.getComponent();
-                sound.setMasterVolume(slid.getValue());
-            }
-        });*/
-        guiList.add(slider);
-        GUIContainer thing = new GUIScrollBox(new Color(100, 0, 0));
-        thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
-        thing.setPosition(2, 20);
-        slider.addComponent(thing);
-        GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
-        thing2.setDimension(200, 30);
-        thing2.setPosition(40, 800);
-        /*thing2.setChangeHandler(new GUICallback() {
-            @Override
-            public void run() {
-                Client.client.setDisplayMode(new DisplayMode(800, 600));
-            }
-        });*/
-        thing.addComponent(thing2);
-        //sound.playStreamingSound("myass.mp3", false);
-        
-        
-        run();
-        shutdownInternal();
-        System.exit(0);
+        frame.setVisible(true);
+        Display.setParent(canvas);
     }
 
     public static void crashException(Throwable ex) {
+        ex.printStackTrace();
         Display.destroy();
         if (client.canvas != null && client.frame != null) {
             client.frame.setResizable(false);
@@ -224,13 +234,16 @@ public class Client {
         config.load();
         config.defaultProperty("display.width", displayMode.getWidth());
         config.defaultProperty("display.height", displayMode.getHeight());
+        config.defaultProperty("display.borderless", false);
+        config.defaultProperty("sound.effectvolume", 1f);
+        config.defaultProperty("sound.musicvolume", 1f);
 
-        DisplayMode dMode = findDisplayMode((Integer)config.getProperty("display.width"), (Integer)config.getProperty("display.height"));
-        if (dMode != null) displayMode = dMode;
-        else {
+        if (!setDisplayMode(config.getInteger("display.width"), config.getInteger("display.height"))) {
             config.setProperty("display.width", displayMode.getWidth());
             config.setProperty("display.height", displayMode.getHeight());
         }
+        borderless = config.getBoolean("display.borderless");
+        wasBorderless = borderless;
         
         config.save();
     }
@@ -244,30 +257,54 @@ public class Client {
         return null;
     }
 
-    public void setDisplayMode(DisplayMode displayMode) {
+    public void useDisplayMode() {
         try {
-            this.displayMode = displayMode;
-            Display.setDisplayMode(displayMode);
-            canvas.setPreferredSize(new Dimension(displayMode.getWidth(), displayMode.getHeight()));
-            frame.pack();
+            actuallyUseDisplayMode(displayMode, borderless);
             resizeGL(displayMode.getWidth(), displayMode.getHeight());
             for (GUICallback callback : resizeHandlers) {
                 callback.run();
             }
         }
         catch (LWJGLException ex) {
-            ex.printStackTrace();
+            crashException(ex);
             System.exit(0);
         }
     }
 
-    public void setDisplayMode(int width, int height) {
-        DisplayMode mode = findDisplayMode(width, height);
-        if (mode != null) setDisplayMode(mode);
-    }
-
     public DisplayMode getDisplayMode() {
         return displayMode;
+    }
+
+    public void setDisplayMode(DisplayMode displayMode) {
+        this.displayMode = displayMode;
+    }
+
+    public boolean setDisplayMode(int width, int height) {
+        DisplayMode mode = findDisplayMode(width, height);
+        if (mode != null) {
+            setDisplayMode(mode);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isBorderless() {
+        return borderless;
+    }
+
+    public void setBorderless(boolean borderless) {
+        this.borderless = borderless;
+    }
+
+    private void actuallyUseDisplayMode(DisplayMode displayMode, boolean borderless) throws LWJGLException {
+        Display.setDisplayMode(displayMode);
+        if (borderless != wasBorderless) {
+            Frame oldFrame = frame;
+            oldFrame.setVisible(false);
+            makeFrame(borderless);
+            oldFrame.dispose();
+            wasBorderless = borderless;
+        }
     }
 
     public List<DisplayMode> getDisplayModeList() {
@@ -340,18 +377,21 @@ public class Client {
         glLoadIdentity();
         glPushMatrix();
     }
+
+    private void preProcess() {
+    }
     
     private void processKeyboard() {
         while (Keyboard.next()) {
             for (GUI gui : guiList)
-                if (!gui.processKeyboardEvent()) break;
+                if (!gui.processKeyboardEvent()) continue;
         }
     }
 
     private void processMouse() {
         while (Mouse.next()) {
             for (GUI gui : guiList)
-                if (!gui.processMouseEvent()) break;
+                if (!gui.processMouseEvent()) continue;
         }
     }
 
@@ -364,21 +404,25 @@ public class Client {
         while (it.hasNext()) {
             GUI gui = (GUI)it.next();
             if (gui.isRemoveRequested()) it.remove();
-            else gui.update();
+            else {
+                gui.update();
+                if (gui.isRemoveRequested()) it.remove();
+            }
         }
     }
     
     private void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         
         //texture.getTexture("pegs/large/red.png").bind();
         //RenderHelper.drawSquare(0, 0, 32, 32, true);
-        
+
         for (GUI gui : guiList)
             gui.render();
+    }
+
+    private void postProcess() {
     }
     
     private void run() throws LWJGLException {
@@ -391,11 +435,13 @@ public class Client {
             fpsLastFrame = System.nanoTime(); 
             if(Display.isVisible()) {
                 mouseHitbox.setLocation(getMouseX(), getMouseY());
+                this.preProcess();
                 this.processKeyboard();
                 this.processMouse();
                 this.processController();
                 this.update();
                 this.render();
+                this.postProcess();
                 tick.incTicks();
             }
             else {
@@ -436,7 +482,7 @@ public class Client {
     
     public int getMouseY() {
         //return (int)((canvas.getHeight() - Mouse.getY()) / ((double)canvas.getHeight() / (double)displayMode.getHeight()));
-        return (int)(canvas.getHeight() - Mouse.getY());
+        return (int)(displayMode.getHeight() - Mouse.getY());
     }
     
     public Vector2f getMousePos() {

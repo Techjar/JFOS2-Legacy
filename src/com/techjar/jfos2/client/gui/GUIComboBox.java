@@ -19,6 +19,7 @@ public class GUIComboBox extends GUI {
     protected UnicodeFont font;
     protected Color color;
     protected GUIBackground guiBg;
+    protected GUIScrollBox scrollBox;
     protected List<GUIComboItem> items = new ArrayList<GUIComboItem>();
     protected int visibleItems = 5;
     

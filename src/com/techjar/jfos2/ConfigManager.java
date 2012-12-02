@@ -10,16 +10,24 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- *
+ * A Yaml configuration manager that supports tree-based structures by placing periods in the key.
  * @author Techjar
  */
 public class ConfigManager {
+    /**
+     * The file to load and save.
+     */
     public final File file;
     private final boolean autoSave;
     private final Yaml yaml;
     private Map<String, Object> config;
     
     
+    /**
+     * Creates a new ConfigManager using the specified {@link File} as the file. Auto-saving is determined by the specified boolean value.
+     * @param file The file to load and save.
+     * @param autoSave <tt>true</tt> to enable auto-saving.
+     */
     public ConfigManager(File file, boolean autoSave) {
         DumperOptions dumper = new DumperOptions();
         dumper.setLineBreak(DumperOptions.LineBreak.getPlatformLineBreak());
@@ -32,37 +40,129 @@ public class ConfigManager {
         this.config = new HashMap<String, Object>();
     }
     
+    /**
+     * Creates a new ConfigManager using the specified {@link String} as the file. Auto-saving is determined by the specified boolean value.
+     * @param file The file to load and save.
+     * @param autoSave <tt>true</tt> to enable auto-saving.
+     */
     public ConfigManager(String file, boolean autoSave) {
         this(new File(file), autoSave);
     }
 
+    /**
+     * Creates a new ConfigManager using the specified {@link File} as the file. Auto-saving is off by default, see {@link #ConfigManager(java.lang.String, boolean)} for enabling it.
+     * @param file The file to load and save.
+     */
     public ConfigManager(File file) {
         this(file, false);
     }
     
+    /**
+     * Creates a new ConfigManager using the specified {@link String} as the file. Auto-saving is off by default, see {@link #ConfigManager(java.lang.String, boolean)} for enabling it.
+     * @param file The file to load and save.
+     */
     public ConfigManager(String file) {
         this(new File(file), false);
+
     }
     
+    /**
+     * Returns whether the Yaml file exists.
+     * @return <tt>true</tt> if the file exists.
+     */
     public boolean fileExists() {
         return file.exists();
     }
     
+    /**
+     * Gets the property or returns the value of <tt>def</tt>. Only intended for internal use, you should call {@link #defaultProperty} in your config initialization instead of using this.
+     * @param name The property key.
+     * @param def The default value
+     * @return The value of the property or the value of <tt>def</tt> if it doesn't exist.
+     */
     public Object getProperty(String name, Object def) {
         if (containsYamlKey(config, name))
             return getYamlKey(config, name);
         return def;
     }
     
+    /**
+     * Gets the property.
+     * @param name The property key.
+     * @return The value of the property or <tt>null</tt> if it doesn't exist.
+     */
     public Object getProperty(String name) {
         return getProperty(name, null);
     }
+
+    /**
+     * Gets the property as a {@link String}.
+     * @param name The property key.
+     * @return {@link String} value of the property.
+     */
+    public String getString(String name) {
+        return getProperty(name, "").toString();
+    }
+
+    /**
+     * Gets the property as a boolean.
+     * @param name The property key.
+     * @return Boolean value of the property.
+     */
+    public boolean getBoolean(String name) {
+        return Boolean.parseBoolean(getProperty(name, false).toString());
+    }
+
+    /**
+     * Gets the property as an integer.
+     * @param name The property key.
+     * @return Integer value of the property.
+     */
+    public int getInteger(String name) {
+        return Integer.parseInt(getProperty(name, 0).toString());
+    }
+
+    /**
+     * Gets the property as a long.
+     * @param name The property key.
+     * @return Long value of the property.
+     */
+    public long getLong(String name) {
+        return Long.parseLong(getProperty(name, 0).toString());
+    }
+
+    /**
+     * Gets a property as a float.
+     * @param name The property key.
+     * @return Float value of the property.
+     */
+    public float getFloat(String name) {
+        return Float.parseFloat(getProperty(name, 0).toString());
+    }
+
+    /**
+     * Gets a property as a double.
+     * @param name The property key.
+     * @return Double value of the property.
+     */
+    public double getDouble(String name) {
+        return Double.parseDouble(getProperty(name, 0).toString());
+    }
     
+    /**
+     * Sets a property.
+     * @param name The property key.
+     * @param value The value to be set.
+     */
     public void setProperty(String name, Object value) {
         putYamlKey(config, name, value);
         if (autoSave) save();
     }
     
+    /**
+     * Removes a property.
+     * @param name The property key.
+     */
     public void unsetProperty(String name) {
         if (containsYamlKey(config, name)) {
             removeYamlKey(config, name);
@@ -70,6 +170,11 @@ public class ConfigManager {
         }
     }
     
+    /**
+     * Set a property only if it doesn't exist already.
+     * @param name The property key.
+     * @param value The value to be set.
+     */
     public void defaultProperty(String name, Object value) {
         if (!containsYamlKey(config, name)) {
             putYamlKey(config, name, value);
@@ -77,6 +182,11 @@ public class ConfigManager {
         }
     }
     
+    /**
+     * Returns whether or not the property exists.
+     * @param name The property key.
+     * @return <tt>true</tt> if the specified property exists.
+     */
     public boolean propertyExists(String name) {
         return containsYamlKey(config, name);
     }
@@ -149,6 +259,9 @@ public class ConfigManager {
         return curmap.containsKey(key);
     }
     
+    /**
+     * Load the Yaml file.
+     */
     public void load() {
         try {
             if (!file.exists()) {
@@ -165,6 +278,9 @@ public class ConfigManager {
         }
     }
     
+    /**
+     * Save the Yaml file.
+     */
     public void save() {
         try {
             FileWriter fw = new FileWriter(file);

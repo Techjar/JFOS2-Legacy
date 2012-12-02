@@ -44,8 +44,15 @@ public class GUIContainer extends GUI {
     
     @Override
     public void update() {
-        for (GUI gui : components)
-            gui.update();
+        Iterator it = components.iterator();
+        while (it.hasNext()) {
+            GUI gui = (GUI)it.next();
+            if (gui.isRemoveRequested()) it.remove();
+            else {
+                gui.update();
+                if (gui.isRemoveRequested()) it.remove();
+            }
+        }
     }
 
     @Override

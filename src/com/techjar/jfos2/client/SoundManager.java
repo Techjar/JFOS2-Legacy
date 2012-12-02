@@ -17,6 +17,8 @@ import paulscode.sound.libraries.LibraryLWJGLOpenAL;
 public class SoundManager {
     protected final SoundSystem soundSystem;
     protected final File soundPath;
+    protected float effectVolume = 1;
+    protected float musicVolume = 1;
     protected long nextId;
     
     public SoundManager() {
@@ -34,6 +36,18 @@ public class SoundManager {
     
     public void unloadSound(String file) {
         soundSystem.unloadSound(file);
+    }
+
+    public String playEffect(String file, boolean loop) {
+        String source = playTemporarySound(file, loop);
+        if (source != null) soundSystem.setVolume(source, effectVolume);
+        return source;
+    }
+
+    public String playMusic(String file, boolean loop) {
+        String source = playStreamingSound(file, loop);
+        if (source != null) soundSystem.setVolume(source, musicVolume);
+        return source;
     }
     
     public String playSound(String file, boolean loop) {
@@ -78,7 +92,23 @@ public class SoundManager {
         return null;
     }
     
+    public void playSound(String source) {
+        soundSystem.play(source);
+    }
+    
+    public void pauseSound(String source) {
+        soundSystem.pause(source);
+    }
+
     public void stopSound(String source) {
+        soundSystem.stop(source);
+    }
+
+    public void rewindSound(String source) {
+        soundSystem.rewind(source);
+    }
+    
+    public void removeSound(String source) {
         soundSystem.removeSource(source);
     }
     
@@ -92,6 +122,22 @@ public class SoundManager {
     
     public void setMasterVolume(float volume) {
         soundSystem.setMasterVolume(volume);
+    }
+
+    public float getEffectVolume() {
+        return effectVolume;
+    }
+
+    public void setEffectVolume(float effectVolume) {
+        this.effectVolume = effectVolume;
+    }
+
+    public float getMusicVolume() {
+        return musicVolume;
+    }
+
+    public void setMusicVolume(float musicVolume) {
+        this.musicVolume = musicVolume;
     }
     
     public float getSoundVolume(String source) {
