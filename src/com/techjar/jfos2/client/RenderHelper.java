@@ -14,7 +14,6 @@ import org.newdawn.slick.geom.Rectangle;
  * @author Techjar
  */
 public final class RenderHelper {
-    private static final Rectangle NULL_RECTANGLE = new NullRectangle();
     private static Stack<Rectangle> prevScissor = new ScissorStack<Rectangle>();
     
     public static void drawSquare(float x, float y, float width, float height, Color color, boolean textured) {
@@ -68,7 +67,7 @@ public final class RenderHelper {
             glEnable(GL_SCISSOR_TEST);
             glScissor((int)rect.getX(), Client.client.getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
         }
-        else prevScissor.push(NULL_RECTANGLE);
+        else prevScissor.push(null);
         return doScissor;
     }
 
@@ -77,15 +76,15 @@ public final class RenderHelper {
     }
     
     public static void endScissor() {
-        if (prevScissor.pop() instanceof NullRectangle) return;
+        if (prevScissor.pop() == null) return;
         Rectangle prev = prevScissor.peek();
         if (prev != null) glScissor((int)prev.getX(), Client.client.getHeight() - (int)prev.getHeight() - (int)prev.getY(), (int)prev.getWidth(), (int)prev.getHeight());
-        else glDisable(GL_SCISSOR_TEST);
+        else if (prevScissor.empty()) glDisable(GL_SCISSOR_TEST);
     }
 
     public static Rectangle getPreviousScissor() {
         Rectangle prev = prevScissor.peek();
-        if (prev != null && !(prev instanceof NullRectangle)) return new Rectangle(prev.getX(), prev.getY(), prev.getWidth(), prev.getHeight());
+        if (prev != null) return new Rectangle(prev.getX(), prev.getY(), prev.getWidth(), prev.getHeight());
         return null;
     }
 
@@ -98,12 +97,6 @@ public final class RenderHelper {
         @Override
         public synchronized E pop() {
             return this.empty() ? null : super.pop();
-        }
-    }
-
-    private static class NullRectangle extends Rectangle {
-        public NullRectangle() {
-            super(0, 0, 0, 0);
         }
     }
 }

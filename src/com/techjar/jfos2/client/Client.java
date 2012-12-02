@@ -162,9 +162,6 @@ public class Client {
         });*/
         thing.addComponent(thing2);
         //sound.playMusic("test.mp3", true);
-        Stack<Object> stack = new Stack<Object>();
-        stack.push(null);
-        System.out.println(stack.peek());
         
         run();
         shutdownInternal();
