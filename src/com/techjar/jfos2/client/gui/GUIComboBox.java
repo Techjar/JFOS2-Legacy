@@ -13,6 +13,7 @@ import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
+import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
@@ -27,6 +28,7 @@ public class GUIComboBox extends GUI {
     protected GUIBackground guiBg;
     protected GUIScrollBox scrollBox;
     protected List<GUIComboItem> items = new ArrayList<GUIComboItem>();
+    protected GUICallback changeHandler;
     protected int visibleItems = 5;
     
     protected int selectedItem = -1;
@@ -37,18 +39,43 @@ public class GUIComboBox extends GUI {
         this.color = color;
         this.guiBg = guiBg;
         this.guiBg.setParent(this);
+        this.scrollBox = new GUIScrollBox(guiBg.getBorderColor());
+        scrollBox.setParent(this);
+        scrollBox.setX(this.guiBg.getBorderSize());
+        scrollBox.setScrollXMode(GUIScrollBox.ScrollMode.DISABLED);
     }
     
     @Override
     public boolean processKeyboardEvent() {
-        if (Mouse.getEventButton() == 0) {
-            
-        }
+        if (opened && !scrollBox.processKeyboardEvent()) return false;
         return true;
     }
 
     @Override
     public boolean processMouseEvent() {
+        if (opened && !scrollBox.processMouseEvent()) return false;
+        if (Mouse.getEventButton() == 0) {
+            if (Mouse.getEventButtonState()) {
+                Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
+                if (checkMouseIntersect(box)) {
+                    opened = !opened;
+                    if (opened) {
+                        scrollBox.setScrollOffset(0, 0);
+                        scrollBox.removeAllComponents();
+                        for (int i = 0; i < items.size(); i++) {
+                            GUIComboItem item = items.get(i);
+                            item.setY(i * (getHeight() - (guiBg.getBorderSize() * 2)));
+                            scrollBox.addComponent(item);
+                        }
+                        scrollBox.setY(dimension.getHeight() - guiBg.getBorderSize());
+                        if (!checkWithinContainer(scrollBox.getComponentBox()))
+                            scrollBox.setY(-scrollBox.getHeight() + 2);
+                    }
+                    return false;
+                }
+                else opened = false;
+            }
+        }
         return true;
     }
 
@@ -56,11 +83,12 @@ public class GUIComboBox extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox())) {
-                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!opened && !hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;
         }
+        if (opened) scrollBox.update();
     }
 
     @Override
@@ -76,16 +104,29 @@ public class GUIComboBox extends GUI {
         glEnd();
         glEnable(GL_TEXTURE_2D);
         if (getSelectedItem() != null) {
-            RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, dimension.getWidth() - 23, dimension.getHeight() - 6));
-            font.drawString(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, getSelectedItem().toString(), Util.convertColor(color));
+            RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - guiBg.getBorderSize() - 20, dimension.getHeight() - (guiBg.getBorderSize() * 2)));
+            font.drawString(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), getSelectedItem().toString(), Util.convertColor(color));
             RenderHelper.endScissor();
         }
+        if (opened) {
+            RenderHelper.drawSquare(scrollBox.getPosition().getX(), scrollBox.getPosition().getY(), scrollBox.getDimension().getWidth(), scrollBox.getDimension().getHeight(), guiBg.getBackgroundColor());
+            scrollBox.render();
+        }
+    }
+
+    @Override
+    public Shape getComponentBox() {
+        if (!opened) return super.getComponentBox();
+        return super.getComponentBox().union(scrollBox.getComponentBox())[0];
     }
 
     @Override
     public void setDimension(Dimension dimension) {
         super.setDimension(dimension);
         guiBg.setDimension(dimension);
+        scrollBox.setWidth(dimension.getWidth() - guiBg.getBorderSize() - 20);
+        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
+        scrollBox.setScrollYIncrement(dimension.getHeight() - (guiBg.getBorderSize() * 2));
     }
 
     public int getVisibleItems() {
@@ -149,15 +190,19 @@ public class GUIComboBox extends GUI {
 
     public boolean addItem(int index, Object item) {
         if (item == null) return false;
-        items.add(index, new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
-        scrollBox.setHeight(MathHelper.clamp(dimension.getHeight() * items.size(), dimension.getHeight(), dimension.getHeight() * visibleItems));
+        GUIComboItem newItem = new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item);
+        newItem.setDimension(scrollBox.getWidth(), getHeight() - (guiBg.getBorderSize() * 2));
+        items.add(index, newItem);
+        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
         return true;
     }
 
     public boolean addItem(Object item) {
         if (item == null) return false;
-        boolean ret = items.add(new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item));
-        scrollBox.setHeight(MathHelper.clamp(dimension.getHeight() * items.size(), dimension.getHeight(), dimension.getHeight() * visibleItems));
+        GUIComboItem newItem = new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item);
+        newItem.setDimension(scrollBox.getWidth(), getHeight() - (guiBg.getBorderSize() * 2));
+        boolean ret = items.add(newItem);
+        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
         return ret;
     }
 
@@ -167,7 +212,7 @@ public class GUIComboBox extends GUI {
 
     public Object removeItem(int index) {
         Object ret = items.remove(index);
-        scrollBox.setHeight(MathHelper.clamp(dimension.getHeight() * items.size(), dimension.getHeight(), dimension.getHeight() * visibleItems));
+        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
         return ret == null ? null : ((GUIComboItem)ret).getValue();
     }
 
@@ -178,6 +223,7 @@ public class GUIComboBox extends GUI {
             GUIComboItem item = (GUIComboItem)it.next();
             if (o.equals(item.getValue())) {
                 it.remove();
+                scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
                 return true;
             }
         }

@@ -95,8 +95,16 @@ public abstract class GUI {
         setPosition(new Vector2f(x, y));
     }
 
+    public float getX() {
+        return getPosition().getX();
+    }
+
     public void setX(float x) {
         setPosition(x, position.getY());
+    }
+
+    public float getY() {
+        return getPosition().getY();
     }
 
     public void setY(float y) {
@@ -119,8 +127,16 @@ public abstract class GUI {
         setDimension(new Dimension(width, height));
     }
 
+    public int getWidth() {
+        return dimension.getWidth();
+    }
+
     public void setWidth(int width) {
         setDimension(width, dimension.getHeight());
+    }
+
+    public int getHeight() {
+        return dimension.getHeight();
     }
 
     public void setHeight(int height) {
@@ -152,8 +168,8 @@ public abstract class GUI {
     }
     
     public boolean checkMouseIntersect(boolean checkParentContainerBox, boolean checkContainerBox, Shape... boxes) {
-        boolean intersect1 = true, intersect2 = true;
         Shape mouseBox = Client.client.getMouseHitbox();
+        boolean intersect1 = true, intersect2 = true;
         if (checkContainerBox) {
             Shape cBox = getContainerBox();
             if (cBox != null) intersect1 = cBox.intersects(mouseBox);
@@ -187,6 +203,18 @@ public abstract class GUI {
     
     public boolean checkMouseIntersect(Shape... boxes) {
         return checkMouseIntersect(true, false, boxes);
+    }
+
+    public boolean checkWithinContainer(Shape... boxes) {
+        if (parent == null || !(parent instanceof GUIContainer)) return true;
+        if (boxes.length > 1) {
+            for (Shape box : boxes) {
+                if (!parent.getContainerBox().contains(box)) return false;
+            }
+            return true;
+        }
+        if (boxes.length < 1) return parent.getContainerBox().contains(getComponentBox());
+        return parent.getContainerBox().contains(boxes[0]);
     }
     
     public Shape getContainerBox() {

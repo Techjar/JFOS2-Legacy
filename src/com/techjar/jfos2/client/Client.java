@@ -151,7 +151,7 @@ public class Client {
         thing.setPosition(2, 20);
         slider.addComponent(thing);
         //GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
-        GUI thing2 = new GUIComboBox(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(255, 255, 255), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        GUIComboBox thing2 = new GUIComboBox(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(255, 255, 255), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         thing2.setDimension(200, 30);
         thing2.setPosition(40, 800);
         /*thing2.setChangeHandler(new GUICallback() {
@@ -161,8 +161,9 @@ public class Client {
                 Client.client.useDisplayMode();
             }
         });*/
+        thing2.addAllItems(this.getDisplayModeStrings());
         thing.addComponent(thing2);
-        //sound.playMusic("test.mp3", true);
+        sound.playMusic("music/title.mp3", true);
         
         run();
         shutdownInternal();
@@ -317,7 +318,7 @@ public class Client {
     public List<String> getDisplayModeStrings() {
         List<String> list = new ArrayList<String>(displayModeList.size());
         for (DisplayMode mode : displayModeList) {
-            list.add(new StringBuilder(mode.getWidth()).append("x").append(mode.getHeight()).toString());
+            list.add(new StringBuilder().append(mode.getWidth()).append("x").append(mode.getHeight()).toString());
         }
         return Collections.unmodifiableList(list);
     }

@@ -38,6 +38,10 @@ public class SoundManager {
         soundSystem.unloadSound(file);
     }
 
+    public boolean isPlaying(String source) {
+        return soundSystem.playing(source);
+    }
+
     public String playEffect(String file, boolean loop) {
         String source = playTemporarySound(file, loop);
         if (source != null) soundSystem.setVolume(source, effectVolume);
@@ -46,6 +50,12 @@ public class SoundManager {
 
     public String playMusic(String file, boolean loop) {
         String source = playStreamingSound(file, loop);
+        if (source != null) soundSystem.setVolume(source, musicVolume);
+        return source;
+    }
+
+    public String playLoadedMusic(String file, boolean loop) {
+        String source = playSound(file, loop);
         if (source != null) soundSystem.setVolume(source, musicVolume);
         return source;
     }
