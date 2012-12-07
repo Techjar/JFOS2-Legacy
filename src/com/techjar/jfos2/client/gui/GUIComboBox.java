@@ -126,6 +126,9 @@ public class GUIComboBox extends GUI {
         }
         if (getSelectedItem() != null) scrollBox.setScrollOffset(scrollBox.getScrollOffset());
         scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
+        scrollBox.setY(dimension.getHeight() - guiBg.getBorderSize());
+        if (!checkWithinContainer(scrollBox.getComponentBox()))
+            scrollBox.setY(-scrollBox.getHeight() + 2);
     }
 
     public int getVisibleItems() {
@@ -172,9 +175,6 @@ public class GUIComboBox extends GUI {
         if (opened) {
             updateScrollBox();
             if (getSelectedItem() != null) scrollBox.setScrollOffset(0, (int)items.get(selectedItem).getRawPosition().getY());
-            scrollBox.setY(dimension.getHeight() - guiBg.getBorderSize());
-            if (!checkWithinContainer(scrollBox.getComponentBox()))
-                scrollBox.setY(-scrollBox.getHeight() + 2);
         }
     }
 
