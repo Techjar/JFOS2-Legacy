@@ -1,9 +1,12 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.MathHelper;
+import com.techjar.jfos2.Util;
+import com.techjar.jfos2.client.Client;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.UnicodeFont;
 
@@ -12,33 +15,54 @@ import org.newdawn.slick.UnicodeFont;
  * @author Techjar
  */
 public class GUIComboButton extends GUI {
+    protected UnicodeFont font;
+    protected Color color;
     protected List<Object> items = new ArrayList<Object>();
 
     protected int selectedItem = -1;
 
-    public GUIComboButton(UnicodeFont font, Color color, String text) {
-        //super(font, color, text);
+    public GUIComboButton(UnicodeFont font, Color color) {
+        this.font = font;
+        this.color = color;
     }
 
     @Override
     public boolean processKeyboardEvent() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return true;
     }
 
     @Override
     public boolean processMouseEvent() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (Mouse.getEventButtonState()) {
+            if (checkMouseIntersect(getComponentBox())) {
+                if (Mouse.getEventButton() == 0) {
+                    Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                    if (++selectedItem >= items.size()) selectedItem = 0;
+                }
+                else if (Mouse.getEventButton() == 1) {
+                    Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                    if (--selectedItem < 0) selectedItem = items.size() - 1;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
     public void update() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (!Mouse.isButtonDown(0)) {
+            if (checkMouseIntersect(getComponentBox())) {
+                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                hovered = true;
+            }
+            else hovered = false;
+        }
     }
 
     @Override
     public void render() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+        if (getSelectedItem() != null) font.drawString(getPosition().getX(), getPosition().getY(), getSelectedItem().toString(), Util.convertColor(hovered ? Util.addColors(color, new Color(50, 50, 50)) : color));
+    } 
 
     public void setSelectedItem(int selectedItem) {
         this.selectedItem = MathHelper.clamp(selectedItem, -1, items.size() - 1);
@@ -54,6 +78,7 @@ public class GUIComboButton extends GUI {
     }
 
     public boolean addAllItems(int index, Collection<? extends Object> c) {
+        if (index <= selectedItem) selectedItem += c.size();
         return items.addAll(index, c);
     }
 
@@ -63,6 +88,7 @@ public class GUIComboButton extends GUI {
 
     public void addItem(int index, Object element) {
         items.add(index, element);
+        if (index <= selectedItem) selectedItem++;
     }
 
     public boolean addItem(String e) {
@@ -74,11 +100,19 @@ public class GUIComboButton extends GUI {
     }
 
     public Object removeItem(int index) {
+        if (index < selectedItem) selectedItem--;
+        else if (index == selectedItem) selectedItem = -1;
         return items.remove(index);
     }
 
     public boolean removeItem(Object o) {
-        return items.remove(o);
+        if (items.contains(o)) {
+            int index = items.indexOf(o);
+            if (index < selectedItem) selectedItem--;
+            else if (index == selectedItem) selectedItem = -1;
+            return items.remove(o);
+        }
+        return false;
     }
 
     public boolean isEmpty() {

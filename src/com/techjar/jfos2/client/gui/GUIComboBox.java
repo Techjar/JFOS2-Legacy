@@ -184,21 +184,20 @@ public class GUIComboBox extends GUI {
         return newItem;
     }
 
-    public boolean addAllItems(int index, Collection<? extends Object> itemsList) {
-        boolean modified = false, before = false;
-        if (index <= selectedItem) before = true;
-        for (Object o : itemsList) {
+    public boolean addAllItems(int index, Collection<? extends Object> c) {
+        boolean modified = false;
+        if (index <= selectedItem) selectedItem += c.size();
+        for (Object o : c) {
             items.add(index++, createItem(o));
-            if (before) selectedItem++;
             modified = true;
         }
         if (modified) updateScrollBox();
         return modified;
     }
 
-    public boolean addAllItems(Collection<? extends Object> itemsList) {
+    public boolean addAllItems(Collection<? extends Object> c) {
         boolean modified = false;
-        for (Object o : itemsList) {
+        for (Object o : c) {
             if (items.add(createItem(o))) modified = true;
         }
         if (modified) updateScrollBox();
