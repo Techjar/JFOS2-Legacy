@@ -205,7 +205,7 @@ public class GUITextField extends GUIText {
     protected void calculateRenderText() {
         renderText = new StringBuilder(text);
         while (renderText.length() > 0) {
-            if (font.getWidth(renderText.toString()) <= dimension.getWidth() - 10)
+            if (font.getWidth(renderText.toString()) <= dimension.getWidth() - (guiBg.getBorderSize() * 2))
                 break;
             renderText.deleteCharAt(0);
         }

@@ -31,14 +31,14 @@ public class GUIContainer extends GUI {
     @Override
     public boolean processKeyboardEvent() {
         for (GUI gui : components)
-            if (!gui.processKeyboardEvent()) return false;
+            if (gui.isVisible() && !gui.processKeyboardEvent()) return false;
         return true;
     }
 
     @Override
     public boolean processMouseEvent() {
         for (GUI gui : components)
-            if (!gui.processMouseEvent()) return false;
+            if (gui.isVisible() && !gui.processMouseEvent()) return false;
         return true;
     }
     
@@ -49,8 +49,10 @@ public class GUIContainer extends GUI {
             GUI gui = (GUI)it.next();
             if (gui.isRemoveRequested()) it.remove();
             else {
-                gui.update();
-                if (gui.isRemoveRequested()) it.remove();
+                if (gui.isVisible()) {
+                    gui.update();
+                    if (gui.isRemoveRequested()) it.remove();
+                }
             }
         }
     }
@@ -59,7 +61,7 @@ public class GUIContainer extends GUI {
     public void render() {
         RenderHelper.beginScissor(getScissorBox());
         for (GUI gui : components) {
-            gui.render();
+            if (gui.isVisible()) gui.render();
         }
         RenderHelper.endScissor();
     }

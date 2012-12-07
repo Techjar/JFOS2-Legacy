@@ -20,6 +20,7 @@ public abstract class GUI {
     protected GUICallback removeHandler;
     protected GUIAlignment parentAlign = GUIAlignment.TOP_LEFT;
     protected GUI parent;
+    protected boolean visible = true;
     protected boolean removeRequested;
     protected boolean hovered;
     
@@ -141,6 +142,14 @@ public abstract class GUI {
 
     public void setHeight(int height) {
         setDimension(dimension.getWidth(), height);
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
     
     public GUICallback getPositionChangeHandler() {

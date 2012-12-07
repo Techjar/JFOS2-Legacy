@@ -60,13 +60,13 @@ public class GUIComboBox extends GUI {
                 if (checkMouseIntersect(box)) {
                     opened = !opened;
                     if (opened) {
-                        scrollBox.setScrollOffset(0, 0);
                         scrollBox.removeAllComponents();
                         for (int i = 0; i < items.size(); i++) {
                             GUIComboItem item = items.get(i);
                             item.setY(i * (getHeight() - (guiBg.getBorderSize() * 2)));
                             scrollBox.addComponent(item);
                         }
+                        if (getSelectedItem() != null) scrollBox.setScrollOffset(0, (int)items.get(selectedItem).getRawPosition().getY());
                         scrollBox.setY(dimension.getHeight() - guiBg.getBorderSize());
                         if (!checkWithinContainer(scrollBox.getComponentBox()))
                             scrollBox.setY(-scrollBox.getHeight() + 2);

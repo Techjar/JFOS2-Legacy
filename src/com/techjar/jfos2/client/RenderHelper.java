@@ -57,26 +57,18 @@ public final class RenderHelper {
         drawSquare(x, y + height - thickness, width, thickness, color);
     }
     
-    public static boolean beginScissor(Rectangle rect, boolean clipToPrevious) {
-        boolean doScissor = true;
+    public static void beginScissor(Rectangle rect, boolean clipToPrevious) {
         if (clipToPrevious) {
             Rectangle prev = prevScissor.peek();
-            if (prev != null) {
-                doScissor = prev.intersects(rect);
-                if (doScissor) rect = Util.clipRectangle(rect, prev);
-            }
+            if (prev != null) rect = Util.clipRectangle(rect, prev);
         }
-        if (doScissor) {
-            prevScissor.push(rect);
-            glEnable(GL_SCISSOR_TEST);
-            glScissor((int)rect.getX(), Client.client.getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
-        }
-        else prevScissor.push(null);
-        return doScissor;
+        prevScissor.push(rect);
+        glEnable(GL_SCISSOR_TEST);
+        glScissor((int)rect.getX(), Client.client.getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
     }
 
-    public static boolean beginScissor(Rectangle rect) {
-        return beginScissor(rect, true);
+    public static void beginScissor(Rectangle rect) {
+        beginScissor(rect, true);
     }
     
     public static void endScissor() {
