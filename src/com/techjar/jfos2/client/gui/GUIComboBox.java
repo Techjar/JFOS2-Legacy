@@ -58,19 +58,7 @@ public class GUIComboBox extends GUI {
             if (Mouse.getEventButtonState()) {
                 Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
                 if (checkMouseIntersect(box)) {
-                    opened = !opened;
-                    if (opened) {
-                        scrollBox.removeAllComponents();
-                        for (int i = 0; i < items.size(); i++) {
-                            GUIComboItem item = items.get(i);
-                            item.setY(i * (getHeight() - (guiBg.getBorderSize() * 2)));
-                            scrollBox.addComponent(item);
-                        }
-                        if (getSelectedItem() != null) scrollBox.setScrollOffset(0, (int)items.get(selectedItem).getRawPosition().getY());
-                        scrollBox.setY(dimension.getHeight() - guiBg.getBorderSize());
-                        if (!checkWithinContainer(scrollBox.getComponentBox()))
-                            scrollBox.setY(-scrollBox.getHeight() + 2);
-                    }
+                    setOpened(!opened);
                     return false;
                 }
                 else opened = false;
@@ -129,6 +117,17 @@ public class GUIComboBox extends GUI {
         scrollBox.setScrollYIncrement(dimension.getHeight() - (guiBg.getBorderSize() * 2));
     }
 
+    private void updateScrollBox() {
+        scrollBox.removeAllComponents();
+        for (int i = 0; i < items.size(); i++) {
+            GUIComboItem item = items.get(i);
+            item.setY(i * (getHeight() - (guiBg.getBorderSize() * 2)));
+            scrollBox.addComponent(item);
+        }
+        if (getSelectedItem() != null) scrollBox.setScrollOffset(scrollBox.getScrollOffset());
+        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
+    }
+
     public int getVisibleItems() {
         return visibleItems;
     }
@@ -170,39 +169,54 @@ public class GUIComboBox extends GUI {
 
     public void setOpened(boolean opened) {
         this.opened = opened;
+        if (opened) {
+            updateScrollBox();
+            if (getSelectedItem() != null) scrollBox.setScrollOffset(0, (int)items.get(selectedItem).getRawPosition().getY());
+            scrollBox.setY(dimension.getHeight() - guiBg.getBorderSize());
+            if (!checkWithinContainer(scrollBox.getComponentBox()))
+                scrollBox.setY(-scrollBox.getHeight() + 2);
+        }
     }
 
-    public boolean addAllItems(int index, Collection<? extends Object> items) {
-        boolean modified = false;
-        for (Object o : items) {
-            if (addItem(index++, o)) modified = true;
+    private GUIComboItem createItem(Object value) {
+        GUIComboItem newItem = new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), value);
+        newItem.setDimension(scrollBox.getWidth(), getHeight() - (guiBg.getBorderSize() * 2));
+        return newItem;
+    }
+
+    public boolean addAllItems(int index, Collection<? extends Object> itemsList) {
+        boolean modified = false, before = false;
+        if (index <= selectedItem) before = true;
+        for (Object o : itemsList) {
+            items.add(index++, createItem(o));
+            if (before) selectedItem++;
+            modified = true;
         }
+        if (modified) updateScrollBox();
         return modified;
     }
 
-    public boolean addAllItems(Collection<? extends Object> items) {
+    public boolean addAllItems(Collection<? extends Object> itemsList) {
         boolean modified = false;
-        for (Object o : items) {
-            if (addItem(o)) modified = true;
+        for (Object o : itemsList) {
+            if (items.add(createItem(o))) modified = true;
         }
+        if (modified) updateScrollBox();
         return modified;
     }
 
     public boolean addItem(int index, Object item) {
         if (item == null) return false;
-        GUIComboItem newItem = new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item);
-        newItem.setDimension(scrollBox.getWidth(), getHeight() - (guiBg.getBorderSize() * 2));
-        items.add(index, newItem);
-        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
+        items.add(index, createItem(item));
+        if (index <= selectedItem) selectedItem++;
+        updateScrollBox();
         return true;
     }
 
     public boolean addItem(Object item) {
         if (item == null) return false;
-        GUIComboItem newItem = new GUIComboItem(this, font, color, Util.addColors(guiBg.getBackgroundColor(), new Color(50, 50, 50)), item);
-        newItem.setDimension(scrollBox.getWidth(), getHeight() - (guiBg.getBorderSize() * 2));
-        boolean ret = items.add(newItem);
-        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
+        boolean ret = items.add(createItem(item));
+        if (ret) updateScrollBox();
         return ret;
     }
 
@@ -212,22 +226,28 @@ public class GUIComboBox extends GUI {
 
     public Object removeItem(int index) {
         Object ret = items.remove(index);
-        scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
+        if (index < selectedItem) selectedItem--;
+        else if (index == selectedItem) selectedItem = -1;
+        updateScrollBox();
         return ret == null ? null : ((GUIComboItem)ret).getValue();
     }
 
     public boolean removeItem(Object o) {
         if (o == null) return false;
+        boolean ret = false;
         Iterator it = items.iterator();
-        while (it.hasNext()) {
+        for (int i = 0; it.hasNext(); i++) {
             GUIComboItem item = (GUIComboItem)it.next();
             if (o.equals(item.getValue())) {
                 it.remove();
-                scrollBox.setHeight(MathHelper.clamp((dimension.getHeight() - (guiBg.getBorderSize() * 2)) * items.size(), (dimension.getHeight() - (guiBg.getBorderSize() * 2)), (dimension.getHeight() - (guiBg.getBorderSize() * 2)) * visibleItems));
-                return true;
+                if (i < selectedItem) selectedItem--;
+                else if (i == selectedItem) selectedItem = -1;
+                ret = true;
+                break;
             }
         }
-        return false;
+        if (ret) updateScrollBox();
+        return ret;
     }
 
     public boolean isEmpty() {

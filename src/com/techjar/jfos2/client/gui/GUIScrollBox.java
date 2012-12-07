@@ -192,9 +192,13 @@ public class GUIScrollBox extends GUIContainer {
         return new Vector2f(scrollOffset);
     }
 
-    public void setScrollOffset(int x, int y) {
+    public void setScrollOffset(Vector2f offset) {
         int[] maxOffset = getMaxScrollOffset();
-        this.scrollOffset = new Vector2f(MathHelper.clamp(x, 0, maxOffset[0]), MathHelper.clamp(y, 0, maxOffset[1]));
+        this.scrollOffset = new Vector2f(MathHelper.clamp(offset.getX(), 0, maxOffset[0]), MathHelper.clamp(offset.getY(), 0, maxOffset[1]));
+    }
+
+    public void setScrollOffset(int x, int y) {
+        setScrollOffset(new Vector2f(x, y));
     }
     
     public Vector2f getScrollbarOffset() {
