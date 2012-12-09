@@ -5,6 +5,7 @@ import com.techjar.jfos2.Util;
 import com.techjar.jfos2.client.Client;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
@@ -18,6 +19,7 @@ public class GUIComboButton extends GUI {
     protected UnicodeFont font;
     protected Color color;
     protected List<Object> items = new ArrayList<Object>();
+    protected GUICallback changeHandler;
 
     protected int selectedItem = -1;
 
@@ -38,10 +40,18 @@ public class GUIComboButton extends GUI {
                 if (Mouse.getEventButton() == 0) {
                     Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
                     if (++selectedItem >= items.size()) selectedItem = 0;
+                    if (changeHandler != null) {
+                        changeHandler.setComponent(this);
+                        changeHandler.run();
+                    }
                 }
                 else if (Mouse.getEventButton() == 1) {
                     Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
                     if (--selectedItem < 0) selectedItem = items.size() - 1;
+                    if (changeHandler != null) {
+                        changeHandler.setComponent(this);
+                        changeHandler.run();
+                    }
                 }
             }
         }
@@ -65,7 +75,13 @@ public class GUIComboButton extends GUI {
     } 
 
     public void setSelectedItem(int selectedItem) {
-        this.selectedItem = MathHelper.clamp(selectedItem, -1, items.size() - 1);
+        if (selectedItem != this.selectedItem) {
+            this.selectedItem = MathHelper.clamp(selectedItem, -1, items.size() - 1);
+            if (changeHandler != null) {
+                changeHandler.setComponent(this);
+                changeHandler.run();
+            }
+        }
     }
 
     public void setSelectedItem(Object o) {
@@ -123,7 +139,19 @@ public class GUIComboButton extends GUI {
         return items.get(index);
     }
 
+    public List<Object> getAllItems() {
+        return Collections.unmodifiableList(items);
+    }
+
     public void clearItems() {
         items.clear();
+    }
+
+    public GUICallback getChangeHandler() {
+        return changeHandler;
+    }
+
+    public void setChangeHandler(GUICallback changeHandler) {
+        this.changeHandler = changeHandler;
     }
 }

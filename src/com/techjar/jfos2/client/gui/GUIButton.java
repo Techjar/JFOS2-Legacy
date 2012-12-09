@@ -68,8 +68,7 @@ public class GUIButton extends GUIText {
     @Override
     public void update() {
         if (!Mouse.isButtonDown(0)) {
-            Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
-            if (checkMouseIntersect(!windowClose, box)) {
+            if (checkMouseIntersect(!windowClose, getComponentBox())) {
                 if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
                 hovered = true;
             }

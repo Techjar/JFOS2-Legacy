@@ -8,6 +8,7 @@ import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.lwjgl.input.Mouse;
@@ -140,7 +141,13 @@ public class GUIComboBox extends GUI {
     }
     
     public void setSelectedItem(int selectedItem) {
-        this.selectedItem = MathHelper.clamp(selectedItem, -1, items.size() - 1);
+        if (selectedItem != this.selectedItem) {
+            this.selectedItem = MathHelper.clamp(selectedItem, -1, items.size() - 1);
+            if (changeHandler != null) {
+                changeHandler.setComponent(this);
+                changeHandler.run();
+            }
+        }
     }
 
     public void setSelectedItem(Object o) {
@@ -226,7 +233,7 @@ public class GUIComboBox extends GUI {
     public Object removeItem(int index) {
         Object ret = items.remove(index);
         if (index < selectedItem) selectedItem--;
-        else if (index == selectedItem) selectedItem = -1;
+        else if (index == selectedItem) setSelectedItem(-1);
         updateScrollBox();
         return ret == null ? null : ((GUIComboItem)ret).getValue();
     }
@@ -240,7 +247,7 @@ public class GUIComboBox extends GUI {
             if (o.equals(item.getValue())) {
                 it.remove();
                 if (i < selectedItem) selectedItem--;
-                else if (i == selectedItem) selectedItem = -1;
+                else if (i == selectedItem) setSelectedItem(-1);
                 ret = true;
                 break;
             }
@@ -258,7 +265,23 @@ public class GUIComboBox extends GUI {
         return item == null ? null : ((GUIComboItem)item).getValue();
     }
 
+    public List<Object> getAllItems() {
+        List<Object> list = new ArrayList<Object>(items.size());
+        for (GUIComboItem item : items) {
+            list.add(item.getValue());
+        }
+        return Collections.unmodifiableList(list);
+    }
+
     public void clearItems() {
         items.clear();
+    }
+
+    public GUICallback getChangeHandler() {
+        return changeHandler;
+    }
+
+    public void setChangeHandler(GUICallback changeHandler) {
+        this.changeHandler = changeHandler;
     }
 }
