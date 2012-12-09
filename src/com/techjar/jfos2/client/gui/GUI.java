@@ -183,7 +183,7 @@ public abstract class GUI {
             Shape cBox = getContainerBox();
             if (cBox != null) intersect1 = cBox.intersects(mouseBox);
         }
-        if (intersect1 && checkParentContainerBox && parent != null) intersect2 = parent.checkMouseIntersect(checkParentContainerBox, true);
+        if (intersect1 && parent != null) intersect2 = parent.checkMouseIntersect(true, checkParentContainerBox);
         if (!intersect1 || !intersect2) return false;
         List<GUI> guiList;
         if (parent != null && parent instanceof GUIContainer) guiList = ((GUIContainer)parent).getAllComponents();

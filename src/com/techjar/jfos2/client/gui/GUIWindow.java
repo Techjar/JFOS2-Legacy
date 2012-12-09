@@ -23,12 +23,15 @@ public class GUIWindow extends GUIContainer {
     protected Dimension maxSize = new Dimension();
     protected boolean canMove = true;
     protected boolean canResize = true;
+    protected boolean onTop;
     
     protected Vector2f mouseLast;
     protected Cursor currentCursor;
     protected boolean dragging;
     protected boolean startResize;
     protected boolean mouseLockX, mouseLockY;
+    protected boolean wasMousePressed;
+    protected boolean toBePutOnTop;
     protected int resizeX;
     protected int resizeY;
 
@@ -119,6 +122,13 @@ public class GUIWindow extends GUIContainer {
     public void update() {
         super.update();
         closeBtn.update();
+        if (!wasMousePressed && Mouse.isButtonDown(0)) {
+            wasMousePressed = true;
+            if (!onTop) setToBePutOnTop(checkMouseIntersect(getComponentBox()));
+        }
+        else if (wasMousePressed && !Mouse.isButtonDown(0)) {
+            wasMousePressed = false;
+        }
         if (canResize && !Client.client.getMousePos().equals(mouseLast)) {
             if (isResizing()) {
                 Vector2f mouseDiff = Vector2f.sub(Client.client.getMousePos(), mouseLast, null);
@@ -187,7 +197,7 @@ public class GUIWindow extends GUIContainer {
                     currentCursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
                 }
             }
-            Client.client.getFrame().setCursor(currentCursor);
+            if (checkMouseIntersect(getComponentBox())) Client.client.getFrame().setCursor(currentCursor);
         }
         if (dragging) {
             setPosition(Vector2f.add(position, Vector2f.sub(Client.client.getMousePos(), mouseLast, null), null));
@@ -243,6 +253,25 @@ public class GUIWindow extends GUIContainer {
     
     protected boolean isResizing() {
         return resizeX != 0 || resizeY != 0;
+    }
+
+    public boolean isOnTop() {
+        return onTop;
+    }
+
+    /**
+     * Used internally for setting the onTop field! Setting this will NOT put the window on top, but instead may cause problems!
+     */
+    public void setOnTop(boolean onTop) {
+        this.onTop = onTop;
+    }
+
+    public boolean isToBePutOnTop() {
+        return toBePutOnTop;
+    }
+
+    public void setToBePutOnTop(boolean toBePutOnTop) {
+        this.toBePutOnTop = toBePutOnTop;
     }
     
     protected Rectangle[] getBoxes() {

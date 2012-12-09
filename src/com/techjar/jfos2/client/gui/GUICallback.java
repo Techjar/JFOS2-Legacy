@@ -24,7 +24,7 @@ public abstract class GUICallback implements Runnable {
         this.component = component;
     }
 
-    public Object[] getArgs() {
+    public final Object[] getArgs() {
         return args;
     }
 }

@@ -138,6 +138,15 @@ public class Client {
         GUIWindow slider = new GUIWindow(new GUIBackground());
         slider.setDimension(500, 500);
         slider.setPosition(56, 50);
+        GUIWindow win1 = new GUIWindow(new GUIBackground());
+        win1.setDimension(500, 500);
+        win1.setPosition(56, 50);
+        GUIWindow win2 = new GUIWindow(new GUIBackground());
+        win2.setDimension(500, 500);
+        win2.setPosition(56, 50);
+        GUIWindow win3 = new GUIWindow(new GUIBackground());
+        win3.setDimension(500, 500);
+        win3.setPosition(56, 50);
         /*slider.setChangeHandler(new GUICallback() {
             @Override
             public void run() {
@@ -146,6 +155,9 @@ public class Client {
             }
         });*/
         guiList.add(slider);
+        guiList.add(win1);
+        guiList.add(win2);
+        guiList.add(win3);
         GUIContainer thing = new GUIScrollBox(new Color(100, 0, 0));
         thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
         thing.setPosition(2, 20);
@@ -406,6 +418,8 @@ public class Client {
     }
     
     private void update() {
+        GUIWindow lastWin = null, lastTopWin = null;
+        List<GUI> toAdd = new ArrayList<GUI>();
         Iterator it = guiList.iterator();
         while (it.hasNext()) {
             GUI gui = (GUI)it.next();
@@ -414,9 +428,29 @@ public class Client {
                 if (gui.isVisible()) {
                     gui.update();
                     if (gui.isRemoveRequested()) it.remove();
+                    else if (gui instanceof GUIWindow) {
+                        GUIWindow win = (GUIWindow)gui;
+                        if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
+                        lastWin = win;
+                        win.setOnTop(true);
+                        if (win.isToBePutOnTop()) {
+                            it.remove();
+                            toAdd.add(gui);
+                            win.setToBePutOnTop(false);
+                            if (lastTopWin != null) lastTopWin.setOnTop(false);
+                            lastTopWin = win;
+                        }
+                    }
                 }
             }
         }
+        if (tick.getTicks() % 60 == 0) {
+            System.out.println("windows");
+            for (GUI gui : guiList) {
+                if (gui instanceof GUIWindow) System.out.println(((GUIWindow)gui).isOnTop());
+            }
+        }
+        guiList.addAll(toAdd);
     }
     
     private void render() {
