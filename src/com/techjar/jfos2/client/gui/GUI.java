@@ -20,6 +20,7 @@ public abstract class GUI {
     protected GUIAlignment parentAlign = GUIAlignment.TOP_LEFT;
     protected GUI parent;
     protected boolean visible = true;
+    protected boolean enabled = true;
     protected boolean removeRequested;
     protected boolean hovered;
     
@@ -144,6 +145,14 @@ public abstract class GUI {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
     
     public GUICallback getPositionChangeHandler() {

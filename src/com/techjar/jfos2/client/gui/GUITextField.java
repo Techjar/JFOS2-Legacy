@@ -1,5 +1,10 @@
 package com.techjar.jfos2.client.gui;
 
+import com.techjar.jfos2.MathHelper;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.lwjgl.util.Color;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -9,6 +14,10 @@ import org.newdawn.slick.geom.Rectangle;
 import com.techjar.jfos2.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 
 /**
  *
@@ -31,6 +40,7 @@ public class GUITextField extends GUIText {
     protected char repeatLastChar;
     protected boolean repeatState;
     protected boolean repeatState2;
+    protected boolean ctrlPressed;
     
     public GUITextField(UnicodeFont font, Color color, GUIBackground guiBg, String text) {
         super(font, color, text);
@@ -46,7 +56,30 @@ public class GUITextField extends GUIText {
     public boolean processKeyboardEvent() {
         super.processKeyboardEvent();
         if (focused) {
-            if (Keyboard.getEventKeyState()) {
+            if (Keyboard.getEventKey() == Keyboard.KEY_LCONTROL) {
+                ctrlPressed = Keyboard.getEventKeyState();
+            }
+            else if (Keyboard.getEventKeyState()) {
+                if (ctrlPressed) {
+                    try {
+                        if (Keyboard.getEventKey() == Keyboard.KEY_V) {
+                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                            Transferable data = clipboard.getContents(this);
+                            if (data != null && data.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                                text.append((String)data.getTransferData(DataFlavor.stringFlavor));
+                                calculateRenderText();
+                                if (changeHandler != null) {
+                                    changeHandler.setComponent(this);
+                                    changeHandler.run();
+                                }
+                            }
+                            return false;
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return true;
+                }
                 char ch = Keyboard.getEventCharacter();
                 if (Util.isValidCharacter(ch) && text.length() < maxLength) {
                     text.append(ch);
@@ -81,17 +114,7 @@ public class GUITextField extends GUIText {
 
     @Override
     public boolean processMouseEvent() {
-        super.processMouseEvent();
-        if (Mouse.getEventButtonState() && Mouse.getEventButton() == 0) {
-            Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
-            if (checkMouseIntersect(box)) {
-                focused = true;
-                return false;
-            }
-            else if(focused && canLoseFocus)
-                focused = false;
-        }
-        return true;
+        return super.processMouseEvent();
     }
     
     @Override
@@ -100,6 +123,15 @@ public class GUITextField extends GUIText {
         if (Client.client.getTick().getTickMillis() - cursorLastMillis >= 500) {
             cursorState = !cursorState;
             cursorLastMillis = Client.client.getTick().getTickMillis();
+        }
+
+        if (Mouse.isButtonDown(0)) {
+            Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
+            if (checkMouseIntersect(box)) {
+                focused = true;
+            }
+            else if(focused && canLoseFocus)
+                focused = false;
         }
         
         if (repeatState && Client.client.getTick().getTickMillis() - repeatLastMillis >= 500) {
@@ -131,6 +163,7 @@ public class GUITextField extends GUIText {
 
     @Override
     public void render() {
+        if (!enabled) focused = false;
         Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
         if (checkMouseIntersect(box)) {
             Color borderColor2 = new Color(guiBg.getBorderColor());
@@ -139,10 +172,25 @@ public class GUITextField extends GUIText {
             guiBg.setBorderColor(borderColor2);
         }
         else guiBg.render();
-        RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - (guiBg.getBorderSize() * 2)));
+        /*RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - (guiBg.getBorderSize() * 2)));
         font.drawString(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), renderText.toString(), Util.convertColor(color));
         RenderHelper.endScissor();
-        if (focused && cursorState) RenderHelper.drawSquare(getPosition().getX() + font.getWidth(renderText.toString()) + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 2, guiBg.getBorderSize(), dimension.getHeight() - (guiBg.getBorderSize() * 2 - 4), color);
+        if (focused && cursorState) RenderHelper.drawSquare(getPosition().getX() + font.getWidth(renderText.toString()) + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 2, guiBg.getBorderSize(), dimension.getHeight() - (guiBg.getBorderSize() * 2) - 4, color);*/
+        int textWidth = font.getWidth(text.toString());
+        float boxWidth = dimension.getWidth() - (guiBg.getBorderSize() * 2);
+        RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), boxWidth, dimension.getHeight() - (guiBg.getBorderSize() * 2)));
+        if (textWidth < boxWidth) font.drawString(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), text.toString(), Util.convertColor(color));
+        else font.drawString(getPosition().getX() + guiBg.getBorderSize() - (textWidth - boxWidth), getPosition().getY() + guiBg.getBorderSize(), text.toString(), Util.convertColor(color));
+        RenderHelper.endScissor();
+        if (focused && cursorState) RenderHelper.drawSquare(getPosition().getX() + getCursorPos(textWidth, boxWidth), getPosition().getY() + guiBg.getBorderSize() + 2, guiBg.getBorderSize(), dimension.getHeight() - (guiBg.getBorderSize() * 2) - 4, color);
+    }
+
+    protected float getCursorPos(int textWidth, float boxWidth) {
+        return MathHelper.clamp(textWidth, guiBg.getBorderSize() * 2, boxWidth - guiBg.getBorderSize());
+    }
+
+    protected float getCursorPos() {
+        return getCursorPos(font.getWidth(text.toString()), dimension.getWidth() - (guiBg.getBorderSize() * 2));
     }
 
     public GUIBackground getGuiBackground() {

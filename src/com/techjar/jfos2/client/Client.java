@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -179,6 +180,10 @@ public class Client {
         thing.addComponent(b2);
         thing.addComponent(b3);
         thing.addComponent(b4);
+        GUITextField guit = new GUITextField(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        guit.setDimension(200, 30);
+        guit.setPosition(40, 240);
+        thing.addComponent(guit);
         //GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
         //GUIComboBox thing2 = new GUIComboBox(font.getFont("Nighb___", 24, false, false).getUnicodeFont(), new Color(255, 255, 255), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         //GUIComboButton thing2 = new GUIComboButton(font.getFont("Nighb___", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
@@ -419,21 +424,21 @@ public class Client {
     private void processKeyboard() {
         while (Keyboard.next()) {
             for (GUI gui : guiList)
-                if (gui.isVisible() && !gui.processKeyboardEvent()) break;
+                if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) break;
         }
     }
 
     private void processMouse() {
         while (Mouse.next()) {
             for (GUI gui : guiList)
-                if (gui.isVisible() && !gui.processMouseEvent()) break;
+                if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) break;
         }
     }
 
     private void processController() {
         
     }
-    
+
     private void update() {
         GUIWindow lastWin = null, lastTopWin = null;
         List<GUI> toAdd = new ArrayList<GUI>();
@@ -442,7 +447,7 @@ public class Client {
             GUI gui = (GUI)it.next();
             if (gui.isRemoveRequested()) it.remove();
             else {
-                if (gui.isVisible()) {
+                if (gui.isVisible() && gui.isEnabled()) {
                     gui.update();
                     if (gui.isRemoveRequested()) it.remove();
                     else if (gui instanceof GUIWindow) {

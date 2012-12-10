@@ -30,14 +30,14 @@ public abstract class GUIContainer extends GUI {
     @Override
     public boolean processKeyboardEvent() {
         for (GUI gui : components)
-            if (gui.isVisible() && !gui.processKeyboardEvent()) return false;
+            if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) return false;
         return true;
     }
 
     @Override
     public boolean processMouseEvent() {
         for (GUI gui : components)
-            if (gui.isVisible() && !gui.processMouseEvent()) return false;
+            if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) return false;
         return true;
     }
     
@@ -48,7 +48,7 @@ public abstract class GUIContainer extends GUI {
             GUI gui = (GUI)it.next();
             if (gui.isRemoveRequested()) it.remove();
             else {
-                if (gui.isVisible()) {
+                if (gui.isVisible() && gui.isEnabled()) {
                     gui.update();
                     if (gui.isRemoveRequested()) it.remove();
                 }
