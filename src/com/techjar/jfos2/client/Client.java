@@ -24,6 +24,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -82,7 +83,7 @@ public class Client {
     
     public Client() {
         dataDir = OperatingSystem.getDataDirectory("jfos2");
-        mouseHitbox = new Rectangle(0, 0, 0, 0);
+        mouseHitbox = new Rectangle(0, 0, 1, 1);
         tick = new TickCounter(Constants.FRAME_RATE);
         guiList = new ArrayList<GUI>();
         resizeHandlers = new ArrayList<GUICallback>();
@@ -162,6 +163,22 @@ public class Client {
         thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
         thing.setPosition(2, 20);
         slider.addComponent(thing);
+        GUIRadioButton b1 = new GUIRadioButton(new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        b1.setDimension(30, 30);
+        b1.setPosition(40, 80);
+        GUIRadioButton b2 = new GUIRadioButton(new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        b2.setDimension(30, 30);
+        b2.setPosition(40, 120);
+        GUIRadioButton b3 = new GUIRadioButton(new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        b3.setDimension(30, 30);
+        b3.setPosition(40, 160);
+        GUIRadioButton b4 = new GUIRadioButton(new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        b4.setDimension(30, 30);
+        b4.setPosition(40, 200);
+        thing.addComponent(b1);
+        thing.addComponent(b2);
+        thing.addComponent(b3);
+        thing.addComponent(b4);
         //GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
         //GUIComboBox thing2 = new GUIComboBox(font.getFont("Nighb___", 24, false, false).getUnicodeFont(), new Color(255, 255, 255), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         //GUIComboButton thing2 = new GUIComboButton(font.getFont("Nighb___", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
@@ -262,7 +279,7 @@ public class Client {
         }
         borderless = config.getBoolean("display.borderless");
         wasBorderless = borderless;
-        
+
         config.save();
     }
 
@@ -442,12 +459,6 @@ public class Client {
                         }
                     }
                 }
-            }
-        }
-        if (tick.getTicks() % 60 == 0) {
-            System.out.println("windows");
-            for (GUI gui : guiList) {
-                if (gui instanceof GUIWindow) System.out.println(((GUIWindow)gui).isOnTop());
             }
         }
         guiList.addAll(toAdd);

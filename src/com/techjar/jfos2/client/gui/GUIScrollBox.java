@@ -128,7 +128,7 @@ public class GUIScrollBox extends GUIContainer {
 
     @Override
     public Vector2f getContainerPosition() {
-        return Vector2f.sub(super.getPosition(), scrollOffset, null);
+        return Vector2f.sub(getPosition(), scrollOffset, null);
     }
 
     @Override

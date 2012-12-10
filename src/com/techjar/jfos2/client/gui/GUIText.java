@@ -3,20 +3,17 @@ package com.techjar.jfos2.client.gui;
 import com.techjar.jfos2.Util;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.UnicodeFont;
-import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 
 /**
  *
  * @author Techjar
  */
-public class GUIText extends GUI {
+public abstract class GUIText extends GUI {
     protected UnicodeFont font;
     protected Color color;
     protected StringBuilder text;
 
     public GUIText(UnicodeFont font, Color color, String text) {
-        super();
         this.font = font;
         this.color = color;
         this.text = new StringBuilder(text);

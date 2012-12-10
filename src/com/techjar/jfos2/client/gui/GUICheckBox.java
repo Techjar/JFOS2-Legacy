@@ -18,6 +18,7 @@ public class GUICheckBox extends GUI {
     protected GUIBackground guiBg;
     protected Texture checkmark;
     protected GUICallback changeHandler;
+    protected GUILabel label;
 
     protected boolean checked;
 
@@ -37,7 +38,7 @@ public class GUICheckBox extends GUI {
     public boolean processMouseEvent() {
         if (Mouse.getEventButtonState()) {
             if (Mouse.getEventButton() == 0) {
-                if (checkMouseIntersect(getComponentBox())) {
+                if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
                     Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
                     setChecked(!checked);
                     return false;
@@ -50,7 +51,7 @@ public class GUICheckBox extends GUI {
     @Override
     public void update() {
         if (!Mouse.isButtonDown(0)) {
-            if (checkMouseIntersect(getComponentBox())) {
+            if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
                 if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
                 hovered = true;
             }
@@ -61,12 +62,22 @@ public class GUICheckBox extends GUI {
     @Override
     public void render() {
         if (hovered) {
-            Color borderColor2 = new Color(guiBg.getBorderColor());
+            Color color2 = new Color(guiBg.getBorderColor());
             guiBg.setBorderColor(Util.addColors(guiBg.getBorderColor(), new Color(50, 50, 50)));
             guiBg.render();
-            guiBg.setBorderColor(borderColor2);
+            guiBg.setBorderColor(color2);
+
+            if (label != null) {
+                color2 = label.getColor();
+                label.setColor(Util.addColors(color2, new Color(50, 50, 50)));
+                label.render();
+                label.setColor(color2);
+            }
         }
-        else guiBg.render();
+        else {
+            guiBg.render();
+            if (label != null) label.render();
+        }
         if (checked) {
             checkmark.bind();
             RenderHelper.drawSquare(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, dimension.getWidth() - (guiBg.getBorderSize() * 2) - 6, dimension.getHeight() - (guiBg.getBorderSize() * 2) - 6, true, color);
@@ -91,5 +102,13 @@ public class GUICheckBox extends GUI {
                 changeHandler.run();
             }
         }
+    }
+
+    public GUILabel getLabel() {
+        return label;
+    }
+
+    public void setLabel(GUILabel label) {
+        this.label = label;
     }
 }

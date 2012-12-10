@@ -20,11 +20,10 @@ import org.newdawn.slick.geom.Shape;
  *
  * @author Techjar
  */
-public class GUIContainer extends GUI {
+public abstract class GUIContainer extends GUI {
     protected List<GUI> components;
     
     public GUIContainer() {
-        super();
         components = new ArrayList<GUI>();
     }
     

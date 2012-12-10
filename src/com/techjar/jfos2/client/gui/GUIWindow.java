@@ -122,11 +122,11 @@ public class GUIWindow extends GUIContainer {
     public void update() {
         super.update();
         closeBtn.update();
-        if (!wasMousePressed && Mouse.isButtonDown(0)) {
+        if (!wasMousePressed && checkMouseButtons()) {
             wasMousePressed = true;
             if (!onTop) setToBePutOnTop(checkMouseIntersect(getComponentBox()));
         }
-        else if (wasMousePressed && !Mouse.isButtonDown(0)) {
+        else if (wasMousePressed && !checkMouseButtons()) {
             wasMousePressed = false;
         }
         if (canResize && !Client.client.getMousePos().equals(mouseLast)) {
@@ -217,6 +217,13 @@ public class GUIWindow extends GUIContainer {
     @Override
     public Rectangle getContainerBox() {
         return new Rectangle(getPosition().getX() + 2, getPosition().getY() + 20, dimension.getWidth() - 4, dimension.getHeight() - 22);
+    }
+
+    protected boolean checkMouseButtons() {
+        for (int i = 0; i < Mouse.getButtonCount(); i++) {
+            if (Mouse.isButtonDown(i)) return true;
+        }
+        return false;
     }
 
     public boolean isMoveable() {

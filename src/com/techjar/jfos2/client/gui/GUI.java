@@ -2,7 +2,6 @@ package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.client.Client;
 import java.util.List;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Dimension;
 import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
@@ -13,8 +12,8 @@ import org.newdawn.slick.geom.Shape;
  * @author Techjar
  */
 public abstract class GUI {
-    protected Vector2f position;
-    protected Dimension dimension;
+    protected Vector2f position = new Vector2f();
+    protected Dimension dimension = new Dimension();;
     protected GUICallback dimensionChangeHandler;
     protected GUICallback positionChangeHandler;
     protected GUICallback removeHandler;
@@ -23,11 +22,6 @@ public abstract class GUI {
     protected boolean visible = true;
     protected boolean removeRequested;
     protected boolean hovered;
-    
-    public GUI() {
-        position = new Vector2f();
-        dimension = new Dimension();
-    }
     
     public abstract boolean processKeyboardEvent();
     public abstract boolean processMouseEvent();
@@ -185,9 +179,7 @@ public abstract class GUI {
         }
         if (intersect1 && parent != null) intersect2 = parent.checkMouseIntersect(true, checkParentContainerBox);
         if (!intersect1 || !intersect2) return false;
-        List<GUI> guiList;
-        if (parent != null && parent instanceof GUIContainer) guiList = ((GUIContainer)parent).getAllComponents();
-        else guiList = Client.client.getGUIList();
+        List<GUI> guiList = getContainerList();
         int thisIndex = guiList.indexOf(this);
         if (thisIndex > -1) {
             for (int i = 0; i < guiList.size(); i++) {
@@ -225,8 +217,13 @@ public abstract class GUI {
         if (boxes.length < 1) return parent.getContainerBox().contains(getComponentBox());
         return parent.getContainerBox().contains(boxes[0]);
     }
+
+    public List<GUI> getContainerList() {
+        if (parent != null && parent instanceof GUIContainer) return ((GUIContainer)parent).getAllComponents();
+        return Client.client.getGUIList();
+    }
     
-    public Shape getContainerBox() {
+    public Rectangle getContainerBox() {
         return null;
     }
     

@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -93,6 +94,16 @@ public class ConfigManager {
      */
     public Object getProperty(String name) {
         return getProperty(name, null);
+    }
+
+    /**
+     * Gets the property as a {@link List}.
+     * @param name The property key.
+     * @return {@link List} value of the property or <tt>null</tt> if it's not a list.
+     */
+    public List getList(String name) {
+        Object obj = getProperty(name, null);
+        return obj instanceof List ? (List)obj : null;
     }
 
     /**
