@@ -25,7 +25,6 @@ import java.awt.datatransfer.Transferable;
  */
 public class GUITextField extends GUIText {
     protected GUIBackground guiBg;
-    protected StringBuilder renderText;
     protected int maxLength = Short.MAX_VALUE;
     protected boolean focused;
     protected boolean canLoseFocus = true;
@@ -67,7 +66,6 @@ public class GUITextField extends GUIText {
                             Transferable data = clipboard.getContents(this);
                             if (data != null && data.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                                 text.append((String)data.getTransferData(DataFlavor.stringFlavor));
-                                calculateRenderText();
                                 if (changeHandler != null) {
                                     changeHandler.setComponent(this);
                                     changeHandler.run();
@@ -83,7 +81,6 @@ public class GUITextField extends GUIText {
                 char ch = Keyboard.getEventCharacter();
                 if (Util.isValidCharacter(ch) && text.length() < maxLength) {
                     text.append(ch);
-                    calculateRenderText();
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
                         changeHandler.run();
@@ -92,7 +89,6 @@ public class GUITextField extends GUIText {
                 }
                 else if (Keyboard.getEventKey() == Keyboard.KEY_BACK && text.length() > 0) {
                     text.deleteCharAt(text.length() - 1);
-                    calculateRenderText();
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
                         changeHandler.run();
@@ -142,7 +138,6 @@ public class GUITextField extends GUIText {
             if (Client.client.getTick().getTickMillis() - repeatLastMillis2 >= 50) {
                 if (Util.isValidCharacter(repeatLastChar) && text.length() < maxLength) {
                     text.append(repeatLastChar);
-                    calculateRenderText();
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
                         changeHandler.run();
@@ -150,7 +145,6 @@ public class GUITextField extends GUIText {
                 }
                 else if (repeatLastKey == Keyboard.KEY_BACK && text.length() > 0) {
                     text.deleteCharAt(text.length() - 1);
-                    calculateRenderText();
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
                         changeHandler.run();
@@ -172,10 +166,6 @@ public class GUITextField extends GUIText {
             guiBg.setBorderColor(borderColor2);
         }
         else guiBg.render();
-        /*RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - (guiBg.getBorderSize() * 2)));
-        font.drawString(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), renderText.toString(), Util.convertColor(color));
-        RenderHelper.endScissor();
-        if (focused && cursorState) RenderHelper.drawSquare(getPosition().getX() + font.getWidth(renderText.toString()) + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 2, guiBg.getBorderSize(), dimension.getHeight() - (guiBg.getBorderSize() * 2) - 4, color);*/
         int textWidth = font.getWidth(text.toString());
         float boxWidth = dimension.getWidth() - (guiBg.getBorderSize() * 2);
         RenderHelper.beginScissor(new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), boxWidth, dimension.getHeight() - (guiBg.getBorderSize() * 2)));
@@ -236,7 +226,6 @@ public class GUITextField extends GUIText {
     @Override
     public void setText(String text) {
         super.setText(text);
-        calculateRenderText();
         if (changeHandler != null) {
             changeHandler.setComponent(this);
             changeHandler.run();
@@ -247,15 +236,5 @@ public class GUITextField extends GUIText {
     public void setDimension(Dimension dimension) {
         super.setDimension(dimension);
         guiBg.setDimension(dimension);
-        calculateRenderText();
-    }
-    
-    protected void calculateRenderText() {
-        renderText = new StringBuilder(text);
-        while (renderText.length() > 0) {
-            if (font.getWidth(renderText.toString()) <= dimension.getWidth() - (guiBg.getBorderSize() * 2))
-                break;
-            renderText.deleteCharAt(0);
-        }
     }
 }
