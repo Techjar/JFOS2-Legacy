@@ -2,16 +2,13 @@ package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.MathHelper;
 import com.techjar.jfos2.Util;
-import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
-import java.awt.Dimension;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 
 /**
  *

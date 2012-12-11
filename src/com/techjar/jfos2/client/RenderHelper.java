@@ -50,11 +50,15 @@ public final class RenderHelper {
         drawSquare(x, y, width, height, null, textured);
     }
     
+    public static void drawBorder(float x, float y, float width, float height, float thickness, Color color, boolean top, boolean bottom, boolean left, boolean right) {
+        if (left) drawSquare(x, y, thickness, height, color);
+        if (top) drawSquare(x, y, width, thickness, color);
+        if (right) drawSquare(x + width - thickness, y, thickness, height, color);
+        if (bottom) drawSquare(x, y + height - thickness, width, thickness, color);
+    }
+
     public static void drawBorder(float x, float y, float width, float height, float thickness, Color color) {
-        drawSquare(x, y, thickness, height, color);
-        drawSquare(x, y, width, thickness, color);
-        drawSquare(x + width - thickness, y, thickness, height, color);
-        drawSquare(x, y + height - thickness, width, thickness, color);
+        drawBorder(x, y, width, height, thickness, color, true, true, true, true);
     }
     
     public static void beginScissor(Rectangle rect, boolean clipToPrevious) {

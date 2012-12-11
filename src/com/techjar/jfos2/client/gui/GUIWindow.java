@@ -219,6 +219,11 @@ public class GUIWindow extends GUIContainer {
         return new Rectangle(getPosition().getX() + 2, getPosition().getY() + 20, dimension.getWidth() - 4, dimension.getHeight() - 22);
     }
 
+    @Override
+    public Vector2f getContainerPosition() {
+        return Vector2f.add(getPosition(), new Vector2f(guiBg.getBorderSize(), 20), null);
+    }
+
     protected boolean checkMouseButtons() {
         for (int i = 0; i < Mouse.getButtonCount(); i++) {
             if (Mouse.isButtonDown(i)) return true;

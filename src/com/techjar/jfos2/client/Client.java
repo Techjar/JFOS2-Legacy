@@ -156,14 +156,21 @@ public class Client {
                 sound.setMasterVolume(slid.getValue());
             }
         });*/
-        guiList.add(slider);
-        guiList.add(win1);
-        guiList.add(win2);
-        guiList.add(win3);
+        //guiList.add(slider);
+        //guiList.add(win1);
+        //guiList.add(win2);
+        //guiList.add(win3);
+        GUITabbed tab = new GUITabbed(font.getFont("COPRGTB", 16, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(200, 0, 0), new Color(50, 50, 50), 1));
+        tab.setDimension(500, 500);
+        tab.setPosition(100, 50);
+        guiList.add(tab);
         GUIContainer thing = new GUIScrollBox(new Color(100, 0, 0));
         thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
-        thing.setPosition(2, 20);
-        slider.addComponent(thing);
+        GUIContainer thingo = new GUIScrollBox(new Color(100, 0, 0));
+        thingo.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
+        //slider.addComponent(thing);
+        tab.addTab("Poop Butt", thing);
+        tab.addTab("Piss Balls", thingo);
         GUIRadioButton b1 = new GUIRadioButton(new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         b1.setDimension(30, 30);
         b1.setPosition(40, 80);
@@ -183,7 +190,7 @@ public class Client {
         GUITextField guit = new GUITextField(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         guit.setDimension(200, 30);
         guit.setPosition(40, 240);
-        thing.addComponent(guit);
+        thingo.addComponent(guit);
         //GUIInputOption thing2 = new GUIInputOption(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
         //GUIComboBox thing2 = new GUIComboBox(font.getFont("Nighb___", 24, false, false).getUnicodeFont(), new Color(255, 255, 255), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         //GUIComboButton thing2 = new GUIComboButton(font.getFont("Nighb___", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
