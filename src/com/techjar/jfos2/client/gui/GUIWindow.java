@@ -216,7 +216,7 @@ public class GUIWindow extends GUIContainer {
 
     @Override
     public Rectangle getContainerBox() {
-        return new Rectangle(getPosition().getX() + 2, getPosition().getY() + 20, dimension.getWidth() - 4, dimension.getHeight() - 22);
+        return new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + 20, dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - guiBg.getBorderSize() - 20);
     }
 
     @Override
