@@ -9,6 +9,7 @@ import com.techjar.jfos2.Constants;
 import org.lwjgl.opengl.DisplayMode;
 import com.techjar.jfos2.OperatingSystem;
 import com.techjar.jfos2.TickCounter;
+import com.techjar.jfos2.Util;
 import com.techjar.jfos2.client.gui.*;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -47,6 +48,7 @@ import org.lwjgl.util.Color;
 import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.Image;
 import org.newdawn.slick.SlickException;
+import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Circle;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
@@ -74,12 +76,23 @@ public class Client {
     private TickCounter tick;
     private List<GUI> guiList;
     private List<GUICallback> resizeHandlers;
+    private List<Runnable> preProcessors;
+    private List<Runnable> postProcessors;
     //private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
     private long fps;
     private long fpsLastFrame;
     private boolean closeRequested;
     private boolean arbSupported;
+    private boolean running = true;
     private int arbMaxSamples;
+
+    // Some State Junk
+    private boolean resourcesDone;
+    private boolean offline;
+    private boolean gameStarted;
+    private String titleMusic;
+    private boolean titleStarted;
+    private TickCounter titleTick;
     
     
     public Client() {
@@ -88,12 +101,15 @@ public class Client {
         tick = new TickCounter(Constants.FRAME_RATE);
         guiList = new ArrayList<GUI>();
         resizeHandlers = new ArrayList<GUICallback>();
+        preProcessors = new ArrayList<Runnable>();
+        postProcessors = new ArrayList<Runnable>();
     }
     
     public static void run(String[] args) {
         if (client != null) throw new RuntimeException("Client is already running");
         try {
             client = new Client();
+            client.offline = args.length > 0 && "offline".equals(args[0]);
             client.start();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -135,7 +151,15 @@ public class Client {
         sound = new SoundManager();
         sound.setEffectVolume(config.getFloat("sound.effectvolume"));
         sound.setMusicVolume(config.getFloat("sound.musicvolume"));
-        preloadData();
+
+        if (offline) {
+            resourcesDone = true;
+            preloadData();
+        }
+        else {
+            font.getFont("batmfa_", 50, false, false);
+            ResourceDownloader.checkAndDownload();
+        }
         
         GUIWindow slider = new GUIWindow(new GUIBackground());
         slider.setDimension(500, 500);
@@ -163,7 +187,7 @@ public class Client {
         GUITabbed tab = new GUITabbed(font.getFont("COPRGTB", 16, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(200, 0, 0), new Color(50, 50, 50), 1));
         tab.setDimension(500, 500);
         tab.setPosition(100, 50);
-        guiList.add(tab);
+        //guiList.add(tab);
         GUIContainer thing = new GUIScrollBox(new Color(100, 0, 0));
         thing.setDimension((int)slider.getContainerBox().getWidth(), (int)slider.getContainerBox().getHeight());
         GUIContainer thingo = new GUIScrollBox(new Color(100, 0, 0));
@@ -206,7 +230,7 @@ public class Client {
         });*/
         //thing2.addAllItems(this.getDisplayModeStrings());
         thing.addComponent(thing2);
-        sound.playMusic("music/title.mp3", true);
+        //sound.playMusic("music/title.mp3", true);
         
         run();
         shutdownInternal();
@@ -374,6 +398,22 @@ public class Client {
         resizeHandlers.remove(resizeHandler);
     }
 
+    public void addPreProcesor(Runnable processor) {
+        preProcessors.add(processor);
+    }
+
+    public void removePreProcesor(Runnable processor) {
+        preProcessors.remove(processor);
+    }
+
+    public void addPostProcesor(Runnable processor) {
+        postProcessors.add(processor);
+    }
+
+    public void removePostProcesor(Runnable processor) {
+        postProcessors.remove(processor);
+    }
+
     private void preloadData() {
         // Preload Textures
         texture.getTexture("ui/windowclose.png");
@@ -381,13 +421,68 @@ public class Client {
         // Preload Sounds
         sound.loadSound("ui/click.wav");
         sound.loadSound("ui/rollover.wav");
+
+        // Preload Fonts
+        font.getFont("Nighb___", 40, false, false);
     }
     
+    private void drawBackground() {
+        texture.getTexture("background.png").bind();
+        RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), true);
+    }
+
     private void drawSplash() {
-        //Shape shape = new Rectangle(0, 0, displayMode.getWidth(), displayMode.getHeight());
-        //Shape shape = new Rectangle(0, 0, 128, 128);
-        Shape shape = new Rectangle(0, 0, displayMode.getWidth(), displayMode.getHeight());
-        ShapeRenderer.textureFit(shape, new Image(texture.getTexture("background.png")));
+        drawBackground();
+    }
+
+    private void gameStartupStuff() {
+        if (!resourcesDone) {
+            if (ResourceDownloader.isCompleted()) {
+                resourcesDone = true;
+                preloadData();
+                initIntro();
+            }
+            else {
+                drawBackground();
+                UnicodeFont theFont = font.getFont("batmfa_", 50, false, false).getUnicodeFont();
+                int width = theFont.getWidth(ResourceDownloader.getStatus());
+                Vector2f fontCenter = getScreenCenter(width, 0);
+                theFont.drawString(fontCenter.getX(), fontCenter.getY() - 60, ResourceDownloader.getStatus(), org.newdawn.slick.Color.white);
+                float barWidth = 600;
+                Vector2f barCenter = getScreenCenter((int)barWidth, 0);
+                RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth, 30, new Color(50, 50, 50));
+                RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth * ResourceDownloader.getProgress(), 30, new Color(0, 100, 0));
+            }
+        }
+        if (titleStarted || sound.isPlaying(titleMusic)) {
+            titleStarted = true;
+            if (titleTick.getTickMillis() < 6000) {
+                String str = "Techjar Presents";
+                UnicodeFont theFont = font.getFont("Nighb___", 40, false, false).getUnicodeFont();
+                int width = theFont.getWidth(str), height = theFont.getHeight(str);
+                Vector2f fontCenter = getScreenCenter(width, height);
+                theFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
+            }
+            if (titleTick.getTickMillis() > 6300) {
+                String str = "Yet another space shooter...";
+                UnicodeFont theFont = font.getFont("Nighb___", 40, false, false).getUnicodeFont();
+                int width = theFont.getWidth(str), height = theFont.getHeight(str);
+                Vector2f fontCenter = getScreenCenter(width, height);
+                theFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
+            }
+            if (titleTick.getTickMillis() > 5000 && titleTick.getTickMillis() < 6000) {
+                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * ((float)(titleTick.getTickMillis() - 5000) / 1000f))));
+            }
+            if (titleTick.getTickMillis() < 1000) {
+                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)titleTick.getTickMillis() / 1000f)))));
+            }
+            titleTick.incTicks();
+        }
+    }
+
+    private void initIntro() {
+        titleMusic = sound.playMusic("music/title.mp3", true);
+        titleTick = new TickCounter(60);
     }
     
     private void init() {
@@ -426,6 +521,9 @@ public class Client {
     }
 
     private void preProcess() {
+        for (Runnable runnable : preProcessors) {
+            runnable.run();
+        }
     }
     
     private void processKeyboard() {
@@ -485,9 +583,13 @@ public class Client {
 
         for (GUI gui : guiList)
             if (gui.isVisible()) gui.render();
+        if (!gameStarted) gameStartupStuff(); // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
     }
 
     private void postProcess() {
+        for (Runnable runnable : postProcessors) {
+            runnable.run();
+        }
     }
     
     private void run() throws LWJGLException {
@@ -539,6 +641,18 @@ public class Client {
     /*public Vector2f getViewportScale() {
         return new Vector2f((float)canvas.getWidth() / (float)displayMode.getWidth(), (float)canvas.getHeight() / (float)displayMode.getHeight());
     }*/
+
+    public Vector2f getScreenCenter(org.lwjgl.util.Dimension dim) {
+        return new Vector2f((displayMode.getWidth() / 2f) - (dim.getWidth() / 2f), (displayMode.getHeight() / 2f) - (dim.getHeight() / 2f));
+    }
+
+    public Vector2f getScreenCenter(int width, int height) {
+        return getScreenCenter(new org.lwjgl.util.Dimension(width, height));
+    }
+
+    public Vector2f getScreenCenter() {
+        return getScreenCenter(new org.lwjgl.util.Dimension());
+    }
     
     public int getMouseX() {
         //return (int)(Mouse.getX() / ((double)canvas.getWidth() / (double)displayMode.getWidth()));
@@ -615,12 +729,17 @@ public class Client {
     public void setPixelFormat(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
+
+    public boolean isRunning() {
+        return running;
+    }
     
     public void shutdown() {
         closeRequested = true;
     }
     
     private void shutdownInternal() {
+        running = false;
         config.save();
         sound.getSoundSystem().cleanup();
         texture.cleanup();

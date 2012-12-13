@@ -1,9 +1,14 @@
 package com.techjar.jfos2;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import org.newdawn.slick.geom.Rectangle;
 
 /**
@@ -54,6 +59,33 @@ public final class Util {
         else ip = str;
 
         return new IPInfo(InetAddress.getByName(ip), port, ipv6);
+    }
+
+    public static String getFileMD5(File file) {
+        try {
+            InputStream is = new FileInputStream(file);
+            byte[] bytes = new byte[(int)file.length()];
+            is.read(bytes); is.close();
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(bytes);
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < digest.length; i++) {
+                sb.append(Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1));
+            }
+            return sb.toString();
+        }
+        catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException("MD5 cryptography not supported!", ex);
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "";
+    }
+
+    public static String getFileMD5(String file) {
+        return getFileMD5(new File(file));
     }
 
     public static Rectangle clipRectangle(Rectangle toClip, Rectangle clipTo) {

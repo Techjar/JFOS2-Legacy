@@ -16,7 +16,7 @@ manifest.mf
 
 # Misc
 logs/
-resources/sounds/music/
+resources/sounds/
 
 # Keep This Shit
 !/lib/*.jar
