@@ -577,7 +577,8 @@ public class Client {
         for (int i = 0; i < Controllers.getControllerCount(); i++) {
             Controller con = Controllers.getController(i);
             for (int j = 0; j < con.getRumblerCount(); j++) {
-                con.setRumblerStrength(j, 1);
+                con.setRumblerStrength(j, 100);
+                System.out.println("Rumbler " + j + "should be on.");
             }
         }
     }
