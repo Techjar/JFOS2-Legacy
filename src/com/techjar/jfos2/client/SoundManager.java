@@ -17,6 +17,7 @@ import paulscode.sound.libraries.LibraryLWJGLOpenAL;
 public class SoundManager {
     protected final SoundSystem soundSystem;
     protected final File soundPath;
+    protected final File soundPathCustom;
     protected float effectVolume = 1;
     protected float musicVolume = 1;
     protected long nextId;
@@ -24,11 +25,18 @@ public class SoundManager {
     public SoundManager() {
         soundSystem = new SoundSystem();
         soundPath = new File("resources/sounds/");
+        soundPathCustom = new File("resources/sounds/");
+    }
+
+    private File getFile(String file) {
+        File fil = new File(soundPathCustom, file);
+        if (!fil.exists()) fil = new File(soundPath, file);
+        return fil;
     }
     
     public void loadSound(String file) {
         try {
-            soundSystem.loadSound(new File(soundPath, file).toURI().toURL(), file);
+            soundSystem.loadSound(getFile(file).toURI().toURL(), file);
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
         }
@@ -63,7 +71,7 @@ public class SoundManager {
     public String playSound(String file, boolean loop) {
         String source = "source_" + nextId++;
         try {
-            soundSystem.newSource(false, source, new File(soundPath, file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
+            soundSystem.newSource(false, source, getFile(file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
             return null;
@@ -75,7 +83,7 @@ public class SoundManager {
     public String playStreamingSound(String file, boolean loop) {
         String source = "source_" + nextId++;
         try {
-            soundSystem.newStreamingSource(false, source, new File(soundPath, file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
+            soundSystem.newStreamingSource(false, source, getFile(file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
             return null;
@@ -86,7 +94,7 @@ public class SoundManager {
     
     public String playTemporarySound(String file, boolean loop) {
         try {
-            return soundSystem.quickPlay(false, new File(soundPath, file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
+            return soundSystem.quickPlay(false, getFile(file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
         }
@@ -95,7 +103,7 @@ public class SoundManager {
     
     public String playTemporaryStreamingSound(String file, boolean loop) {
         try {
-            return soundSystem.quickStream(false, new File(soundPath, file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
+            return soundSystem.quickStream(false, getFile(file).toURI().toURL(), file, loop, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
         }

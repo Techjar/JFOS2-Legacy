@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
+import org.lwjgl.input.Controller;
 import org.lwjgl.input.Controllers;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -572,6 +573,13 @@ public class Client {
             }
         }
         guiList.addAll(toAdd);
+
+        for (int i = 0; i < Controllers.getControllerCount(); i++) {
+            Controller con = Controllers.getController(i);
+            for (int j = 0; j < con.getRumblerCount(); j++) {
+                con.setRumblerStrength(j, 1);
+            }
+        }
     }
     
     private void render() {
