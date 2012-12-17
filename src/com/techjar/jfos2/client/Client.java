@@ -86,6 +86,7 @@ public class Client {
     private boolean arbSupported;
     private boolean running = true;
     private int arbMaxSamples;
+    private boolean renderBackground;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -93,7 +94,9 @@ public class Client {
     private boolean gameStarted;
     private String titleMusic;
     private boolean titleStarted;
+    private boolean titleScreenVisible;
     private TickCounter titleTick;
+    private UnicodeFont introFont;
     
     
     public Client() {
@@ -161,6 +164,7 @@ public class Client {
             font.getFont("batmfa_", 50, false, false);
             ResourceDownloader.checkAndDownload();
         }
+        introFont = font.getFont("astronbo", 64, true, false).getUnicodeFont();
         
         GUIWindow slider = new GUIWindow(new GUIBackground());
         slider.setDimension(500, 500);
@@ -391,12 +395,22 @@ public class Client {
         return Collections.unmodifiableList(list);
     }
 
-    public void addResizeHandler(GUICallback resizeHandler) {
-        resizeHandlers.add(resizeHandler);
+    public int addResizeHandler(GUICallback resizeHandler) {
+        if (resizeHandlers.add(resizeHandler))
+            return resizeHandlers.indexOf(resizeHandler);
+        return -1;
     }
 
     public void removeResizeHandler(GUICallback resizeHandler) {
         resizeHandlers.remove(resizeHandler);
+    }
+
+    public void removeResizeHandler(int index) {
+        resizeHandlers.remove(index);
+    }
+
+    public void clearResizeHandlers() {
+        resizeHandlers.clear();
     }
 
     public void addPreProcesor(Runnable processor) {
@@ -422,9 +436,6 @@ public class Client {
         // Preload Sounds
         sound.loadSound("ui/click.wav");
         sound.loadSound("ui/rollover.wav");
-
-        // Preload Fonts
-        font.getFont("Nighb___", 40, false, false);
     }
     
     private void drawBackground() {
@@ -457,22 +468,34 @@ public class Client {
         }
         if (titleStarted || sound.isPlaying(titleMusic)) {
             titleStarted = true;
-            if (titleTick.getTickMillis() < 6000) {
+            if (titleTick.getTickMillis() > 12000) gameStarted = true;
+            if (titleTick.getTickMillis() > 11000 && !titleScreenVisible) {
+                titleScreenVisible = true;
+                GUICreator.setupTitleScreen(this);
+            }
+            if (titleTick.getTickMillis() < 5400) {
                 String str = "Techjar Presents";
-                UnicodeFont theFont = font.getFont("Nighb___", 40, false, false).getUnicodeFont();
-                int width = theFont.getWidth(str), height = theFont.getHeight(str);
+                int width = introFont.getWidth(str), height = introFont.getHeight(str);
                 Vector2f fontCenter = getScreenCenter(width, height);
-                theFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
+                introFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
             }
-            if (titleTick.getTickMillis() > 6300) {
+            if (titleTick.getTickMillis() > 6400 && titleTick.getTickMillis() < 10500) {
                 String str = "Yet another space shooter...";
-                UnicodeFont theFont = font.getFont("Nighb___", 40, false, false).getUnicodeFont();
-                int width = theFont.getWidth(str), height = theFont.getHeight(str);
+                int width = introFont.getWidth(str), height = introFont.getHeight(str);
                 Vector2f fontCenter = getScreenCenter(width, height);
-                theFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
+                introFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
             }
-            if (titleTick.getTickMillis() > 5000 && titleTick.getTickMillis() < 6000) {
-                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * ((float)(titleTick.getTickMillis() - 5000) / 1000f))));
+            if (titleTick.getTickMillis() > 11000 && titleTick.getTickMillis() < 12000) {
+                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)(titleTick.getTickMillis() - 11000) / 1000f)))));
+            }
+            if (titleTick.getTickMillis() > 9500 && titleTick.getTickMillis() < 10500) {
+                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * ((float)(titleTick.getTickMillis() - 9500) / 1000f))));
+            }
+            if (titleTick.getTickMillis() > 6400 && titleTick.getTickMillis() < 7400) {
+                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)(titleTick.getTickMillis() - 6400) / 1000f)))));
+            }
+            if (titleTick.getTickMillis() > 4400 && titleTick.getTickMillis() < 5400) {
+                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * ((float)(titleTick.getTickMillis() - 4400) / 1000f))));
             }
             if (titleTick.getTickMillis() < 1000) {
                 RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)titleTick.getTickMillis() / 1000f)))));
@@ -573,27 +596,13 @@ public class Client {
             }
         }
         guiList.addAll(toAdd);
-
-        for (int i = 0; i < Controllers.getControllerCount(); i++) {
-            Controller con = Controllers.getController(i);
-            if (con.getRumblerCount() > 0) {
-                System.out.print(con.getName() + ": ");
-                System.out.println(con.getRumblerCount());
-                for (int j = 0; j < con.getRumblerCount(); j++) {
-                    con.setRumblerStrength(j, 100);
-                    System.out.print(j + ": ");
-                    System.out.println(con.getRumblerName(j));
-                }
-            }
-        }
     }
     
     private void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
         
-        //texture.getTexture("pegs/large/red.png").bind();
-        //RenderHelper.drawSquare(0, 0, 32, 32, true);
+        if (renderBackground) drawBackground();
 
         for (GUI gui : guiList)
             if (gui.isVisible()) gui.render();
@@ -724,6 +733,22 @@ public class Client {
         return Collections.unmodifiableList(guiList);
     }
 
+    public void addGUI(GUI gui) {
+        guiList.add(gui);
+    }
+
+    public void removeGUI(GUI gui) {
+        guiList.remove(gui);
+    }
+
+    public void removeGUI(int index) {
+        guiList.remove(index);
+    }
+
+    public void clearGUI() {
+        guiList.clear();
+    }
+
     public TickCounter getTick() {
         return tick;
     }
@@ -746,6 +771,14 @@ public class Client {
 
     public boolean isRunning() {
         return running;
+    }
+
+    public boolean isRenderBackground() {
+        return renderBackground;
+    }
+
+    public void setRenderBackground(boolean renderBackground) {
+        this.renderBackground = renderBackground;
     }
     
     public void shutdown() {

@@ -4,6 +4,7 @@ import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
+import org.newdawn.slick.opengl.Texture;
 
 /**
  *
@@ -13,11 +14,17 @@ public class GUIBackground extends GUI {
     protected Color bgColor;
     protected Color borderColor;
     protected int borderSize;
+    protected Texture texture;
 
-    public GUIBackground(Color bgColor, Color borderColor, int borderSize) {
+    public GUIBackground(Color bgColor, Color borderColor, int borderSize, Texture texture) {
         this.bgColor = bgColor;
         this.borderColor = borderColor;
         this.borderSize = borderSize;
+        this.texture = texture;
+    }
+
+    public GUIBackground(Color bgColor, Color borderColor, int borderSize) {
+        this(bgColor, borderColor, borderSize, null);
     }
     
     public GUIBackground() {
@@ -40,7 +47,11 @@ public class GUIBackground extends GUI {
 
     @Override
     public void render() {
-        RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), bgColor);
+        if (texture != null) {
+            texture.bind();
+            RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), bgColor, true);
+        }
+        else RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), bgColor, false);
         if (borderSize > 0) RenderHelper.drawBorder(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), borderSize, borderColor);
     }
     

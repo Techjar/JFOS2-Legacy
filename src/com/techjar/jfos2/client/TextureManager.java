@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.lwjgl.opengl.GL11;
 import org.newdawn.slick.opengl.Texture;
+import org.newdawn.slick.opengl.TextureImpl;
 import org.newdawn.slick.opengl.TextureLoader;
 
 /**
@@ -16,6 +17,7 @@ import org.newdawn.slick.opengl.TextureLoader;
 public class TextureManager {
     protected final File texturePath;
     protected Map<String, Texture> cache;
+    protected Texture lastBind;
     
     public TextureManager() {
         texturePath = new File("resources/textures/");

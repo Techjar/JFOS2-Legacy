@@ -14,7 +14,11 @@ public class GUIBox extends GUIContainer {
     public GUIBox(GUIBackground guiBg) {
         super();
         this.guiBg = guiBg;
-        this.guiBg.setParent(this);
+        if (this.guiBg != null) this.guiBg.setParent(this);
+    }
+
+    public GUIBox() {
+        this(null);
     }
 
     @Override
@@ -26,16 +30,18 @@ public class GUIBox extends GUIContainer {
     @Override
     public void setDimension(Dimension dimension) {
         super.setDimension(dimension);
-        guiBg.setDimension(dimension);
+        if (guiBg != null) guiBg.setDimension(dimension);
     }
 
     @Override
     public Rectangle getContainerBox() {
-        return new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - (guiBg.getBorderSize() * 2));
+        if (guiBg != null) return new Rectangle(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - (guiBg.getBorderSize() * 2));
+        return (Rectangle)getComponentBox();
     }
 
     @Override
     public Vector2f getContainerPosition() {
-        return Vector2f.add(getPosition(), new Vector2f(2, 2), null);
+        if (guiBg != null) return Vector2f.add(getPosition(), new Vector2f(guiBg.getBorderSize(), guiBg.getBorderSize()), null);
+        return super.getContainerPosition();
     }
 }
