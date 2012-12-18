@@ -1,5 +1,6 @@
 package com.techjar.jfos2.client;
 
+import org.lwjgl.input.Controller;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -8,35 +9,62 @@ import org.lwjgl.input.Mouse;
  * @author Techjar
  */
 public class InputInfo {
-    private boolean mouse;
+    private Type type;
     private int button;
 
-    public InputInfo(boolean mouse, int button) {
-        this.mouse = mouse;
+    public InputInfo(Type type, int button) {
+        this.type = type;
         this.button = button;
     }
 
-    public boolean isMouse() {
-        return mouse;
+    public Type getType() {
+        return type;
     }
 
     public int getButton() {
         return button;
     }
 
-    public static InputInfo fromString(String name) {
-        if (Mouse.getButtonIndex(name) != -1) {
-            return new InputInfo(true, Mouse.getButtonIndex(name));
-        }
-        if (Keyboard.getKeyIndex(name) != Keyboard.KEY_NONE) {
-            return new InputInfo(false, Keyboard.getKeyIndex(name));
+    public static InputInfo fromString(String str) {
+        if (str == null || str.indexOf(':') == -1) return null;
+        String[] split = str.trim().split(":");
+        Type type = Type.fromString(split[0]);
+        if (type == null) return null;
+        switch (type) {
+            case KEYBOARD:
+                if (Keyboard.getKeyIndex(split[1]) == Keyboard.KEY_NONE)
+                    return new InputInfo(type, Keyboard.getKeyIndex(split[1]));
+            case MOUSE:
+                if (Mouse.getButtonIndex(split[1]) != -1)
+                    return new InputInfo(type, Mouse.getButtonIndex(split[1]));
+            case CONTROLLER:
+                Controller con = Client.client.getController(Client.client.getConfigManager().getString("controls.controller"));
+                if (con != null)
+                    for (int i = 0; i < con.getButtonCount(); i++)
+                        if (con.getButtonName(i).equals(split[1])) return new InputInfo(type, i);
         }
         return null;
     }
 
     @Override
     public String toString() {
-        return mouse ? Mouse.getButtonName(button) : Keyboard.getKeyName(button);
+        StringBuilder sb = new StringBuilder(type.toString()).append(':');
+        switch (type) {
+            case KEYBOARD:
+                if (Keyboard.getKeyName(button) == null) return "";
+                sb.append(Keyboard.getKeyName(button));
+                break;
+            case MOUSE:
+                if (Mouse.getButtonName(button) == null) return "";
+                sb.append(Mouse.getButtonName(button));
+                break;
+            case CONTROLLER:
+                Controller con = Client.client.getController(Client.client.getConfigManager().getString("controls.controller"));
+                if (con == null || con.getButtonName(button) == null) return "";
+                sb.append(con.getButtonName(button));
+                break;
+        }
+        return sb.toString();
     }
 
     @Override
@@ -48,7 +76,7 @@ public class InputInfo {
             return false;
         }
         final InputInfo other = (InputInfo) obj;
-        if (this.mouse != other.mouse) {
+        if (this.type != other.type) {
             return false;
         }
         if (this.button != other.button) {
@@ -59,9 +87,35 @@ public class InputInfo {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 97 * hash + (this.mouse ? 1 : 0);
-        hash = 97 * hash + this.button;
+        int hash = 3;
+        hash = 59 * hash + (this.type != null ? this.type.hashCode() : 0);
+        hash = 59 * hash + this.button;
         return hash;
+    }
+
+    public static enum Type {
+        KEYBOARD,
+        MOUSE,
+        CONTROLLER;
+
+        @Override
+        public String toString() {
+            switch (this) {
+                case KEYBOARD: return "K";
+                case MOUSE: return "M";
+                case CONTROLLER: return "C";
+            }
+            return "";
+        }
+
+        public static Type fromString(String str) {
+            if (str == null || str.length() != 1) return null;
+            switch (str.charAt(0)) {
+                case 'K': return KEYBOARD;
+                case 'M': return MOUSE;
+                case 'C': return CONTROLLER;
+            }
+            return null;
+        }
     }
 }

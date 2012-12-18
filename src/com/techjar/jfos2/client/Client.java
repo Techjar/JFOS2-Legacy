@@ -87,6 +87,7 @@ public class Client {
     private boolean running = true;
     private int arbMaxSamples;
     private boolean renderBackground;
+    private List<String> validControllers = new ArrayList<String>();
 
     // Some State Junk
     private boolean resourcesDone;
@@ -146,9 +147,19 @@ public class Client {
         init();
         drawSplash();
         Display.update();
+
+        Controllers.create();
+        for (int i = 0; i < Controllers.getControllerCount(); i++) {
+            Controller con = Controllers.getController(i);
+            if (con.getAxisCount() >= 2) {
+                validControllers.add(con.getName());
+                config.defaultProperty("controls.controller", con.getName());
+            }
+        }
+        if (validControllers.size() < 1) config.defaultProperty("controls.controller", "");
+        config.save();
         
         Keyboard.create();
-        Controllers.create();
         Mouse.create();
         Mouse.setGrabbed(false);
         font = new FontManager();
@@ -551,21 +562,27 @@ public class Client {
     }
     
     private void processKeyboard() {
-        while (Keyboard.next()) {
+        toploop: while (Keyboard.next()) {
             for (GUI gui : guiList)
-                if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) break;
+                if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) continue toploop;
         }
     }
 
     private void processMouse() {
-        while (Mouse.next()) {
+        toploop: while (Mouse.next()) {
             for (GUI gui : guiList)
-                if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) break;
+                if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) continue toploop;
         }
     }
 
     private void processController() {
-        
+        toploop: while (Controllers.next()) {
+            Controller con = Controllers.getEventSource();
+            if (con.getName().equals(config.getString("controls.controller"))) {
+                for (GUI gui : guiList)
+                    if (gui.isVisible() && gui.isEnabled() && !gui.processControllerEvent(con)) continue toploop;
+            }
+        }
     }
 
     private void update() {
@@ -659,6 +676,18 @@ public class Client {
 
     public SoundManager getSoundManager() {
         return sound;
+    }
+
+    public ConfigManager getConfigManager() {
+        return config;
+    }
+
+    public Controller getController(String name) {
+        for (int i = 0; i < Controllers.getControllerCount(); i++) {
+            Controller con = Controllers.getController(i);
+            if (con.getName().equals(name)) return con;
+        }
+        return null;
     }
 
     /*public Vector2f getViewportScale() {

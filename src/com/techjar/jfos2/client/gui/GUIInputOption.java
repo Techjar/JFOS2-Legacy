@@ -3,6 +3,8 @@ package com.techjar.jfos2.client.gui;
 import com.techjar.jfos2.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.InputInfo;
+import org.lwjgl.input.Controller;
+import org.lwjgl.input.Controllers;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
@@ -36,7 +38,7 @@ public class GUIInputOption extends GUI {
     public boolean processKeyboardEvent() {
         if (assign && Keyboard.getEventKeyState()) {
             if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) button = null;
-            else button = new InputInfo(false, Keyboard.getEventKey());
+            else button = new InputInfo(InputInfo.Type.KEYBOARD, Keyboard.getEventKey());
             if (changeHandler != null) {
                 changeHandler.setComponent(this);
                 changeHandler.run();
@@ -51,11 +53,7 @@ public class GUIInputOption extends GUI {
     public boolean processMouseEvent() {
         if (Mouse.getEventButtonState()) {
             if (assign) {
-                button = new InputInfo(true, Mouse.getEventButton());
-                if (changeHandler != null) {
-                    changeHandler.setComponent(this);
-                    changeHandler.run();
-                }
+                setButton(InputInfo.Type.MOUSE, Mouse.getEventButton());
                 assign = false;
                 return false;
             }
@@ -67,6 +65,16 @@ public class GUIInputOption extends GUI {
                 }
                 else assign = false;
             }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean processControllerEvent(Controller controller) {
+        if (assign && Controllers.isEventButton()) {
+            setButton(InputInfo.Type.CONTROLLER, Controllers.getEventControlIndex());
+            assign = false;
+            return false;
         }
         return true;
     }
@@ -99,8 +107,8 @@ public class GUIInputOption extends GUI {
         return button;
     }
 
-    public void setButton(boolean mouse, int button) {
-        this.button = new InputInfo(mouse, button);
+    public void setButton(InputInfo.Type type, int button) {
+        this.button = new InputInfo(type, button);
         if (changeHandler != null) {
             changeHandler.setComponent(this);
             changeHandler.run();

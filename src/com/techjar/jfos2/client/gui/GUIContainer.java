@@ -1,6 +1,7 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.Util;
+import org.lwjgl.input.Controller;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.client.Client;
@@ -38,6 +39,13 @@ public abstract class GUIContainer extends GUI {
     public boolean processMouseEvent() {
         for (GUI gui : components)
             if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) return false;
+        return true;
+    }
+
+    @Override
+    public boolean processControllerEvent(Controller controller) {
+        for (GUI gui : components)
+            if (gui.isVisible() && gui.isEnabled() && !gui.processControllerEvent(controller)) return false;
         return true;
     }
     
