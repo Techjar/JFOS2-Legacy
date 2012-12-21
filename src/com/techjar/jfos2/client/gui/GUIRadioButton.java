@@ -43,7 +43,7 @@ public class GUIRadioButton extends GUI {
             if (Mouse.getEventButton() == 0) {
                 if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
                     if (!selected) {
-                        Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                        Client.client.getSoundManager().playEffect("ui/click.wav", false);
                         setSelected(true);
                     }
                     return false;
@@ -60,7 +60,7 @@ public class GUIRadioButton extends GUI {
         //circle2.setLocation(getPosition().getX() + (dimension.getWidth() / 2), getPosition().getY() + (dimension.getHeight() / 2));
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
-                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

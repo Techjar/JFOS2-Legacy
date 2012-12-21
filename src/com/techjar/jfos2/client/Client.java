@@ -80,8 +80,10 @@ public class Client {
     private List<Runnable> preProcessors;
     private List<Runnable> postProcessors;
     //private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
-    private long fps;
-    private long fpsLastFrame;
+    private int fps;
+    private int fpsRender;
+    private long timeLastFrame;
+    private long timeSpentLastFrame;
     private boolean closeRequested;
     private boolean arbSupported;
     private boolean running = true;
@@ -98,6 +100,7 @@ public class Client {
     private boolean titleScreenVisible;
     private TickCounter titleTick;
     private UnicodeFont introFont;
+    private long lol = 1;
     
     
     public Client() {
@@ -110,7 +113,7 @@ public class Client {
         postProcessors = new ArrayList<Runnable>();
     }
     
-    public static void run(String[] args) {
+    public static void main(String[] args) {
         if (client != null) throw new RuntimeException("Client is already running");
         try {
             client = new Client();
@@ -141,6 +144,7 @@ public class Client {
         
         makeFrame(borderless);
         Display.setDisplayMode(displayMode);
+        Display.setVSyncEnabled(true);
 
         texture = new TextureManager();
         Display.create();
@@ -154,9 +158,11 @@ public class Client {
             if (con.getAxisCount() >= 2) {
                 validControllers.add(con.getName());
                 config.defaultProperty("controls.controller", con.getName());
+                System.out.println("Found controller: " + con.getName() + " (" + con.getRumblerCount() + " Rumblers)");
             }
         }
-        if (validControllers.size() < 1) config.defaultProperty("controls.controller", "");
+        if (validControllers.size() < 1) config.setProperty("controls.controller", "");
+        else if (!validControllers.contains(config.getString("controls.controller"))) config.setProperty("controls.controller", validControllers.get(0));
         config.save();
         
         Keyboard.create();
@@ -302,6 +308,7 @@ public class Client {
             g.setFont(new java.awt.Font("Monospaced", Font.BOLD, 50));
             g.drawString(Constants.GAME_TITLE + " has crashed!", 55, 50);
         }
+        System.exit(0);
     }
 
     private void initDisplayModes() throws LWJGLException {
@@ -332,6 +339,7 @@ public class Client {
         borderless = config.getBoolean("display.borderless");
         wasBorderless = borderless;
 
+        config.setProperty("version", Constants.VERSION);
         config.save();
     }
 
@@ -517,7 +525,7 @@ public class Client {
 
     private void initIntro() {
         titleMusic = sound.playMusic("music/title.mp3", true);
-        titleTick = new TickCounter(60);
+        titleTick = new TickCounter(Constants.FRAME_RATE);
     }
     
     private void init() {
@@ -624,6 +632,7 @@ public class Client {
         for (GUI gui : guiList)
             if (gui.isVisible()) gui.render();
         if (!gameStarted) gameStartupStuff(); // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
+        font.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 5, Long.toString(fpsRender), org.newdawn.slick.Color.yellow);
     }
 
     private void postProcess() {
@@ -637,9 +646,11 @@ public class Client {
         while(!Display.isCloseRequested() && !closeRequested) {
             //newDim = newCanvasSize.getAndSet(null);
             //if (newDim != null) resizeGL(newDim.width, newDim.height);
-            
-            fps = Math.round((double)Sys.getTimerResolution() / (double)(Sys.getTime() - fpsLastFrame));
-            fpsLastFrame = Sys.getTime();
+
+            timeSpentLastFrame = System.nanoTime() - timeLastFrame;
+            fps = (int)Math.round(1000000000D / (double)timeSpentLastFrame);
+            timeLastFrame = System.nanoTime();
+            if (tick.getTicks() % 6 == 0) fpsRender = fps;
             if(Display.isVisible()) {
                 mouseHitbox.setLocation(getMouseX(), getMouseY());
                 this.preProcess();
@@ -704,6 +715,16 @@ public class Client {
 
     public Vector2f getScreenCenter() {
         return getScreenCenter(new org.lwjgl.util.Dimension());
+    }
+
+    public Controller getActiveController() {
+        for (int i = 0; i < Controllers.getControllerCount(); i++) {
+            Controller con = Controllers.getController(i);
+            if (con.getName().equals(config.getString("controls.controller"))) {
+                return con;
+            }
+        }
+        return null;
     }
     
     public int getMouseX() {

@@ -84,7 +84,7 @@ public class GUIInputOption extends GUI {
         if (!Mouse.isButtonDown(0) && !assign) {
             Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
             if (checkMouseIntersect(box)) {
-                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;
@@ -107,20 +107,20 @@ public class GUIInputOption extends GUI {
         return button;
     }
 
-    public void setButton(InputInfo.Type type, int button) {
-        this.button = new InputInfo(type, button);
+    public void setButton(InputInfo button) {
+        this.button = button;
         if (changeHandler != null) {
             changeHandler.setComponent(this);
             changeHandler.run();
         }
     }
 
+    public void setButton(InputInfo.Type type, int button) {
+        setButton(new InputInfo(type, button));
+    }
+
     public void setButton(String button) {
-        this.button = InputInfo.fromString(button);
-        if (changeHandler != null) {
-            changeHandler.setComponent(this);
-            changeHandler.run();
-        }
+        setButton(InputInfo.fromString(button));
     }
 
     public GUICallback getChangeHandler() {

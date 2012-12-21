@@ -5,6 +5,7 @@ import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
+import org.lwjgl.util.Dimension;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.opengl.Texture;
@@ -14,30 +15,19 @@ import org.newdawn.slick.opengl.Texture;
  * @author Techjar
  */
 public class GUIButton extends GUIText {
-    protected Color bgColor;
-    protected Texture texture;
+    protected GUIBackground guiBg;
     protected GUICallback clickHandler;
-    protected boolean textured;
     protected boolean pressed;
     protected boolean windowClose;
     
-    public GUIButton(UnicodeFont font, Color color, Color bgColor, String text) {
+    public GUIButton(UnicodeFont font, Color color, String text, GUIBackground guiBg) {
         super(font, color, text);
-        this.bgColor = bgColor;
+        this.guiBg = guiBg;
+        if (guiBg != null) guiBg.setParent(this);
     }
     
-    public GUIButton(UnicodeFont font, Color color, Color bgColor, Texture texture, String text) {
-        this(font, color, bgColor, text);
-        this.texture = texture;
-        this.textured = true;
-    }
-    
-    public GUIButton(Color bgColor) {
-        this(null, null, bgColor, "");
-    }
-    
-    public GUIButton(Color bgColor, Texture texture) {
-        this(null, null, bgColor, texture, "");
+    public GUIButton(UnicodeFont font, Color color, String text) {
+        this(font, color, text, null);
     }
 
     @Override
@@ -52,7 +42,7 @@ public class GUIButton extends GUIText {
                 Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
                 if (checkMouseIntersect(!windowClose, box)) {
                     pressed = true;
-                    Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
                     if (clickHandler != null) {
                         clickHandler.setComponent(this);
                         clickHandler.run();
@@ -69,7 +59,7 @@ public class GUIButton extends GUIText {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(!windowClose, getComponentBox())) {
-                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;
@@ -78,21 +68,24 @@ public class GUIButton extends GUIText {
 
     @Override
     public void render() {
-        Color bgColor2 = new Color(bgColor);
-        Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
-        if (pressed) bgColor2 = Util.addColors(bgColor2, new Color(25, 25, 25));
-        else if (checkMouseIntersect(!windowClose, box)) bgColor2 = Util.addColors(bgColor2, new Color(50, 50, 50));
-        if (textured) texture.bind();
-        RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), bgColor2, textured);
+        if (guiBg != null) {
+            if (pressed || hovered) {
+                Color color2 = guiBg.getBorderColor(), color3 = guiBg.getBackgroundColor();
+                guiBg.setBorderColor(Util.addColors(color2, new Color(50, 50, 50)));
+                guiBg.setBackgroundColor(Util.addColors(color3, new Color(50, 50, 50)));
+                guiBg.render();
+                guiBg.setBorderColor(color2);
+                guiBg.setBackgroundColor(color3);
+            }
+            else guiBg.render();
+        }
         if (font != null && color != null) font.drawString(getPosition().getX() + ((dimension.getWidth() - font.getWidth(text.toString())) / 2), getPosition().getY() + ((dimension.getHeight() - font.getHeight(text.toString())) / 2), text.toString(), Util.convertColor(color));
     }
 
-    public Color getBackgroundColor() {
-        return bgColor;
-    }
-
-    public void setBackgroundColor(Color bgColor) {
-        this.bgColor = bgColor;
+    @Override
+    public void setDimension(Dimension dimension) {
+        super.setDimension(dimension);
+        if (guiBg != null) guiBg.setDimension(dimension);
     }
 
     public GUICallback getClickHandler() {

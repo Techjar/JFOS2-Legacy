@@ -32,6 +32,8 @@ public class NetworkManager {
     private volatile long timeLastRead = System.currentTimeMillis();
     private volatile int sendQueueLength;
     private final int sendQueueMax;
+    public volatile long lastKeepAlive;
+    public volatile int ping;
     public final long connectionNumber;
     public NetworkUser user;
     public String terminationReason;
@@ -70,6 +72,7 @@ public class NetworkManager {
                     try {
                         Thread.sleep(5000);
                         queuePacket(new Packet0KeepAlive());
+                        lastKeepAlive = System.currentTimeMillis();
                     }
                     catch (Exception e) { }
                 }
@@ -77,11 +80,11 @@ public class NetworkManager {
         });
         keepAliveThread.start();
         
-        processThread = new Thread(new Runnable() {
+        /*processThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 long start;
-                while(!isTerminating || sendQueue.size() > 0) {
+                while(!isTerminating || recieveQueue.size() > 0) {
                     try {
                         start = System.currentTimeMillis();
                         processPackets();
@@ -91,7 +94,7 @@ public class NetworkManager {
                 }
             }
         });
-        processThread.start();
+        processThread.start();*/
     }
     
     public void queuePacket(Packet packet) {

@@ -17,7 +17,6 @@ public class NetworkServer {
     
     
     public NetworkServer(InetAddress ip, int port) throws IOException {
-        isListening = false;
         serverSocket = new ServerSocket(port, 0, ip);
         serverSocket.setPerformancePreferences(0, 2, 1);
         isListening = true;
@@ -36,6 +35,7 @@ public class NetworkServer {
     
     public void shutdown() throws IOException {
         isListening = false;
+        acceptThread.interrupt();
         serverSocket.close();
     }
 }

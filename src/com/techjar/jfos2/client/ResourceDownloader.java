@@ -13,13 +13,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -41,6 +38,7 @@ public class ResourceDownloader {
     public static void checkAndDownload() {
         try {
             List<URI> downloads = new ArrayList<URI>();
+            System.out.println("Retrieving download list...");
             HttpURLConnection conn = (HttpURLConnection)url.toURL().openConnection();
             //conn.setRequestMethod("GET");
             //conn.connect();
@@ -62,7 +60,10 @@ public class ResourceDownloader {
                 Thread thread = new DownloadThread(downloads);
                 thread.start();
             }
-            else completed = true;
+            else {
+                completed = true;
+                System.out.println("All files are up to date!");
+            }
         }
         catch (Exception ex) {
             Client.crashException(ex);
@@ -98,7 +99,7 @@ public class ResourceDownloader {
                     status = new StringBuilder("Downloading ").append(i).append(" of ").append(urls.size()).append("... ").toString();
                     progress = 0;
                     System.out.println("Downloading " + path);
-                    File file = new File("resources/" + uri.toString().replace(urlPart, ""));
+                    File file = new File(path);
                     File dir = new File(path.substring(0, path.lastIndexOf('/')));
                     if (file.exists()) file.delete();
                     else dir.mkdirs();
@@ -120,6 +121,7 @@ public class ResourceDownloader {
                 }
                 status = "Downloads completed!";
                 completed = true;
+                System.out.println("All files are up to date!");
             }
             catch (Exception ex) {
                 Client.crashException(ex);

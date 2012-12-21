@@ -1,5 +1,6 @@
 package com.techjar.jfos2.client;
 
+import com.techjar.jfos2.MathHelper;
 import de.cuina.fireandfuel.CodecJLayerMP3;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -147,7 +148,7 @@ public class SoundManager {
     }
 
     public void setEffectVolume(float effectVolume) {
-        this.effectVolume = effectVolume;
+        this.effectVolume = MathHelper.clamp(effectVolume, 0, 1);
     }
 
     public float getMusicVolume() {
@@ -155,7 +156,7 @@ public class SoundManager {
     }
 
     public void setMusicVolume(float musicVolume) {
-        this.musicVolume = musicVolume;
+        this.musicVolume = MathHelper.clamp(musicVolume, 0, 1);
     }
     
     public float getSoundVolume(String source) {

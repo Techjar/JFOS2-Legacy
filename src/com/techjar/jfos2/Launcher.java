@@ -19,7 +19,7 @@ public class Launcher {
             System.setProperty("org.lwjgl.librarypath", natives.getPath());
             System.setProperty("net.java.games.input.librarypath", natives.getPath());
             
-            Client.run(args);
+            Client.main(args);
         }
         catch (Exception ex) {
             ex.printStackTrace();

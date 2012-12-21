@@ -33,16 +33,16 @@ public abstract class GUI {
     public boolean processControllerEvent(Controller controller) {
         return true;
     }
-    
+
     /**
      * Returns the position of this component relative to it's parent.
      * For the non-relative position, use {@link #getRawPosition}.
-     * 
+     *
      * @return The position of this component as a {@link Vector2f}
      */
-    public Vector2f getPosition() {
+    protected Vector2f getPosition() {
         if (parent != null) {
-            Vector2f parentPos = parent.getContainerPosition();
+            Vector2f parentPos = this instanceof GUIBackground || (this instanceof GUIButton && ((GUIButton)this).windowClose) ? parent.getPosition() : parent.getContainerPosition();
             Dimension parentDim = parent.getDimension();
             switch (parentAlign) {
                 case TOP_LEFT:

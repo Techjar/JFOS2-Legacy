@@ -51,6 +51,8 @@ public abstract class GUIContainer extends GUI {
     
     @Override
     public void update() {
+        GUIWindow lastWin = null, lastTopWin = null;
+        List<GUI> toAdd = new ArrayList<GUI>();
         Iterator it = components.iterator();
         while (it.hasNext()) {
             GUI gui = (GUI)it.next();
@@ -59,9 +61,23 @@ public abstract class GUIContainer extends GUI {
                 if (gui.isVisible() && gui.isEnabled()) {
                     gui.update();
                     if (gui.isRemoveRequested()) it.remove();
+                    else if (gui instanceof GUIWindow) {
+                        GUIWindow win = (GUIWindow)gui;
+                        if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
+                        lastWin = win;
+                        win.setOnTop(true);
+                        if (win.isToBePutOnTop()) {
+                            it.remove();
+                            toAdd.add(gui);
+                            win.setToBePutOnTop(false);
+                            if (lastTopWin != null) lastTopWin.setOnTop(false);
+                            lastTopWin = win;
+                        }
+                    }
                 }
             }
         }
+        components.addAll(toAdd);
     }
 
     @Override

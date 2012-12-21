@@ -72,7 +72,7 @@ public class GUIComboBox extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox())) {
-                if (!opened && !hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!opened && !hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

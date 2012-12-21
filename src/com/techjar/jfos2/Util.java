@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Rectangle;
 
 /**
@@ -40,6 +41,14 @@ public final class Util {
 
     public static org.lwjgl.util.Color subtractColors(org.lwjgl.util.Color color1, org.lwjgl.util.Color color2) {
         return new org.lwjgl.util.Color(MathHelper.clamp(color1.getRed() - color2.getRed(), 0, 255), MathHelper.clamp(color1.getGreen() - color2.getGreen(), 0, 255), MathHelper.clamp(color1.getBlue() - color2.getBlue(), 0, 255));
+    }
+
+    public static float getAxisValue(Controller con, String name) {
+        if (name == null) return 0;
+        for (int i = 0; i < con.getAxisCount(); i++) {
+            if (name.equals(con.getAxisName(i))) return con.getAxisValue(i);
+        }
+        return 0;
     }
 
     public static IPInfo parseIPAddress(String str) throws UnknownHostException {

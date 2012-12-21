@@ -50,7 +50,7 @@ public class GUITabbed extends GUI {
                 for (int i = 0; i < boxes.length; i++) {
                     if (i == selectedTab) continue;
                     if (checkMouseIntersect(boxes[i])) {
-                        Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                        Client.client.getSoundManager().playEffect("ui/click.wav", false);
                         setSelectedTab(i);
                         break;
                     }
@@ -69,7 +69,7 @@ public class GUITabbed extends GUI {
         for (int i = 0; i < boxes.length; i++) {
             if (checkMouseIntersect(boxes[i])) {
                 if (i != hoveredTab) {
-                    if (i != selectedTab) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                    if (i != selectedTab) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                     hoveredTab = i;
                 }
                 tabIntersected = true;

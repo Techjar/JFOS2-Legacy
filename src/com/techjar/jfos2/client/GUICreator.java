@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.techjar.jfos2.client;
 
 import com.techjar.jfos2.client.gui.*;
@@ -39,6 +35,10 @@ public class GUICreator {
         title.setDimension(title.getFont().getWidth(title.getText()), title.getFont().getHeight(title.getText()));
         title.setPosition(0, 40);
         box.addComponent(title);
+        //GUIInputOption thing2 = new GUIInputOption(client.getFontManager().getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(200, 0, 0));
+        //thing2.setPosition(50, 50);
+        //thing2.setDimension(200, 40);
+        //box.addComponent(thing2);
         client.addGUI(box);
     }
 }

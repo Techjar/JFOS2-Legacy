@@ -65,7 +65,7 @@ public class GUISlider extends GUI {
         if (!Mouse.isButtonDown(0)) {
             Rectangle box = new Rectangle(getPosition().getX() + getSliderPos(), getPosition().getY(), draggerWidth, dimension.getHeight());
             if (checkMouseIntersect(box)) {
-                if (!hovered && !dragging) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!hovered && !dragging) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

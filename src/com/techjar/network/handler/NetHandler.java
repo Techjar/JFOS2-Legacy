@@ -20,6 +20,7 @@ public abstract class NetHandler {
     }
     
     public void handleKeepAlive(Packet0KeepAlive packet) {
+        netManager.ping = (int)(System.currentTimeMillis() - netManager.lastKeepAlive);
     }
     
     public void handleLogin(Packet1Login packet) {

@@ -39,7 +39,7 @@ public class GUICheckBox extends GUI {
         if (Mouse.getEventButtonState()) {
             if (Mouse.getEventButton() == 0) {
                 if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
-                    Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
                     setChecked(!checked);
                     return false;
                 }
@@ -52,7 +52,7 @@ public class GUICheckBox extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
-                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

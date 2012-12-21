@@ -80,4 +80,8 @@ public class NetworkUser {
         netManager.shutdown(allMsg);
         globalMessage(allMsg);
     }
+
+    public int getPing() {
+        return netManager.ping;
+    }
 }

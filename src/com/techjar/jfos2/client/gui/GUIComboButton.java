@@ -38,7 +38,7 @@ public class GUIComboButton extends GUI {
         if (Mouse.getEventButtonState()) {
             if (checkMouseIntersect(getComponentBox())) {
                 if (Mouse.getEventButton() == 0) {
-                    Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
                     if (++selectedItem >= items.size()) selectedItem = 0;
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
@@ -46,7 +46,7 @@ public class GUIComboButton extends GUI {
                     }
                 }
                 else if (Mouse.getEventButton() == 1) {
-                    Client.client.getSoundManager().playTemporarySound("ui/click.wav", false);
+                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
                     if (--selectedItem < 0) selectedItem = items.size() - 1;
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
@@ -62,7 +62,7 @@ public class GUIComboButton extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox())) {
-                if (!hovered) Client.client.getSoundManager().playTemporarySound("ui/rollover.wav", false);
+                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

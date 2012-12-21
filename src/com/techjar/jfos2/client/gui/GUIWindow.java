@@ -38,7 +38,7 @@ public class GUIWindow extends GUIContainer {
     public GUIWindow(GUIBackground guiBg) {
         this.guiBg = guiBg;
         this.guiBg.setParent(this);
-        this.closeBtn = new GUIButton(new Color(0, 0, 0), Client.client.getTextureManager().getTexture("ui/windowclose.png"));
+        this.closeBtn = new GUIButton(null, null, "", new GUIBackground(new Color(0, 0, 0), new Color(0, 0, 0, 0), 0, Client.client.getTextureManager().getTexture("ui/windowclose.png")));
         this.closeBtn.setDimension(20, 20);
         this.closeBtn.setParent(this);
         this.closeBtn.windowClose = true;
@@ -108,14 +108,6 @@ public class GUIWindow extends GUIContainer {
             }
         }
         return true;
-    }
-
-    @Override
-    public void render() {
-        guiBg.render();
-        RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), 20, guiBg.getBorderColor());
-        closeBtn.render();
-        super.render();
     }
 
     @Override
@@ -205,6 +197,14 @@ public class GUIWindow extends GUIContainer {
         if (mouseLockX && !mouseLockY) mouseLast.setY(Client.client.getMouseY());
         else if (!mouseLockX && mouseLockY) mouseLast.setX(Client.client.getMouseX());
         else if (!mouseLockX && !mouseLockY) mouseLast = Client.client.getMousePos();
+    }
+
+    @Override
+    public void render() {
+        guiBg.render();
+        RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), 20, guiBg.getBorderColor());
+        closeBtn.render();
+        super.render();
     }
 
     @Override
