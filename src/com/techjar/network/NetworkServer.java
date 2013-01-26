@@ -34,6 +34,7 @@ public class NetworkServer {
     }
     
     public void shutdown() throws IOException {
+        for (NetworkUser user : NetworkUser.users) user.kick("Server shutting down!");
         isListening = false;
         acceptThread.interrupt();
         serverSocket.close();

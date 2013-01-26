@@ -9,20 +9,20 @@ import com.techjar.network.handler.*;
  * @author Techjar
  */
 public class NetworkAcceptThread extends Thread {
-    private NetworkServer network;
+    private NetworkServer netServer;
     
     
-    public NetworkAcceptThread(String name, NetworkServer network) {
+    public NetworkAcceptThread(String name, NetworkServer netServer) {
         super(name);
-        this.network = network;
+        this.netServer = netServer;
     }
     
     @Override
     public void run() {
         Socket socket;
-        while(network.isListening()) {
+        while(netServer.isListening()) {
             try {
-                socket = network.getServerSocket().accept();
+                socket = netServer.getServerSocket().accept();
                 if (socket == null) continue;
                 NetworkServer.pendingConn.add(new NetworkManager(socket, new NetHandlerLogin()));
                 System.out.println(socket.getRemoteSocketAddress() + " connected.");

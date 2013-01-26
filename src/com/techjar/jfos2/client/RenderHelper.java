@@ -1,11 +1,11 @@
 package com.techjar.jfos2.client;
 
+import static org.lwjgl.opengl.GL11.*;
+
 import com.techjar.jfos2.Util;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
-import static org.lwjgl.opengl.GL11.*;
-
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;
 

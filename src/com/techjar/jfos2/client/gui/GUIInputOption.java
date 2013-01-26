@@ -100,7 +100,7 @@ public class GUIInputOption extends GUI {
         }
         Color color2 = color;
         if (hovered || assign) color2 = Util.addColors(color2, new Color(50, 50, 50));
-        font.drawString(getPosition().getX() + posAdd, getPosition().getY() + posAdd, assign ? "_" : (button == null ? "None" : button.toString()), Util.convertColor(color2));
+        font.drawString(getPosition().getX() + posAdd, getPosition().getY() + posAdd, assign ? "_" : (button == null ? "None" : button.getDisplayString()), Util.convertColor(color2));
     }
 
     public InputInfo getButton() {

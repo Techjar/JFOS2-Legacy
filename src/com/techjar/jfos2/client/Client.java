@@ -11,6 +11,7 @@ import com.techjar.jfos2.OperatingSystem;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.Util;
 import com.techjar.jfos2.client.gui.*;
+import com.techjar.jfos2.entity.EntityShip;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Dimension;
@@ -100,7 +101,6 @@ public class Client {
     private boolean titleScreenVisible;
     private TickCounter titleTick;
     private UnicodeFont introFont;
-    private long lol = 1;
     
     
     public Client() {

@@ -34,6 +34,14 @@ public final class Util {
     public static org.lwjgl.util.Color convertColor(org.newdawn.slick.Color color) {
         return new org.lwjgl.util.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
     }
+
+    public static org.newdawn.slick.geom.Vector2f convertVector2f(org.lwjgl.util.vector.Vector2f vector) {
+        return new org.newdawn.slick.geom.Vector2f(vector.getX(), vector.getY());
+    }
+
+    public static org.lwjgl.util.vector.Vector2f convertVector2f(org.newdawn.slick.geom.Vector2f vector) {
+        return new org.lwjgl.util.vector.Vector2f(vector.getX(), vector.getY());
+    }
     
     public static org.lwjgl.util.Color addColors(org.lwjgl.util.Color color1, org.lwjgl.util.Color color2) {
         return new org.lwjgl.util.Color(MathHelper.clamp(color1.getRed() + color2.getRed(), 0, 255), MathHelper.clamp(color1.getGreen() + color2.getGreen(), 0, 255), MathHelper.clamp(color1.getBlue() + color2.getBlue(), 0, 255));

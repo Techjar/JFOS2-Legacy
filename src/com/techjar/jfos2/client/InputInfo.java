@@ -25,6 +25,22 @@ public class InputInfo {
         return button;
     }
 
+    public String getDisplayString() {
+        switch (type) {
+            case KEYBOARD:
+                if (Keyboard.getKeyName(button) == null) return "";
+                return Keyboard.getKeyName(button);
+            case MOUSE:
+                if (Mouse.getButtonName(button) == null) return "";
+                return Mouse.getButtonName(button);
+            case CONTROLLER:
+                Controller con = Client.client.getController(Client.client.getConfigManager().getString("controls.controller"));
+                if (con == null || con.getButtonName(button) == null) return "";
+                return con.getButtonName(button);
+        }
+        return "";
+    }
+
     public static InputInfo fromString(String str) {
         if (str == null || str.indexOf(':') == -1) return null;
         String[] split = str.trim().split(":");
@@ -48,23 +64,7 @@ public class InputInfo {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(type.toString()).append(':');
-        switch (type) {
-            case KEYBOARD:
-                if (Keyboard.getKeyName(button) == null) return "";
-                sb.append(Keyboard.getKeyName(button));
-                break;
-            case MOUSE:
-                if (Mouse.getButtonName(button) == null) return "";
-                sb.append(Mouse.getButtonName(button));
-                break;
-            case CONTROLLER:
-                Controller con = Client.client.getController(Client.client.getConfigManager().getString("controls.controller"));
-                if (con == null || con.getButtonName(button) == null) return "";
-                sb.append(con.getButtonName(button));
-                break;
-        }
-        return sb.toString();
+        return new StringBuilder(type.toString()).append(':').append(getDisplayString()).toString();
     }
 
     @Override
