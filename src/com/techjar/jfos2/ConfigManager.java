@@ -19,7 +19,7 @@ public class ConfigManager {
      * The file to load and save.
      */
     public final File file;
-    private final boolean autoSave;
+    private boolean autoSave;
     private final Yaml yaml;
     private Map<String, Object> config;
     
@@ -73,6 +73,22 @@ public class ConfigManager {
      */
     public boolean fileExists() {
         return file.exists();
+    }
+
+    /**
+     * Returns whether this ConfigManager auto-saves.
+     * @return <tt>true</tt> if this ConfigManager auto-saves.
+     */
+    public boolean isAutoSaving() {
+        return autoSave;
+    }
+
+    /**
+     * Sets whether this ConfigManager auto-saves.
+     * @param autoSave Whether this ConfigManager should auto-save.
+     */
+    public void setAutoSaving(boolean autoSave) {
+        this.autoSave = autoSave;
     }
     
     /**
