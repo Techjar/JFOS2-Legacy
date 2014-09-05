@@ -30,6 +30,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +67,7 @@ import org.newdawn.slick.geom.ShapeRenderer;
 import org.newdawn.slick.geom.TexCoordGenerator;
 import org.newdawn.slick.geom.Transform;
 import org.newdawn.slick.opengl.Texture;
+import org.newdawn.slick.opengl.renderer.ImmediateModeOGLRenderer;
 
 /**
  *
@@ -574,7 +576,8 @@ public class Client {
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
 
         glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 512, 512, 0, GL_RGBA, GL_INT, (ByteBuffer)null);
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex, 0);
 
@@ -697,18 +700,31 @@ public class Client {
                 //glColor3f(1, 1, 1);
                 //ShapeRenderer.fill(sh);
                 glEnable(GL_TEXTURE_2D);
-                final Texture texture = textureManager.getTexture("asteroid.png");
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                final Texture texture = textureManager.getTexture("asteroid.png", GL_NEAREST);
                 texture.bind();
-                ShapeRenderer.texture(sh, new Image(textureManager.getTexture("asteroid.png")), new TexCoordGenerator() {
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Temp code for Reference
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Temp code for Reference
+                /*glBegin(GL_QUADS);
+                glTexCoord2f(0, 0); glVertex2f(0, 0);
+                glTexCoord2f(8, 0); glVertex2f(512, 0);
+                glTexCoord2f(8, 8); glVertex2f(512, 512);
+                glTexCoord2f(0, 8); glVertex2f(0, 512);
+                glEnd();*/
+                /*try {
+                    Field f = ShapeRenderer.class.getDeclaredField("GL");
+                    f.setAccessible(true);
+                Object obj = f.get(null);
+                if (obj instanceof ImmediateModeOGLRenderer) System.out.println("YAY");
+                else System.out.println("BOO");
+                }catch(Exception ex){ex.printStackTrace();}*/
+                //ShapeRenderer.texture(sh, textureManager.getImage("asteroid.png"));
+                /*ShapeRenderer.texture(sh, new Image(textureManager.getTexture("asteroid.png")), new TexCoordGenerator() {
                     @Override
                     public org.newdawn.slick.geom.Vector2f getCoordFor(float x, float y) {
-                        System.out.println(x);
-                        return new org.newdawn.slick.geom.Vector2f(x / (float)texture.getTextureWidth(), y /  (float)texture.getTextureHeight());
+                        return new org.newdawn.slick.geom.Vector2f(x / (float)texture.getImageWidth(), y /  (float)texture.getImageHeight());
                     }
-                });
-                //ShapeRenderer.textureFit(sh, new Image(textureManager.getTexture("asteroid.png")), sh.getWidth() / texture.getTextureWidth(), sh.getHeight() / texture.getTextureHeight());
+                });*/
+                ShapeRenderer.textureFit(sh, textureManager.getImage("asteroid.png"), sh.getWidth() / texture.getTextureWidth(), sh.getHeight() / texture.getTextureHeight());
             }
             //glBindTexture(GL_TEXTURE_2D, tex);
             //ByteBuffer pixels = ByteBuffer.allocateDirect(4 * 4 * 4);

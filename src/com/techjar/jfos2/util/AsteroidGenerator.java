@@ -18,7 +18,7 @@ public class AsteroidGenerator {
     public static float[] generatePoints(int baseRadius, int maxDeviation, int maxDifference, int minIncrement, int maxIncrement) {
         List<Float> points = new ArrayList<>();
         int deviation = 0;
-        for (int deg = 0; deg < 360; deg += minIncrement + random.nextInt(maxIncrement - minIncrement)) {
+        for (int deg = 0; deg < 340; deg += minIncrement + random.nextInt(maxIncrement - minIncrement)) {
             double rad = Math.toRadians(deg);
             int difference = random.nextInt(maxDifference * 2) - maxDifference;
             deviation = MathHelper.clamp(difference + deviation, -maxDeviation, maxDeviation);
