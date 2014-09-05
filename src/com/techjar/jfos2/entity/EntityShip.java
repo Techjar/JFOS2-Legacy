@@ -39,7 +39,7 @@ public class EntityShip extends EntityFriendly {
 
     @Override
     public void render() {
-        Client.client.getTextureManager().getTexture("ship.png").bind();
+        Client.getInstance().getTextureManager().getTexture("ship.png").bind();
         glPushMatrix();
         glTranslatef(position.getX(), position.getY(), 0);
         glRotatef(angle, 0, 0, 1);

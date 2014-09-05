@@ -11,7 +11,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Dimension;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.awt.Toolkit;
@@ -97,7 +97,7 @@ public class GUITextField extends GUIText {
                 }
                 repeatLastKey = Keyboard.getEventKey();
                 repeatLastChar = Keyboard.getEventCharacter();
-                repeatLastMillis = Client.client.getTick().getTickMillis();
+                repeatLastMillis = Client.getInstance().getTick().getTickMillis();
             }
             else if (Keyboard.getEventKey() == repeatLastKey || Keyboard.getEventCharacter() == repeatLastChar) {
                 repeatState = false;
@@ -116,9 +116,9 @@ public class GUITextField extends GUIText {
     @Override
     public void update() {
         super.update();
-        if (Client.client.getTick().getTickMillis() - cursorLastMillis >= 500) {
+        if (Client.getInstance().getTick().getTickMillis() - cursorLastMillis >= 500) {
             cursorState = !cursorState;
-            cursorLastMillis = Client.client.getTick().getTickMillis();
+            cursorLastMillis = Client.getInstance().getTick().getTickMillis();
         }
 
         if (Mouse.isButtonDown(0)) {
@@ -130,12 +130,12 @@ public class GUITextField extends GUIText {
                 focused = false;
         }
         
-        if (repeatState && Client.client.getTick().getTickMillis() - repeatLastMillis >= 500) {
+        if (repeatState && Client.getInstance().getTick().getTickMillis() - repeatLastMillis >= 500) {
             if (!repeatState2) {
-                repeatLastMillis2 = Client.client.getTick().getTickMillis() + 200;
+                repeatLastMillis2 = Client.getInstance().getTick().getTickMillis() + 200;
                 repeatState2 = true;
             }
-            if (Client.client.getTick().getTickMillis() - repeatLastMillis2 >= 50) {
+            if (Client.getInstance().getTick().getTickMillis() - repeatLastMillis2 >= 50) {
                 if (Util.isValidCharacter(repeatLastChar) && text.length() < maxLength) {
                     text.append(repeatLastChar);
                     if (changeHandler != null) {
@@ -150,7 +150,7 @@ public class GUITextField extends GUIText {
                         changeHandler.run();
                     }
                 }
-                repeatLastMillis2 = Client.client.getTick().getTickMillis();
+                repeatLastMillis2 = Client.getInstance().getTick().getTickMillis();
             }
         }
     }

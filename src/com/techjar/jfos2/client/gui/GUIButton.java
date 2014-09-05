@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
@@ -42,7 +42,7 @@ public class GUIButton extends GUIText {
                 Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
                 if (checkMouseIntersect(!windowClose, box)) {
                     pressed = true;
-                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
+                    Client.getInstance().getSoundManager().playEffect("ui/click.wav", false);
                     if (clickHandler != null) {
                         clickHandler.setComponent(this);
                         clickHandler.run();
@@ -59,7 +59,7 @@ public class GUIButton extends GUIText {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(!windowClose, getComponentBox())) {
-                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

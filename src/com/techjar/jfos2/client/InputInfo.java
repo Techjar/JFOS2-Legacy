@@ -34,7 +34,7 @@ public class InputInfo {
                 if (Mouse.getButtonName(button) == null) return "";
                 return Mouse.getButtonName(button);
             case CONTROLLER:
-                Controller con = Client.client.getController(Client.client.getConfigManager().getString("controls.controller"));
+                Controller con = Client.getInstance().getController(Client.getInstance().getConfigManager().getString("controls.controller"));
                 if (con == null || con.getButtonName(button) == null) return "";
                 return con.getButtonName(button);
         }
@@ -42,29 +42,31 @@ public class InputInfo {
     }
 
     public static InputInfo fromString(String str) {
-        if (str == null || str.indexOf(':') == -1) return null;
-        String[] split = str.trim().split(":");
-        Type type = Type.fromString(split[0]);
+        if (str == null) return null;
+        Type type = Type.fromString(str);
         if (type == null) return null;
+        int code = Integer.valueOf(str.substring(1));
         switch (type) {
             case KEYBOARD:
-                if (Keyboard.getKeyIndex(split[1]) == Keyboard.KEY_NONE)
-                    return new InputInfo(type, Keyboard.getKeyIndex(split[1]));
+                if (code != Keyboard.KEY_NONE)
+                    return new InputInfo(type, code);
             case MOUSE:
-                if (Mouse.getButtonIndex(split[1]) != -1)
-                    return new InputInfo(type, Mouse.getButtonIndex(split[1]));
+                if (code != -1)
+                    return new InputInfo(type, code);
             case CONTROLLER:
-                Controller con = Client.client.getController(Client.client.getConfigManager().getString("controls.controller"));
-                if (con != null)
-                    for (int i = 0; i < con.getButtonCount(); i++)
-                        if (con.getButtonName(i).equals(split[1])) return new InputInfo(type, i);
+                Controller con = Client.getInstance().getController(Client.getInstance().getConfigManager().getString("controls.controller"));
+                if (code != -1)
+                    return new InputInfo(type, code);
+                else {
+                    
+                }
         }
         return null;
     }
 
     @Override
     public String toString() {
-        return new StringBuilder(type.toString()).append(':').append(getDisplayString()).toString();
+        return new StringBuilder(type.toString()).append(button).toString();
     }
 
     @Override
@@ -109,7 +111,7 @@ public class InputInfo {
         }
 
         public static Type fromString(String str) {
-            if (str == null || str.length() != 1) return null;
+            if (str == null || str.length() < 1) return null;
             switch (str.charAt(0)) {
                 case 'K': return KEYBOARD;
                 case 'M': return MOUSE;

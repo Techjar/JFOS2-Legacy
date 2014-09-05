@@ -38,7 +38,7 @@ public class GUIWindow extends GUIContainer {
     public GUIWindow(GUIBackground guiBg) {
         this.guiBg = guiBg;
         this.guiBg.setParent(this);
-        this.closeBtn = new GUIButton(null, null, "", new GUIBackground(new Color(0, 0, 0), new Color(0, 0, 0, 0), 0, Client.client.getTextureManager().getTexture("ui/windowclose.png")));
+        this.closeBtn = new GUIButton(null, null, "", new GUIBackground(new Color(0, 0, 0), new Color(0, 0, 0, 0), 0, Client.getInstance().getTextureManager().getTexture("ui/windowclose.png")));
         this.closeBtn.setDimension(20, 20);
         this.closeBtn.setParent(this);
         this.closeBtn.windowClose = true;
@@ -97,7 +97,7 @@ public class GUIWindow extends GUIContainer {
                     if (checkMouseIntersect(head)) dragging = true;
                 }
                 if (dragging || isResizing()) {
-                    mouseLast = Client.client.getMousePos();
+                    mouseLast = Client.getInstance().getMousePos();
                     return false;
                 }
             }
@@ -121,9 +121,9 @@ public class GUIWindow extends GUIContainer {
         else if (wasMousePressed && !checkMouseButtons()) {
             wasMousePressed = false;
         }
-        if (canResize && !Client.client.getMousePos().equals(mouseLast)) {
+        if (canResize && !Client.getInstance().getMousePos().equals(mouseLast)) {
             if (isResizing()) {
-                Vector2f mouseDiff = Vector2f.sub(Client.client.getMousePos(), mouseLast, null);
+                Vector2f mouseDiff = Vector2f.sub(Client.getInstance().getMousePos(), mouseLast, null);
                 Vector2f newPos = new Vector2f(position);
                 Dimension newDim = new Dimension(dimension);
                 if (resizeX == 1) {
@@ -189,14 +189,14 @@ public class GUIWindow extends GUIContainer {
                     currentCursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
                 }
             }
-            if (checkMouseIntersect(getComponentBox())) Client.client.getFrame().setCursor(currentCursor);
+            if (checkMouseIntersect(getComponentBox())) Client.getInstance().getFrame().setCursor(currentCursor);
         }
         if (dragging) {
-            setPosition(Vector2f.add(position, Vector2f.sub(Client.client.getMousePos(), mouseLast, null), null));
+            setPosition(Vector2f.add(position, Vector2f.sub(Client.getInstance().getMousePos(), mouseLast, null), null));
         }
-        if (mouseLockX && !mouseLockY) mouseLast.setY(Client.client.getMouseY());
-        else if (!mouseLockX && mouseLockY) mouseLast.setX(Client.client.getMouseX());
-        else if (!mouseLockX && !mouseLockY) mouseLast = Client.client.getMousePos();
+        if (mouseLockX && !mouseLockY) mouseLast.setY(Client.getInstance().getMouseY());
+        else if (!mouseLockX && mouseLockY) mouseLast.setX(Client.getInstance().getMouseX());
+        else if (!mouseLockX && !mouseLockY) mouseLast = Client.getInstance().getMousePos();
     }
 
     @Override

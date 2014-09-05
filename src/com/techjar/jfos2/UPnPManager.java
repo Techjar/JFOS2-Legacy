@@ -26,7 +26,7 @@ public class UPnPManager {
             System.exit(0);
         }
         
-        upnpServices = new HashMap<Integer, UpnpService>();
+        upnpServices = new HashMap<>();
     }
     
     public boolean start(int port) {

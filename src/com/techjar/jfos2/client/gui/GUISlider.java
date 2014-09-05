@@ -1,7 +1,7 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.MathHelper;
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
@@ -53,7 +53,7 @@ public class GUISlider extends GUI {
     @Override
     public void update() {
         if (dragging) {
-            int mouseX = Client.client.getMouseX() - (int)getPosition().getX() - draggerWidth / 2;
+            int mouseX = Client.getInstance().getMouseX() - (int)getPosition().getX() - draggerWidth / 2;
             value = (float)MathHelper.clamp(mouseX, 0, dimension.getWidth() - draggerWidth) / (float)(dimension.getWidth() - draggerWidth);
             if (changeHandler != null && lastValue != value) {
                 changeHandler.setComponent(this);
@@ -65,7 +65,7 @@ public class GUISlider extends GUI {
         if (!Mouse.isButtonDown(0)) {
             Rectangle box = new Rectangle(getPosition().getX() + getSliderPos(), getPosition().getY(), draggerWidth, dimension.getHeight());
             if (checkMouseIntersect(box)) {
-                if (!hovered && !dragging) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!hovered && !dragging) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

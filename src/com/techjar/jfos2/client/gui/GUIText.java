@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.UnicodeFont;
 

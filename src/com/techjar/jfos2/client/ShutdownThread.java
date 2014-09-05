@@ -7,6 +7,6 @@ package com.techjar.jfos2.client;
 public class ShutdownThread extends Thread {
     @Override
     public void run() {
-        Client.client.shutdown();
+        Client.getInstance().shutdown();
     }
 }

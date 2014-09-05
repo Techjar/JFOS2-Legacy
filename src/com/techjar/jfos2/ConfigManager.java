@@ -18,7 +18,7 @@ public class ConfigManager {
     /**
      * The file to load and save.
      */
-    public final File file;
+    public File file;
     private boolean autoSave;
     private final Yaml yaml;
     private Map<String, Object> config;
@@ -40,15 +40,6 @@ public class ConfigManager {
         this.file = file;
         this.config = new HashMap<String, Object>();
     }
-    
-    /**
-     * Creates a new ConfigManager using the specified {@link String} as the file. Auto-saving is determined by the specified boolean value.
-     * @param file The file to load and save.
-     * @param autoSave <tt>true</tt> to enable auto-saving.
-     */
-    public ConfigManager(String file, boolean autoSave) {
-        this(new File(file), autoSave);
-    }
 
     /**
      * Creates a new ConfigManager using the specified {@link File} as the file. Auto-saving is off by default, see {@link #ConfigManager(java.lang.String, boolean)} for enabling it.
@@ -59,12 +50,19 @@ public class ConfigManager {
     }
     
     /**
-     * Creates a new ConfigManager using the specified {@link String} as the file. Auto-saving is off by default, see {@link #ConfigManager(java.lang.String, boolean)} for enabling it.
-     * @param file The file to load and save.
+     * Creates a new ConfigManager using the specified {@link String} as the file. Auto-saving is determined by the specified boolean value.
+     * @param data Raw Yaml data to load.
      */
-    public ConfigManager(String file) {
-        this(new File(file), false);
+    public ConfigManager(String data) {
+        DumperOptions dumper = new DumperOptions();
+        dumper.setLineBreak(DumperOptions.LineBreak.getPlatformLineBreak());
+        dumper.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        dumper.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
+        this.yaml = new Yaml(dumper);
 
+        this.autoSave = false;
+        this.file = null;
+        this.config = (Map)yaml.load(data);
     }
     
     /**
@@ -72,23 +70,7 @@ public class ConfigManager {
      * @return <tt>true</tt> if the file exists.
      */
     public boolean fileExists() {
-        return file.exists();
-    }
-
-    /**
-     * Returns whether this ConfigManager auto-saves.
-     * @return <tt>true</tt> if this ConfigManager auto-saves.
-     */
-    public boolean isAutoSaving() {
-        return autoSave;
-    }
-
-    /**
-     * Sets whether this ConfigManager auto-saves.
-     * @param autoSave Whether this ConfigManager should auto-save.
-     */
-    public void setAutoSaving(boolean autoSave) {
-        this.autoSave = autoSave;
+        return file != null && file.exists();
     }
     
     /**
@@ -190,7 +172,7 @@ public class ConfigManager {
      * Removes a property.
      * @param name The property key.
      */
-    public void unsetProperty(String name) {
+    public void removeProperty(String name) {
         if (containsYamlKey(config, name)) {
             removeYamlKey(config, name);
             if (autoSave) save();
@@ -290,6 +272,7 @@ public class ConfigManager {
      * Load the Yaml file.
      */
     public void load() {
+        if (file == null) throw new UnsupportedOperationException("ConfigManager does not have a file");
         try {
             if (!file.exists()) {
                 file.createNewFile();
@@ -299,8 +282,7 @@ public class ConfigManager {
             config = (Map)yaml.load(fr);
             if (config == null) config = new HashMap<String, Object>();
             fr.close();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
@@ -309,12 +291,12 @@ public class ConfigManager {
      * Save the Yaml file.
      */
     public void save() {
+        if (file == null) throw new UnsupportedOperationException("ConfigManager does not have a file");
         try {
             FileWriter fw = new FileWriter(file);
             yaml.dump(config, fw);
             fw.close();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
     }

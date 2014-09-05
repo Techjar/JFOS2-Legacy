@@ -1,7 +1,10 @@
 package com.techjar.jfos2.client;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.EXTFramebufferObject.*;
 import static org.lwjgl.util.glu.GLU.*;
 
 import com.techjar.jfos2.ConfigManager;
@@ -9,9 +12,11 @@ import com.techjar.jfos2.Constants;
 import org.lwjgl.opengl.DisplayMode;
 import com.techjar.jfos2.OperatingSystem;
 import com.techjar.jfos2.TickCounter;
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
+import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.entity.EntityShip;
+import com.techjar.jfos2.util.AsteroidGenerator;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Dimension;
@@ -25,6 +30,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,6 +49,7 @@ import org.lwjgl.input.Controllers;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLContext;
 import org.lwjgl.opengl.Pbuffer;
 import org.lwjgl.opengl.PixelFormat;
@@ -52,31 +59,35 @@ import org.newdawn.slick.Image;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Circle;
+import org.newdawn.slick.geom.Polygon;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.geom.ShapeRenderer;
+import org.newdawn.slick.geom.TexCoordGenerator;
+import org.newdawn.slick.geom.Transform;
+import org.newdawn.slick.opengl.Texture;
 
 /**
  *
  * @author Techjar
  */
 public class Client {
-    public static Client client;
+    private static Client instance;
     private final File dataDir;
     private Frame frame;
     private Canvas canvas;
     private Rectangle mouseHitbox;
     private ConfigManager config;
-    private FontManager font;
-    private TextureManager texture;
-    private SoundManager sound;
+    private FontManager fontManager;
+    private TextureManager textureManager;
+    private SoundManager soundManager;
     private DisplayMode displayMode;
     private boolean borderless;
     private boolean wasBorderless;
     private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
     private TickCounter tick;
-    private List<GUI> guiList;
+    private List<Screen> screenList;
     private List<GUICallback> resizeHandlers;
     private List<Runnable> preProcessors;
     private List<Runnable> postProcessors;
@@ -90,7 +101,11 @@ public class Client {
     private boolean running = true;
     private int arbMaxSamples;
     private boolean renderBackground;
-    private List<String> validControllers = new ArrayList<String>();
+    private List<String> validControllers = new ArrayList<>();
+    private List<Shape> testShapes = new ArrayList<>();
+    
+    private int tex;
+    private int fbo;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -106,19 +121,28 @@ public class Client {
     public Client() {
         dataDir = OperatingSystem.getDataDirectory("jfos2");
         mouseHitbox = new Rectangle(0, 0, 1, 1);
-        tick = new TickCounter(Constants.FRAME_RATE);
-        guiList = new ArrayList<GUI>();
-        resizeHandlers = new ArrayList<GUICallback>();
-        preProcessors = new ArrayList<Runnable>();
-        postProcessors = new ArrayList<Runnable>();
+        tick = new TickCounter(Constants.TICK_RATE);
+        screenList = new ArrayList<>();
+        resizeHandlers = new ArrayList<>();
+        preProcessors = new ArrayList<>();
+        postProcessors = new ArrayList<>();
     }
     
     public static void main(String[] args) {
-        if (client != null) throw new RuntimeException("Client is already running");
+        if (getInstance() != null) throw new IllegalStateException("Client already running!");
         try {
-            client = new Client();
-            client.offline = args.length > 0 && "offline".equals(args[0]);
-            client.start();
+            instance = new Client();
+            for (String arg : args) {
+                switch (arg) {
+                    case "--offline":
+                        instance.offline = true;
+                        break;
+                    default:
+                        System.out.println("Unknown argument: " + arg);
+                        break;
+                }
+            }
+            getInstance().start();
         } catch (Exception ex) {
             ex.printStackTrace();
             try {
@@ -128,6 +152,10 @@ public class Client {
                 System.exit(0); // Everything broke, bail!
             }
         }
+    }
+
+    public static Client getInstance() {
+        return instance;
     }
     
     public void start() throws LWJGLException, SlickException, IOException {
@@ -146,7 +174,7 @@ public class Client {
         Display.setDisplayMode(displayMode);
         Display.setVSyncEnabled(true);
 
-        texture = new TextureManager();
+        textureManager = new TextureManager();
         Display.create();
         init();
         drawSplash();
@@ -168,20 +196,20 @@ public class Client {
         Keyboard.create();
         Mouse.create();
         Mouse.setGrabbed(false);
-        font = new FontManager();
-        sound = new SoundManager();
-        sound.setEffectVolume(config.getFloat("sound.effectvolume"));
-        sound.setMusicVolume(config.getFloat("sound.musicvolume"));
+        fontManager = new FontManager();
+        soundManager = new SoundManager();
+        soundManager.setEffectVolume(config.getFloat("sound.effectvolume"));
+        soundManager.setMusicVolume(config.getFloat("sound.musicvolume"));
 
         if (offline) {
             resourcesDone = true;
             preloadData();
         }
         else {
-            font.getFont("batmfa_", 50, false, false);
+            fontManager.getFont("batmfa_", 50, false, false);
             ResourceDownloader.checkAndDownload();
         }
-        introFont = font.getFont("astronbo", 64, true, false).getUnicodeFont();
+        introFont = fontManager.getFont("astronbo", 64, true, false).getUnicodeFont();
         
         GUIWindow slider = new GUIWindow(new GUIBackground());
         slider.setDimension(500, 500);
@@ -206,7 +234,7 @@ public class Client {
         //guiList.add(win1);
         //guiList.add(win2);
         //guiList.add(win3);
-        GUITabbed tab = new GUITabbed(font.getFont("COPRGTB", 16, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(200, 0, 0), new Color(50, 50, 50), 1));
+        GUITabbed tab = new GUITabbed(fontManager.getFont("COPRGTB", 16, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(200, 0, 0), new Color(50, 50, 50), 1));
         tab.setDimension(500, 500);
         tab.setPosition(100, 50);
         //guiList.add(tab);
@@ -233,7 +261,7 @@ public class Client {
         thing.addComponent(b2);
         thing.addComponent(b3);
         thing.addComponent(b4);
-        GUITextField guit = new GUITextField(font.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
+        GUITextField guit = new GUITextField(fontManager.getFont("COPRGTB", 24, false, false).getUnicodeFont(), new Color(Color.WHITE), new GUIBackground(new Color(0, 0, 0), new Color(200, 0, 0), 2));
         guit.setDimension(200, 30);
         guit.setPosition(40, 240);
         thingo.addComponent(guit);
@@ -300,19 +328,27 @@ public class Client {
 
     public static void crashException(Throwable ex) {
         ex.printStackTrace();
-        Display.destroy();
-        if (client.canvas != null && client.frame != null) {
-            client.frame.setResizable(false);
-            client.frame.setSize(new Dimension(client.displayMode.getWidth(), client.displayMode.getHeight()));
-            Graphics g = client.canvas.getGraphics();
-            g.setFont(new java.awt.Font("Monospaced", Font.BOLD, 50));
-            g.drawString(Constants.GAME_TITLE + " has crashed!", 55, 50);
+        if (getInstance() != null) {
+            try {
+                if (getInstance().frame != null) {
+                    getInstance().frame.setResizable(false);
+                    getInstance().frame.setSize(new Dimension(getInstance().displayMode.getWidth(), getInstance().displayMode.getHeight()));
+                    // todo
+                    while (!getInstance().closeRequested) {
+                        try { Thread.sleep(100); }
+                        catch (InterruptedException junk) { }
+                    }
+                }
+                getInstance().shutdownInternal();
+            } catch (Throwable ex2) {
+                ex2.printStackTrace();
+                System.exit(0);
+            }
         }
-        System.exit(0);
     }
 
     private void initDisplayModes() throws LWJGLException {
-        displayModeList = new ArrayList<DisplayMode>();
+        displayModeList = new ArrayList<>();
         DisplayMode desktop = Display.getDesktopDisplayMode();
         for (DisplayMode mode : Display.getAvailableDisplayModes()) {
             if(mode.getBitsPerPixel() == desktop.getBitsPerPixel() && mode.getFrequency() == desktop.getFrequency()) {
@@ -407,7 +443,7 @@ public class Client {
     }
 
     public List<String> getDisplayModeStrings() {
-        List<String> list = new ArrayList<String>(displayModeList.size());
+        List<String> list = new ArrayList<>(displayModeList.size());
         for (DisplayMode mode : displayModeList) {
             list.add(new StringBuilder().append(mode.getWidth()).append("x").append(mode.getHeight()).toString());
         }
@@ -450,15 +486,15 @@ public class Client {
 
     private void preloadData() {
         // Preload Textures
-        texture.getTexture("ui/windowclose.png");
+        textureManager.getTexture("ui/windowclose.png");
         
         // Preload Sounds
-        sound.loadSound("ui/click.wav");
-        sound.loadSound("ui/rollover.wav");
+        soundManager.loadSound("ui/click.wav");
+        soundManager.loadSound("ui/rollover.wav");
     }
     
     private void drawBackground() {
-        texture.getTexture("background.png").bind();
+        textureManager.getTexture("background.png").bind();
         RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), true);
     }
 
@@ -475,7 +511,7 @@ public class Client {
             }
             else {
                 drawBackground();
-                UnicodeFont theFont = font.getFont("batmfa_", 50, false, false).getUnicodeFont();
+                UnicodeFont theFont = fontManager.getFont("batmfa_", 50, false, false).getUnicodeFont();
                 int width = theFont.getWidth(ResourceDownloader.getStatus());
                 Vector2f fontCenter = getScreenCenter(width, 0);
                 theFont.drawString(fontCenter.getX(), fontCenter.getY() - 60, ResourceDownloader.getStatus(), org.newdawn.slick.Color.white);
@@ -485,7 +521,7 @@ public class Client {
                 RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth * ResourceDownloader.getProgress(), 30, new Color(0, 100, 0));
             }
         }
-        if (titleStarted || sound.isPlaying(titleMusic)) {
+        if (titleStarted || soundManager.isPlaying(titleMusic)) {
             titleStarted = true;
             if (titleTick.getTickMillis() > 12000) gameStarted = true;
             if (titleTick.getTickMillis() > 11000 && !titleScreenVisible) {
@@ -524,13 +560,25 @@ public class Client {
     }
 
     private void initIntro() {
-        titleMusic = sound.playMusic("music/title.mp3", true);
-        titleTick = new TickCounter(Constants.FRAME_RATE);
+        titleMusic = soundManager.playMusic("music/title.mp3", true);
+        titleTick = new TickCounter(Constants.TICK_RATE);
     }
     
     private void init() {
         initGL();
         resizeGL(displayMode.getWidth(), displayMode.getHeight());
+
+        fbo = glGenFramebuffersEXT();
+        tex = glGenTextures();
+
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 512, 512, 0, GL_RGBA, GL_INT, (ByteBuffer)null);
+        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex, 0);
+
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     }
 
     private void initGL() {
@@ -541,6 +589,7 @@ public class Client {
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_ALPHA_TEST);
         glEnable(GL_BLEND);
+        glEnable(GL_MULTISAMPLE);
         glAlphaFunc(GL_GREATER, 0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -556,11 +605,8 @@ public class Client {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         gluOrtho2D(0, width, height, 0);
-        glPushMatrix();
-
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        glPushMatrix();
     }
 
     private void preProcess() {
@@ -571,15 +617,15 @@ public class Client {
     
     private void processKeyboard() {
         toploop: while (Keyboard.next()) {
-            for (GUI gui : guiList)
-                if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) continue toploop;
+            for (Screen screen : screenList)
+                if (!screen.processKeyboardEvent()) continue toploop;
         }
     }
 
     private void processMouse() {
         toploop: while (Mouse.next()) {
-            for (GUI gui : guiList)
-                if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) continue toploop;
+            for (Screen screen : screenList)
+                if (!screen.processMouseEvent()) continue toploop;
         }
     }
 
@@ -587,52 +633,98 @@ public class Client {
         toploop: while (Controllers.next()) {
             Controller con = Controllers.getEventSource();
             if (con.getName().equals(config.getString("controls.controller"))) {
-                for (GUI gui : guiList)
-                    if (gui.isVisible() && gui.isEnabled() && !gui.processControllerEvent(con)) continue toploop;
+                for (Screen screen : screenList)
+                    if (!screen.processControllerEvent(con)) continue toploop;
             }
         }
     }
 
     private void update() {
-        GUIWindow lastWin = null, lastTopWin = null;
-        List<GUI> toAdd = new ArrayList<GUI>();
-        Iterator it = guiList.iterator();
-        while (it.hasNext()) {
-            GUI gui = (GUI)it.next();
-            if (gui.isRemoveRequested()) it.remove();
-            else {
-                if (gui.isVisible() && gui.isEnabled()) {
-                    gui.update();
-                    if (gui.isRemoveRequested()) it.remove();
-                    else if (gui instanceof GUIWindow) {
-                        GUIWindow win = (GUIWindow)gui;
-                        if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
-                        lastWin = win;
-                        win.setOnTop(true);
-                        if (win.isToBePutOnTop()) {
-                            it.remove();
-                            toAdd.add(gui);
-                            win.setToBePutOnTop(false);
-                            if (lastTopWin != null) lastTopWin.setOnTop(false);
-                            lastTopWin = win;
-                        }
-                    }
-                }
-            }
-        }
-        guiList.addAll(toAdd);
+        for (Screen screen : screenList)
+            screen.update();
+        //throw new RuntimeException();
     }
     
     private void render() {
+        long time = System.nanoTime();
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
         
         if (renderBackground) drawBackground();
 
-        for (GUI gui : guiList)
-            if (gui.isVisible()) gui.render();
+        for (Screen screen : screenList)
+            screen.render();
         if (!gameStarted) gameStartupStuff(); // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
-        font.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 5, Long.toString(fpsRender), org.newdawn.slick.Color.yellow);
+        Runtime runtime = Runtime.getRuntime();
+        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 5, Long.toString(fpsRender), org.newdawn.slick.Color.yellow);
+        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 25, "Memory: " + Util.bytesToMBString(runtime.totalMemory() - runtime.freeMemory()) + " / " + Util.bytesToMBString(runtime.maxMemory()), org.newdawn.slick.Color.yellow);
+        /*long time = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            Shape shape = new Polygon(AsteroidGenerator.generate(50, 10, 10, 30));
+        }
+        System.out.println(System.nanoTime() - time);*/
+        if (tick.getTickMillis() % 500 == 0) {
+        //if (testShapes.isEmpty()) {
+            testShapes.clear();
+            Shape shape = new Polygon(AsteroidGenerator.generatePoints(130, 10, 5, 10, 30));
+            //shape.setCenterX(displayMode.getWidth() / 2);
+            //shape.setCenterY(displayMode.getHeight() / 2);
+            shape.setCenterX(256);
+            shape.setCenterY(256);
+            Shape shape2 = shape.transform(Transform.createScaleTransform((shape.getWidth() + 6) / shape.getWidth(), (shape.getHeight() + 6) / shape.getHeight()));
+            //shape2.setCenterX(displayMode.getWidth() / 2);
+            //shape2.setCenterY(displayMode.getHeight() / 2);
+            shape2.setCenterX(256);
+            shape2.setCenterY(256);
+            testShapes.add(shape2);
+            testShapes.add(shape);
+            testShapes.addAll(Arrays.asList(AsteroidGenerator.generateCraters(shape, 10, 5, 200)));
+            //System.out.println(shape2.getMinX() + " " + shape2.getMinY() + " " + shape2.getMaxX() + " " + shape2.getMaxY());
+
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+            resizeGL(512, 512);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            
+            //glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glLoadIdentity();
+            
+            for (int i = 0; i < testShapes.size(); i++) {
+                Shape sh = testShapes.get(i);
+                if (i == 0) glColor3f(1, 0, 0);
+                if (i == 1) glColor3f(1, 1, 0);
+                if (i == 2) glColor3f(0, 1, 1);
+                //glColor3f(1, 1, 1);
+                //ShapeRenderer.fill(sh);
+                glEnable(GL_TEXTURE_2D);
+                final Texture texture = textureManager.getTexture("asteroid.png");
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                texture.bind();
+                ShapeRenderer.texture(sh, new Image(textureManager.getTexture("asteroid.png")), new TexCoordGenerator() {
+                    @Override
+                    public org.newdawn.slick.geom.Vector2f getCoordFor(float x, float y) {
+                        System.out.println(x);
+                        return new org.newdawn.slick.geom.Vector2f(x / (float)texture.getTextureWidth(), y /  (float)texture.getTextureHeight());
+                    }
+                });
+                //ShapeRenderer.textureFit(sh, new Image(textureManager.getTexture("asteroid.png")), sh.getWidth() / texture.getTextureWidth(), sh.getHeight() / texture.getTextureHeight());
+            }
+            //glBindTexture(GL_TEXTURE_2D, tex);
+            //ByteBuffer pixels = ByteBuffer.allocateDirect(4 * 4 * 4);
+            //glReadPixels(0, 0, (int)Math.ceil(shape2.getWidth()), (int)Math.ceil(shape2.getHeight()), GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+            //glBlitFramebuffer(0, 0, 512, 512, 0, 0, 512, 512, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+            resizeGL(displayMode.getWidth(), displayMode.getHeight());
+        }
+        if (tex > 0) {
+            Shape shape = testShapes.get(0);
+            glBindTexture(GL_TEXTURE_2D, tex);
+            //Circle c = new Circle(0, 0, shape.getBoundingCircleRadius());
+            //System.out.println(shape.getMaxY() - shape.getMinY());
+            RenderHelper.drawSquare(100, 100, 512, 512, (Color)Color.WHITE, true);
+        }
+        //System.out.println(System.nanoTime() - time);
     }
 
     private void postProcess() {
@@ -673,20 +765,20 @@ public class Client {
                 }
             }
             Display.update();
-            Display.sync(Constants.FRAME_RATE);
+            Display.sync(Constants.TICK_RATE);
         }
     }
 
     public FontManager getFontManager() {
-        return font;
+        return fontManager;
     }
 
     public TextureManager getTextureManager() {
-        return texture;
+        return textureManager;
     }
 
     public SoundManager getSoundManager() {
-        return sound;
+        return soundManager;
     }
 
     public ConfigManager getConfigManager() {
@@ -779,24 +871,24 @@ public class Client {
         return displayMode.getBitsPerPixel();
     }
     
-    public List<GUI> getGUIList() {
-        return Collections.unmodifiableList(guiList);
+    public List<Screen> getScreenList() {
+        return Collections.unmodifiableList(screenList);
     }
 
-    public void addGUI(GUI gui) {
-        guiList.add(gui);
+    public void addScreen(Screen screen) {
+        screenList.add(screen);
     }
 
-    public void removeGUI(GUI gui) {
-        guiList.remove(gui);
+    public void removeScreen(Screen screen) {
+        screenList.remove(screen);
     }
 
-    public void removeGUI(int index) {
-        guiList.remove(index);
+    public void removeScreen(int index) {
+        screenList.remove(index);
     }
 
-    public void clearGUI() {
-        guiList.clear();
+    public void clearScreens() {
+        screenList.clear();
     }
 
     public TickCounter getTick() {
@@ -838,9 +930,9 @@ public class Client {
     private void shutdownInternal() {
         running = false;
         config.save();
-        sound.getSoundSystem().cleanup();
-        texture.cleanup();
-        font.cleanup();
+        soundManager.getSoundSystem().cleanup();
+        textureManager.cleanup();
+        fontManager.cleanup();
         Display.destroy();
         Keyboard.destroy();
         Mouse.destroy();

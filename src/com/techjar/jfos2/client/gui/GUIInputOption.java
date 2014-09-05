@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.InputInfo;
 import org.lwjgl.input.Controller;
@@ -84,7 +84,7 @@ public class GUIInputOption extends GUI {
         if (!Mouse.isButtonDown(0) && !assign) {
             Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
             if (checkMouseIntersect(box)) {
-                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

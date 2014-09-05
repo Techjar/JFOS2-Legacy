@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.font.effects.ColorEffect;
@@ -15,42 +16,40 @@ import org.newdawn.slick.font.effects.Effect;
  */
 public class FontManager {
     protected final File fontPath;
-    protected Map<Integer, UnicodeFont> fonts;
+    protected Map<FontInfo, UnicodeFont> fonts;
     
     public FontManager() {
         fontPath = new File("resources/fonts/");
-        fonts = new HashMap<Integer, UnicodeFont>();
+        fonts = new HashMap<>();
     }
     
     public FontInstance getFont(String font, int size, boolean bold, boolean italic, List<Effect> effects) {
-        try {
-            FontInfo info = new FontInfo(font, size, bold, italic, (effects == null || effects.isEmpty() ? 0 : effects.hashCode()));
-            if (fonts.containsKey(info.hashCode())) return new FontInstance(fonts.get(info.hashCode()), info.hashCode());
-            UnicodeFont unicodeFont = new UnicodeFont(new File(fontPath, font + ".ttf").getPath(), size, bold, italic);
-            unicodeFont.getEffects().add(new ColorEffect(java.awt.Color.WHITE));
-            if (effects != null && !effects.isEmpty())
-                unicodeFont.getEffects().addAll(effects);
-            unicodeFont.addAsciiGlyphs();
-            unicodeFont.loadGlyphs();
-            fonts.put(info.hashCode(), unicodeFont);
-            return new FontInstance(unicodeFont, info.hashCode());
-        } catch (SlickException ex) {
-            ex.printStackTrace();
-        }
-        return null;
+        FontInfo info = new FontInfo(font, size, bold, italic, effects);
+        return new FontInstance(getFont(info), info);
     }
     
     public FontInstance getFont(String font, int size, boolean bold, boolean italic) {
         return getFont(font, size, bold, italic, null);
     }
     
-    public UnicodeFont getFont(int identifier) {
-        if (fonts.containsKey(identifier)) return fonts.get(identifier);
-        return null;
+    public UnicodeFont getFont(FontInfo info) {
+        try {
+            if (fonts.containsKey(info)) return fonts.get(info);
+            UnicodeFont unicodeFont = new UnicodeFont(new File(fontPath, info.getFont() + ".ttf").getPath(), info.getSize(), info.isBold(), info.isItalic());
+            unicodeFont.getEffects().add(new ColorEffect(java.awt.Color.WHITE));
+            if (info.getEffects() != null && !info.getEffects().isEmpty())
+                unicodeFont.getEffects().addAll(info.getEffects());
+            unicodeFont.addAsciiGlyphs();
+            unicodeFont.loadGlyphs();
+            fonts.put(info, unicodeFont);
+            return unicodeFont;
+        } catch (SlickException ex) {
+            throw new RuntimeException(ex);
+        }
     }
     
-    public void unloadFont(int identifier) {
-        if (fonts.containsKey(identifier)) fonts.remove(identifier).destroy();
+    public void unloadFont(FontInfo info) {
+        if (fonts.containsKey(info)) fonts.remove(info).destroy();
     }
     
     public void cleanup() {
@@ -64,9 +63,9 @@ public class FontManager {
         private int size;
         private boolean bold;
         private boolean italic;
-        private int effects;
+        private List<Effect> effects;
 
-        public FontInfo(String font, int size, boolean bold, boolean italic, int effects) {
+        public FontInfo(String font, int size, boolean bold, boolean italic, List<Effect> effects) {
             this.font = font;
             this.size = size;
             this.bold = bold;
@@ -90,8 +89,19 @@ public class FontManager {
             return italic;
         }
 
-        public int getEffects() {
+        public List<Effect> getEffects() {
             return effects;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 47 * hash + Objects.hashCode(this.font);
+            hash = 47 * hash + this.size;
+            hash = 47 * hash + (this.bold ? 1 : 0);
+            hash = 47 * hash + (this.italic ? 1 : 0);
+            hash = 47 * hash + Objects.hashCode(this.effects);
+            return hash;
         }
 
         @Override
@@ -102,8 +112,8 @@ public class FontManager {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            final FontInfo other = (FontInfo) obj;
-            if ((this.font == null) ? (other.font != null) : !this.font.equals(other.font)) {
+            final FontInfo other = (FontInfo)obj;
+            if (!Objects.equals(this.font, other.font)) {
                 return false;
             }
             if (this.size != other.size) {
@@ -115,44 +125,36 @@ public class FontManager {
             if (this.italic != other.italic) {
                 return false;
             }
-            if (this.effects != other.effects) {
+            if (!Objects.equals(this.effects, other.effects)) {
                 return false;
             }
             return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 89 * hash + (this.font != null ? this.font.hashCode() : 0);
-            hash = 89 * hash + this.size;
-            hash = 89 * hash + (this.bold ? 1 : 0);
-            hash = 89 * hash + (this.italic ? 1 : 0);
-            hash = 89 * hash + this.effects;
-            return hash;
-        }
-
-        @Override
-        public String toString() {
-            return "FontInfo{" + "font=" + font + ", size=" + size + ", bold=" + bold + ", italic=" + italic + ", effects=" + effects + '}';
         }
     }
     
     public class FontInstance {
         private UnicodeFont unicodeFont;
-        private int identifier;
+        private FontInfo info;
 
-        public FontInstance(UnicodeFont unicodeFont, int identifier) {
+        public FontInstance(UnicodeFont unicodeFont, FontInfo info) {
             this.unicodeFont = unicodeFont;
-            this.identifier = identifier;
+            this.info = info;
         }
 
         public UnicodeFont getUnicodeFont() {
             return unicodeFont;
         }
         
-        public int getIdentifier() {
-            return identifier;
+        public FontInfo getInfo() {
+            return info;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 41 * hash + Objects.hashCode(this.unicodeFont);
+            hash = 41 * hash + Objects.hashCode(this.info);
+            return hash;
         }
 
         @Override
@@ -163,27 +165,14 @@ public class FontManager {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            final FontInstance other = (FontInstance) obj;
-            if (this.unicodeFont != other.unicodeFont && (this.unicodeFont == null || !this.unicodeFont.equals(other.unicodeFont))) {
+            final FontInstance other = (FontInstance)obj;
+            if (!Objects.equals(this.unicodeFont, other.unicodeFont)) {
                 return false;
             }
-            if (this.identifier != other.identifier) {
+            if (!Objects.equals(this.info, other.info)) {
                 return false;
             }
             return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 17 * hash + (this.unicodeFont != null ? this.unicodeFont.hashCode() : 0);
-            hash = 17 * hash + this.identifier;
-            return hash;
-        }
-
-        @Override
-        public String toString() {
-            return "FontInstance{" + "unicodeFont=" + unicodeFont + ", identifier=" + identifier + '}';
         }
     }
 }

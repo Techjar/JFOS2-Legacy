@@ -2,9 +2,7 @@ package com.techjar.jfos2.client;
 
 import static org.lwjgl.opengl.GL11.*;
 
-import com.techjar.jfos2.Util;
-import java.util.LinkedList;
-import java.util.Queue;
+import com.techjar.jfos2.util.Util;
 import java.util.Stack;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;
@@ -14,14 +12,13 @@ import org.newdawn.slick.geom.Rectangle;
  * @author Techjar
  */
 public final class RenderHelper {
-    private static Stack<Rectangle> prevScissor = new ScissorStack<Rectangle>();
+    private static Stack<Rectangle> prevScissor = new ScissorStack<>();
 
     public static void setGlColor(Color color) {
         glColor4ub(color.getRedByte(), color.getGreenByte(), color.getBlueByte(), color.getAlphaByte());
     }
 
     public static void drawSquare(float x, float y, float width, float height, Color color, boolean textured) {
-        glPushMatrix();
         if (!textured) glDisable(GL_TEXTURE_2D);
         glTranslatef(x, y, 0);
         if (color != null) {
@@ -29,13 +26,13 @@ public final class RenderHelper {
         }
         else glColor3f(1, 1, 1);
         glBegin(GL_QUADS);
-            if (textured) glTexCoord2f(0, 0); glVertex2f(0, 0);
-            if (textured) glTexCoord2f(1, 0); glVertex2f(width, 0);
-            if (textured) glTexCoord2f(1, 1); glVertex2f(width, height);
-            if (textured) glTexCoord2f(0, 1); glVertex2f(0, height);
+        if (textured) glTexCoord2f(0, 0); glVertex2f(0, 0);
+        if (textured) glTexCoord2f(1, 0); glVertex2f(width, 0);
+        if (textured) glTexCoord2f(1, 1); glVertex2f(width, height);
+        if (textured) glTexCoord2f(0, 1); glVertex2f(0, height);
         glEnd();
+        glTranslatef(-x, -y, 0);
         if (!textured) glEnable(GL_TEXTURE_2D);
-        glPopMatrix();
     }
     
     public static void drawSquare(float x, float y, float width, float height, boolean textured, Color color) {
@@ -68,7 +65,7 @@ public final class RenderHelper {
         }
         prevScissor.push(rect);
         glEnable(GL_SCISSOR_TEST);
-        glScissor((int)rect.getX(), Client.client.getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
+        glScissor((int)rect.getX(), Client.getInstance().getHeight() - (int)rect.getHeight() - (int)rect.getY(), (int)rect.getWidth(), (int)rect.getHeight());
     }
 
     public static void beginScissor(Rectangle rect) {
@@ -78,7 +75,7 @@ public final class RenderHelper {
     public static void endScissor() {
         if (prevScissor.pop() == null) return;
         Rectangle prev = prevScissor.peek();
-        if (prev != null) glScissor((int)prev.getX(), Client.client.getHeight() - (int)prev.getHeight() - (int)prev.getY(), (int)prev.getWidth(), (int)prev.getHeight());
+        if (prev != null) glScissor((int)prev.getX(), Client.getInstance().getHeight() - (int)prev.getHeight() - (int)prev.getY(), (int)prev.getWidth(), (int)prev.getHeight());
         else if (prevScissor.empty()) glDisable(GL_SCISSOR_TEST);
     }
 

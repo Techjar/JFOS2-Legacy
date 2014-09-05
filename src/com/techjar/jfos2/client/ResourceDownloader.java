@@ -4,7 +4,7 @@
  */
 package com.techjar.jfos2.client;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,8 +23,8 @@ import java.util.List;
  * @author Techjar
  */
 public class ResourceDownloader {
-    public static final URI url = URI.create("http://www.techjargaming.com/download/list.php?dir=jfos2");
-    public static final String urlPart = "http://www.techjargaming.com/download/jfos2/";
+    public static final URI url = URI.create("http://server.techjargaming.com/download/list.php?dir=jfos2");
+    public static final String urlPart = "http://server.techjargaming.com/download/jfos2/";
     private static volatile String status = "";
     private static volatile float progress;
     private static volatile boolean completed;
@@ -37,7 +37,7 @@ public class ResourceDownloader {
 
     public static void checkAndDownload() {
         try {
-            List<URI> downloads = new ArrayList<URI>();
+            List<URI> downloads = new ArrayList<>();
             System.out.println("Retrieving download list...");
             HttpURLConnection conn = (HttpURLConnection)url.toURL().openConnection();
             //conn.setRequestMethod("GET");

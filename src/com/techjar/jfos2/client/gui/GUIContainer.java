@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import org.lwjgl.input.Controller;
 import static org.lwjgl.opengl.GL11.*;
 
@@ -25,7 +25,7 @@ public abstract class GUIContainer extends GUI {
     protected List<GUI> components;
     
     public GUIContainer() {
-        components = new ArrayList<GUI>();
+        components = new ArrayList<>();
     }
     
     @Override
@@ -52,7 +52,7 @@ public abstract class GUIContainer extends GUI {
     @Override
     public void update() {
         GUIWindow lastWin = null, lastTopWin = null;
-        List<GUI> toAdd = new ArrayList<GUI>();
+        List<GUI> toAdd = new ArrayList<>();
         Iterator it = components.iterator();
         while (it.hasNext()) {
             GUI gui = (GUI)it.next();

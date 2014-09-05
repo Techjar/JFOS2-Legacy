@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
@@ -26,7 +26,7 @@ public class GUICheckBox extends GUI {
         this.color = color;
         this.guiBg = guiBg;
         this.guiBg.setParent(this);
-        this.checkmark = Client.client.getTextureManager().getTexture("ui/checkmark.png");
+        this.checkmark = Client.getInstance().getTextureManager().getTexture("ui/checkmark.png");
     }
 
     @Override
@@ -39,7 +39,7 @@ public class GUICheckBox extends GUI {
         if (Mouse.getEventButtonState()) {
             if (Mouse.getEventButton() == 0) {
                 if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
-                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
+                    Client.getInstance().getSoundManager().playEffect("ui/click.wav", false);
                     setChecked(!checked);
                     return false;
                 }
@@ -52,7 +52,7 @@ public class GUICheckBox extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
-                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

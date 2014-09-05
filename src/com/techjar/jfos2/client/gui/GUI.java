@@ -1,6 +1,7 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.client.Client;
+import java.util.ArrayList;
 import java.util.List;
 import org.lwjgl.input.Controller;
 import org.lwjgl.util.Dimension;
@@ -185,7 +186,7 @@ public abstract class GUI {
     }
     
     public boolean checkMouseIntersect(boolean checkParentContainerBox, boolean checkContainerBox, Shape... boxes) {
-        Shape mouseBox = Client.client.getMouseHitbox();
+        Shape mouseBox = Client.getInstance().getMouseHitbox();
         boolean intersect1 = true, intersect2 = true;
         if (checkContainerBox) {
             Shape cBox = getContainerBox();
@@ -234,7 +235,7 @@ public abstract class GUI {
 
     public List<GUI> getContainerList() {
         if (parent != null && parent instanceof GUIContainer) return ((GUIContainer)parent).getAllComponents();
-        return Client.client.getGUIList();
+        return new ArrayList<>();
     }
     
     public Rectangle getContainerBox() {

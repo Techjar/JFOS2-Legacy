@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public class GUITabbed extends GUI {
     protected Color color;
     protected GUIBackground guiBg;
     protected GUICallback changeHandler;
-    protected List<TabInfo> tabs = new ArrayList<TabInfo>();
+    protected List<TabInfo> tabs = new ArrayList<>();
     protected int selectedTab = -1;
 
     protected int hoveredTab = -1;
@@ -50,7 +50,7 @@ public class GUITabbed extends GUI {
                 for (int i = 0; i < boxes.length; i++) {
                     if (i == selectedTab) continue;
                     if (checkMouseIntersect(boxes[i])) {
-                        Client.client.getSoundManager().playEffect("ui/click.wav", false);
+                        Client.getInstance().getSoundManager().playEffect("ui/click.wav", false);
                         setSelectedTab(i);
                         break;
                     }
@@ -69,7 +69,7 @@ public class GUITabbed extends GUI {
         for (int i = 0; i < boxes.length; i++) {
             if (checkMouseIntersect(boxes[i])) {
                 if (i != hoveredTab) {
-                    if (i != selectedTab) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                    if (i != selectedTab) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                     hoveredTab = i;
                 }
                 tabIntersected = true;

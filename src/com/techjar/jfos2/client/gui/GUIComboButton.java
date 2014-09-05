@@ -1,7 +1,7 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.MathHelper;
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +18,7 @@ import org.newdawn.slick.UnicodeFont;
 public class GUIComboButton extends GUI {
     protected UnicodeFont font;
     protected Color color;
-    protected List<Object> items = new ArrayList<Object>();
+    protected List<Object> items = new ArrayList<>();
     protected GUICallback changeHandler;
 
     protected int selectedItem = -1;
@@ -38,7 +38,7 @@ public class GUIComboButton extends GUI {
         if (Mouse.getEventButtonState()) {
             if (checkMouseIntersect(getComponentBox())) {
                 if (Mouse.getEventButton() == 0) {
-                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
+                    Client.getInstance().getSoundManager().playEffect("ui/click.wav", false);
                     if (++selectedItem >= items.size()) selectedItem = 0;
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
@@ -46,7 +46,7 @@ public class GUIComboButton extends GUI {
                     }
                 }
                 else if (Mouse.getEventButton() == 1) {
-                    Client.client.getSoundManager().playEffect("ui/click.wav", false);
+                    Client.getInstance().getSoundManager().playEffect("ui/click.wav", false);
                     if (--selectedItem < 0) selectedItem = items.size() - 1;
                     if (changeHandler != null) {
                         changeHandler.setComponent(this);
@@ -62,7 +62,7 @@ public class GUIComboButton extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox())) {
-                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;

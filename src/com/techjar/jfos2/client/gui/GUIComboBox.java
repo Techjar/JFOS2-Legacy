@@ -3,7 +3,7 @@ package com.techjar.jfos2.client.gui;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.MathHelper;
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class GUIComboBox extends GUI {
     protected Color color;
     protected GUIBackground guiBg;
     protected GUIScrollBox scrollBox;
-    protected List<GUIComboItem> items = new ArrayList<GUIComboItem>();
+    protected List<GUIComboItem> items = new ArrayList<>();
     protected GUICallback changeHandler;
     protected int visibleItems = 5;
     
@@ -72,7 +72,7 @@ public class GUIComboBox extends GUI {
     public void update() {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox())) {
-                if (!opened && !hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!opened && !hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;
@@ -266,7 +266,7 @@ public class GUIComboBox extends GUI {
     }
 
     public List<Object> getAllItems() {
-        List<Object> list = new ArrayList<Object>(items.size());
+        List<Object> list = new ArrayList<>(items.size());
         for (GUIComboItem item : items) {
             list.add(item.getValue());
         }

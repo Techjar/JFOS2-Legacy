@@ -29,13 +29,13 @@ public class Server {
     protected String name;
     protected NetworkServer netServer;
     protected ConfigManager config;
-    protected List<Entity> entities = new ArrayList<Entity>();
+    protected List<Entity> entities = new ArrayList<>();
     protected TickCounter tick;
     protected boolean shutdownRequested;
 
     public Server(boolean singlePlayer) {
         this.singlePlayer = singlePlayer;
-        tick = new TickCounter(Constants.FRAME_RATE);
+        tick = new TickCounter(Constants.TICK_RATE);
     }
 
     public static void main(String[] args) {
@@ -50,7 +50,7 @@ public class Server {
     }
 
     public void run() {
-        Iterator it; final long tickTime = 1000000000 / Constants.FRAME_RATE;
+        Iterator it; final long tickTime = 1000000000 / Constants.TICK_RATE;
         while (!shutdownRequested) {
             long time = System.nanoTime();
             it = NetworkServer.pendingConn.iterator(); while(it.hasNext()) ((NetworkManager)it.next()).processPackets();

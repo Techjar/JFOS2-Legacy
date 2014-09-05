@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.lwjgl.opengl.GL11;
 import org.newdawn.slick.opengl.Texture;
-import org.newdawn.slick.opengl.TextureImpl;
 import org.newdawn.slick.opengl.TextureLoader;
 
 /**
@@ -21,22 +20,20 @@ public class TextureManager {
     
     public TextureManager() {
         texturePath = new File("resources/textures/");
-        cache = new HashMap<String, Texture>();
+        cache = new HashMap<>();
     }
     
     public Texture getTexture(String file, int filter) {
         try {
-            File file2 = new File(texturePath, file);
-            String path = file2.getAbsolutePath();
-            if (cache.containsKey(path)) return cache.get(path);
-            Texture tex = TextureLoader.getTexture(path.substring(path.indexOf('.') + 1).toUpperCase(), new FileInputStream(file2), filter);
-            cache.put(path, tex);
+            Texture cached = cache.get(file);
+            if (cached != null) return cached;
+            Texture tex = TextureLoader.getTexture(file.substring(file.indexOf('.') + 1).toUpperCase(), new FileInputStream(new File(texturePath, file)), filter);
+            cache.put(file, tex);
             return tex;
         }
         catch (IOException ex) {
-            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
-        return null;
     }
     
     public Texture getTexture(String file) {
@@ -44,9 +41,7 @@ public class TextureManager {
     }
     
     public void unloadTexture(String file) {
-        File file2 = new File(texturePath, file);
-        String path = file2.getAbsolutePath();
-        if (cache.containsKey(path)) cache.remove(path).release();
+        if (cache.containsKey(file)) cache.remove(file).release();
     }
     
     public void cleanup() {

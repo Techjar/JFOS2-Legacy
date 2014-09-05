@@ -20,8 +20,9 @@ public class Launcher {
             System.setProperty("net.java.games.input.librarypath", natives.getPath());
             
             Client.main(args);
+            //FBOTest.main(args);
         }
-        catch (Exception ex) {
+        catch (Throwable ex) {
             ex.printStackTrace();
             System.exit(0);
         }

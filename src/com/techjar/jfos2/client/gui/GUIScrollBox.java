@@ -1,7 +1,7 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.MathHelper;
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
@@ -47,7 +47,7 @@ public class GUIScrollBox extends GUIContainer {
                     Rectangle box = new Rectangle(getPosition().getX() + scrollbarOffset.getX() + 1, getPosition().getY() + dimension.getHeight() - 9, (int)((dimension.getWidth() - 2) * sizeFactor[0]) - (getScrollX() && getScrollY() ? 10 : 0), 8);
                     if (checkMouseIntersect(box)) {
                         scrolling = 1;
-                        mouseStart.set(Client.client.getMousePos());
+                        mouseStart.set(Client.getInstance().getMousePos());
                         scrollOffsetStart.set(scrollOffset);
                         scrollbarOffsetStart.set(getScrollbarOffset());
                         return false;
@@ -57,7 +57,7 @@ public class GUIScrollBox extends GUIContainer {
                     Rectangle box = new Rectangle(getPosition().getX() + dimension.getWidth() - 9, getPosition().getY() + scrollbarOffset.getY() + 1, 8, (int)((dimension.getHeight() - 2) * sizeFactor[1]) - (getScrollX() && getScrollY() ? 10 : 0));
                     if (checkMouseIntersect(box)) {
                         scrolling = 2;
-                        mouseStart.set(Client.client.getMousePos());
+                        mouseStart.set(Client.getInstance().getMousePos());
                         scrollOffsetStart.set(scrollOffset);
                         scrollbarOffsetStart.set(getScrollbarOffset());
                         return false;
@@ -80,7 +80,7 @@ public class GUIScrollBox extends GUIContainer {
     @Override
     public void update() {
         if (scrolling != 0) {
-            Vector2f mouseOffset = Vector2f.sub(Client.client.getMousePos(), mouseStart, null);
+            Vector2f mouseOffset = Vector2f.sub(Client.getInstance().getMousePos(), mouseStart, null);
             int[] maxScrollOffset = getMaxScrollOffset();
             int[] maxScrollbarOffset = getMaxScrollbarOffset();
             if (scrolling == 1 && maxScrollOffset[0] > 0) {

@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.Util;
+import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.util.List;
@@ -29,7 +29,7 @@ public class GUIRadioButton extends GUI {
         this.color = color;
         this.guiBg = guiBg;
         this.guiBg.setParent(this);
-        this.circle = Client.client.getTextureManager().getTexture("ui/circle.png");
+        this.circle = Client.getInstance().getTextureManager().getTexture("ui/circle.png");
     }
 
     @Override
@@ -43,7 +43,7 @@ public class GUIRadioButton extends GUI {
             if (Mouse.getEventButton() == 0) {
                 if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
                     if (!selected) {
-                        Client.client.getSoundManager().playEffect("ui/click.wav", false);
+                        Client.getInstance().getSoundManager().playEffect("ui/click.wav", false);
                         setSelected(true);
                     }
                     return false;
@@ -60,7 +60,7 @@ public class GUIRadioButton extends GUI {
         //circle2.setLocation(getPosition().getX() + (dimension.getWidth() / 2), getPosition().getY() + (dimension.getHeight() / 2));
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
-                if (!hovered) Client.client.getSoundManager().playEffect("ui/rollover.wav", false);
+                if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);
                 hovered = true;
             }
             else hovered = false;
@@ -80,9 +80,7 @@ public class GUIRadioButton extends GUI {
         }
         circle.bind();
         RenderHelper.drawSquare(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight(), hovered ? Util.addColors(guiBg.getBorderColor(), new Color(50, 50, 50)) : guiBg.getBorderColor(), true);
-        //RenderHelper.setGlColor(guiBg.getBackgroundColor());
         RenderHelper.drawSquare(getPosition().getX() + guiBg.getBorderSize(), getPosition().getY() + guiBg.getBorderSize(), dimension.getWidth() - (guiBg.getBorderSize() * 2), dimension.getHeight() - (guiBg.getBorderSize() * 2), guiBg.getBackgroundColor(), true);
-        //RenderHelper.setGlColor(color);
         if (selected) RenderHelper.drawSquare(getPosition().getX() + guiBg.getBorderSize() + 3, getPosition().getY() + guiBg.getBorderSize() + 3, dimension.getWidth() - (guiBg.getBorderSize() * 2) - 6, dimension.getHeight() - (guiBg.getBorderSize() * 2) - 6, color, true);
     }
 
