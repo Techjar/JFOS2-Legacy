@@ -1,11 +1,12 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.client.Client;
+import com.techjar.jfos2.client.gui.screen.Screen;
+import com.techjar.jfos2.util.Vector2;
 import java.util.ArrayList;
 import java.util.List;
 import org.lwjgl.input.Controller;
 import org.lwjgl.util.Dimension;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 
@@ -14,13 +15,14 @@ import org.newdawn.slick.geom.Shape;
  * @author Techjar
  */
 public abstract class GUI {
-    protected Vector2f position = new Vector2f();
+    protected Vector2 position = new Vector2();
     protected Dimension dimension = new Dimension();;
     protected GUICallback dimensionChangeHandler;
     protected GUICallback positionChangeHandler;
     protected GUICallback removeHandler;
     protected GUIAlignment parentAlign = GUIAlignment.TOP_LEFT;
     protected GUI parent;
+    protected Screen screen;
     protected boolean visible = true;
     protected boolean enabled = true;
     protected boolean removeRequested;
@@ -39,39 +41,39 @@ public abstract class GUI {
      * Returns the position of this component relative to it's parent.
      * For the non-relative position, use {@link #getRawPosition}.
      *
-     * @return The position of this component as a {@link Vector2f}
+     * @return The position of this component as a {@link Vector2}
      */
-    protected Vector2f getPosition() {
+    protected Vector2 getPosition() {
         if (parent != null) {
-            Vector2f parentPos = this instanceof GUIBackground || (this instanceof GUIButton && ((GUIButton)this).windowClose) ? parent.getPosition() : parent.getContainerPosition();
+            Vector2 parentPos = this instanceof GUIBackground || (this instanceof GUIButton && ((GUIButton)this).windowClose) ? parent.getPosition() : parent.getContainerPosition();
             Dimension parentDim = parent.getDimension();
             switch (parentAlign) {
                 case TOP_LEFT:
-                    return Vector2f.add(position, parentPos, null);
+                    return position.add(parentPos);
                 case TOP_RIGHT:
-                    return new Vector2f(position.x + parentPos.x + parentDim.getWidth() - dimension.getWidth(), position.y + parentPos.y);
+                    return new Vector2(position.getX() + parentPos.getX() + parentDim.getWidth() - dimension.getWidth(), position.getY() + parentPos.getY());
                 case BOTTOM_LEFT:
-                    return new Vector2f(position.x + parentPos.x, -position.y + parentPos.y + parentDim.getHeight() - dimension.getHeight());
+                    return new Vector2(position.getX() + parentPos.getX(), -position.getY() + parentPos.getY() + parentDim.getHeight() - dimension.getHeight());
                 case BOTTOM_RIGHT:
-                    return new Vector2f(position.x + parentPos.x + parentDim.getWidth() - dimension.getWidth(), position.y + parentPos.y + parentDim.getHeight() - dimension.getHeight());
+                    return new Vector2(position.getX() + parentPos.getX() + parentDim.getWidth() - dimension.getWidth(), position.getY() + parentPos.getY() + parentDim.getHeight() - dimension.getHeight());
                 case TOP_CENTER:
-                    return new Vector2f(position.x + parentPos.x + (parentDim.getWidth() / 2) - (dimension.getWidth() / 2), position.y + parentPos.y);
+                    return new Vector2(position.getX() + parentPos.getX() + (parentDim.getWidth() / 2) - (dimension.getWidth() / 2), position.getY() + parentPos.getY());
                 case BOTTOM_CENTER:
-                    return new Vector2f(position.x + parentPos.x + (parentDim.getWidth() / 2) - (dimension.getWidth() / 2), -position.y + parentPos.y + parentDim.getHeight() - dimension.getHeight());
+                    return new Vector2(position.getX() + parentPos.getX() + (parentDim.getWidth() / 2) - (dimension.getWidth() / 2), -position.getY() + parentPos.getY() + parentDim.getHeight() - dimension.getHeight());
                 case LEFT_CENTER:
-                    return new Vector2f(position.x + parentPos.x, position.y + parentPos.y + (parentDim.getHeight() / 2) - (dimension.getHeight() / 2));
+                    return new Vector2(position.getX() + parentPos.getX(), position.getY() + parentPos.getY() + (parentDim.getHeight() / 2) - (dimension.getHeight() / 2));
                 case RIGHT_CENTER:
-                    return new Vector2f(position.x + parentPos.x + parentDim.getWidth() - dimension.getWidth(), position.y + parentPos.y + (parentDim.getHeight() / 2) - (dimension.getHeight() / 2));
+                    return new Vector2(position.getX() + parentPos.getX() + parentDim.getWidth() - dimension.getWidth(), position.getY() + parentPos.getY() + (parentDim.getHeight() / 2) - (dimension.getHeight() / 2));
                 case CENTER:
-                    return new Vector2f(position.x + parentPos.x + (parentDim.getWidth() / 2) - (dimension.getWidth() / 2), position.y + parentPos.y + (parentDim.getHeight() / 2) - (dimension.getHeight() / 2));
+                    return new Vector2(position.getX() + parentPos.getX() + (parentDim.getWidth() / 2) - (dimension.getWidth() / 2), position.getY() + parentPos.getY() + (parentDim.getHeight() / 2) - (dimension.getHeight() / 2));
                 default:
                     throw new RuntimeException("Illegal value for parentAlign");
             }
         }
-        return new Vector2f(position);
+        return position.copy();
     }
     
-    public Vector2f getContainerPosition() {
+    public Vector2 getContainerPosition() {
         return getPosition();
     }
     
@@ -79,13 +81,13 @@ public abstract class GUI {
      * Returns the position of this component as set by {@link #setPosition}.
      * For the non-relative position, use {@link #getPosition}.
      * 
-     * @return The position of this component as a {@link Vector2f}
+     * @return The position of this component as a {@link Vector2}
      */
-    public Vector2f getRawPosition() {
-        return new Vector2f(position);
+    public Vector2 getRawPosition() {
+        return position.copy();
     }
     
-    public void setPosition(Vector2f position) {
+    public void setPosition(Vector2 position) {
         this.position.set(position);
         if (positionChangeHandler != null) {
             positionChangeHandler.setComponent(this);
@@ -94,7 +96,7 @@ public abstract class GUI {
     }
     
     public void setPosition(float x, float y) {
-        setPosition(new Vector2f(x, y));
+        setPosition(new Vector2(x, y));
     }
 
     public float getX() {
@@ -235,7 +237,7 @@ public abstract class GUI {
 
     public List<GUI> getContainerList() {
         if (parent != null && parent instanceof GUIContainer) return ((GUIContainer)parent).getAllComponents();
-        return new ArrayList<>();
+        return screen != null ? screen.getComponentList() : new ArrayList<GUI>();
     }
     
     public Rectangle getContainerBox() {
@@ -252,6 +254,14 @@ public abstract class GUI {
 
     public void setParent(GUI parent) {
         this.parent = parent;
+    }
+
+    public Screen getScreen() {
+        return screen;
+    }
+
+    public void setScreen(Screen screen) {
+        this.screen = screen;
     }
 
     public GUIAlignment getParentAlignment() {

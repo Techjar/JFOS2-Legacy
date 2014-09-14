@@ -3,13 +3,13 @@ package com.techjar.jfos2.client.gui;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
+import com.techjar.jfos2.util.Vector2;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
 
@@ -97,8 +97,8 @@ public class GUITabbed extends GUI {
     }
 
     @Override
-    public Vector2f getContainerPosition() {
-        return Vector2f.add(getPosition(), new Vector2f(0, 20), null);
+    public Vector2 getContainerPosition() {
+        return getPosition().add(new Vector2(0, 20));
     }
 
     public GUICallback getChangeHandler() {

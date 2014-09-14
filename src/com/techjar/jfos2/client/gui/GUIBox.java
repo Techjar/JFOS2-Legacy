@@ -1,7 +1,7 @@
 package com.techjar.jfos2.client.gui;
 
+import com.techjar.jfos2.util.Vector2;
 import org.lwjgl.util.Dimension;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
 
 /**
@@ -40,8 +40,8 @@ public class GUIBox extends GUIContainer {
     }
 
     @Override
-    public Vector2f getContainerPosition() {
-        if (guiBg != null) return Vector2f.add(getPosition(), new Vector2f(guiBg.getBorderSize(), guiBg.getBorderSize()), null);
+    public Vector2 getContainerPosition() {
+        if (guiBg != null) return getPosition().add(new Vector2(guiBg.getBorderSize(), guiBg.getBorderSize()));
         return super.getContainerPosition();
     }
 }

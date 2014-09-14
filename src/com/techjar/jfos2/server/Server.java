@@ -1,6 +1,6 @@
 package com.techjar.jfos2.server;
 
-import com.techjar.jfos2.ConfigManager;
+import com.techjar.jfos2.util.ConfigManager;
 import com.techjar.jfos2.Constants;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.entity.Entity;
@@ -81,7 +81,7 @@ public class Server {
 
         port = config.getInteger("socket.port");
         ip = config.getString("socket.ip").trim().isEmpty() ? null : InetAddress.getByName(config.getString("socket.ip"));
-        config.save();
+        if (config.hasChanged()) config.save();
     }
 
     public String getName() {

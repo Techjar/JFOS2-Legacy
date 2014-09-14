@@ -3,11 +3,12 @@ package com.techjar.jfos2.client;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.*;
 import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL32.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.EXTFramebufferObject.*;
 import static org.lwjgl.util.glu.GLU.*;
 
-import com.techjar.jfos2.ConfigManager;
+import com.techjar.jfos2.util.ConfigManager;
 import com.techjar.jfos2.Constants;
 import org.lwjgl.opengl.DisplayMode;
 import com.techjar.jfos2.OperatingSystem;
@@ -16,7 +17,10 @@ import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
 import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.entity.EntityShip;
+import com.techjar.jfos2.util.ArgumentParser;
+import com.techjar.jfos2.util.Asteroid;
 import com.techjar.jfos2.util.AsteroidGenerator;
+import com.techjar.jfos2.util.Vector2;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Dimension;
@@ -35,8 +39,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -55,7 +61,6 @@ import org.lwjgl.opengl.GLContext;
 import org.lwjgl.opengl.Pbuffer;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.Color;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.Image;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
@@ -67,7 +72,6 @@ import org.newdawn.slick.geom.ShapeRenderer;
 import org.newdawn.slick.geom.TexCoordGenerator;
 import org.newdawn.slick.geom.Transform;
 import org.newdawn.slick.opengl.Texture;
-import org.newdawn.slick.opengl.renderer.ImmediateModeOGLRenderer;
 
 /**
  *
@@ -84,6 +88,7 @@ public class Client {
     private TextureManager textureManager;
     private SoundManager soundManager;
     private DisplayMode displayMode;
+    private DisplayMode newDisplayMode;
     private boolean borderless;
     private boolean wasBorderless;
     private List<DisplayMode> displayModeList;
@@ -99,15 +104,16 @@ public class Client {
     private long timeLastFrame;
     private long timeSpentLastFrame;
     private boolean closeRequested;
-    private boolean arbSupported;
+    public final boolean antiAliasingSupported;
+    public final int antiAliasingMaxSamples;
+    private boolean antiAliasing;
+    private int antiAliasingSamples = 4;
     private boolean running = true;
-    private int arbMaxSamples;
     private boolean renderBackground;
     private List<String> validControllers = new ArrayList<>();
-    private List<Shape> testShapes = new ArrayList<>();
-    
-    private int tex;
-    private int fbo;
+    private Asteroid asteroid;
+    private Map<Vector2, Asteroid> asteroids = new HashMap<>();
+    private int multisampleFBO;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -120,7 +126,7 @@ public class Client {
     private UnicodeFont introFont;
     
     
-    public Client() {
+    public Client() throws LWJGLException {
         dataDir = OperatingSystem.getDataDirectory("jfos2");
         mouseHitbox = new Rectangle(0, 0, 1, 1);
         tick = new TickCounter(Constants.TICK_RATE);
@@ -128,6 +134,13 @@ public class Client {
         resizeHandlers = new ArrayList<>();
         preProcessors = new ArrayList<>();
         postProcessors = new ArrayList<>();
+        
+        PixelFormat format = new PixelFormat(32, 0, 24, 8, 0);
+        Pbuffer pb = new Pbuffer(800, 600, format, null);
+        pb.makeCurrent();
+        antiAliasingMaxSamples = glGetInteger(GL_MAX_SAMPLES);
+        antiAliasingSupported = antiAliasingMaxSamples > 0;
+        pb.destroy();
     }
     
     public static void main(String[] args) {
@@ -165,13 +178,6 @@ public class Client {
         initDisplayModes();
         initConfig();
         
-        PixelFormat format = new PixelFormat(displayMode.getBitsPerPixel(), 0, 24, 8, 0);
-        Pbuffer pb = new Pbuffer(640, 480, format, null);
-        pb.makeCurrent();
-        arbSupported = GLContext.getCapabilities().GL_ARB_multisample;
-        if(arbSupported) arbMaxSamples = glGetInteger(GL_MAX_SAMPLES);
-        pb.destroy();
-        
         makeFrame(borderless);
         Display.setDisplayMode(displayMode);
         Display.setVSyncEnabled(true);
@@ -193,7 +199,7 @@ public class Client {
         }
         if (validControllers.size() < 1) config.setProperty("controls.controller", "");
         else if (!validControllers.contains(config.getString("controls.controller"))) config.setProperty("controls.controller", validControllers.get(0));
-        config.save();
+        if (config.hasChanged()) config.save();
         
         Keyboard.create();
         Mouse.create();
@@ -366,19 +372,31 @@ public class Client {
         config.load();
         config.defaultProperty("display.width", displayMode.getWidth());
         config.defaultProperty("display.height", displayMode.getHeight());
+        config.defaultProperty("display.antialiasing", true);
+        config.defaultProperty("display.antialiasingsamples", 4);
         config.defaultProperty("display.borderless", false);
-        config.defaultProperty("sound.effectvolume", 1f);
-        config.defaultProperty("sound.musicvolume", 1f);
+        config.defaultProperty("sound.effectvolume", 1.0F);
+        config.defaultProperty("sound.musicvolume", 1.0F);
 
-        if (!setDisplayMode(config.getInteger("display.width"), config.getInteger("display.height"))) {
+        if (!internalSetDisplayMode(config.getInteger("display.width"), config.getInteger("display.height"))) {
             config.setProperty("display.width", displayMode.getWidth());
             config.setProperty("display.height", displayMode.getHeight());
         }
+        antiAliasing = config.getBoolean("display.antialiasing");
+        antiAliasingSamples = config.getInteger("display.antialiasingsamples");
         borderless = config.getBoolean("display.borderless");
         wasBorderless = borderless;
 
+        if (!antiAliasingSupported) {
+            antiAliasing = false;
+            config.setProperty("display.antialiasing", false);
+        } else if (antiAliasingSamples < 2 || antiAliasingSamples > antiAliasingMaxSamples || !Util.isPowerOfTwo(antiAliasingSamples)) {
+            antiAliasingSamples = 4;
+            config.setProperty("display.antialiasingsamples", 4);
+        }
+
         config.setProperty("version", Constants.VERSION);
-        config.save();
+        if (config.hasChanged()) config.save();
     }
 
     public DisplayMode findDisplayMode(int width, int height) {
@@ -394,6 +412,7 @@ public class Client {
         try {
             actuallyUseDisplayMode(displayMode, borderless);
             resizeGL(displayMode.getWidth(), displayMode.getHeight());
+            setupAntiAliasing();
             for (GUICallback callback : resizeHandlers) {
                 callback.run();
             }
@@ -409,13 +428,22 @@ public class Client {
     }
 
     public void setDisplayMode(DisplayMode displayMode) {
-        this.displayMode = displayMode;
+        this.newDisplayMode = displayMode;
     }
 
     public boolean setDisplayMode(int width, int height) {
         DisplayMode mode = findDisplayMode(width, height);
         if (mode != null) {
             setDisplayMode(mode);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean internalSetDisplayMode(int width, int height) {
+        DisplayMode mode = findDisplayMode(width, height);
+        if (mode != null) {
+            displayMode = mode;
             return true;
         }
         return false;
@@ -437,6 +465,25 @@ public class Client {
             makeFrame(borderless);
             oldFrame.dispose();
             wasBorderless = borderless;
+        }
+    }
+
+    private void setupAntiAliasing() {
+        if (multisampleFBO != 0) {
+            glDeleteFramebuffers(multisampleFBO);
+            multisampleFBO = 0;
+        }
+        if (antiAliasing) {
+            int tex = glGenTextures();
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, antiAliasingSamples, GL_RGBA8, displayMode.getWidth(), displayMode.getHeight(), false);
+            multisampleFBO = glGenFramebuffers();
+            glBindFramebuffer(GL_FRAMEBUFFER, multisampleFBO);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                throw new RuntimeException("anti-aliasing framebuffer is invalid");
+            }
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
 
@@ -515,10 +562,10 @@ public class Client {
                 drawBackground();
                 UnicodeFont theFont = fontManager.getFont("batmfa_", 50, false, false).getUnicodeFont();
                 int width = theFont.getWidth(ResourceDownloader.getStatus());
-                Vector2f fontCenter = getScreenCenter(width, 0);
+                Vector2 fontCenter = getScreenCenter(width, 0);
                 theFont.drawString(fontCenter.getX(), fontCenter.getY() - 60, ResourceDownloader.getStatus(), org.newdawn.slick.Color.white);
                 float barWidth = 600;
-                Vector2f barCenter = getScreenCenter((int)barWidth, 0);
+                Vector2 barCenter = getScreenCenter((int)barWidth, 0);
                 RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth, 30, new Color(50, 50, 50));
                 RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth * ResourceDownloader.getProgress(), 30, new Color(0, 100, 0));
             }
@@ -533,13 +580,13 @@ public class Client {
             if (titleTick.getTickMillis() < 5400) {
                 String str = "Techjar Presents";
                 int width = introFont.getWidth(str), height = introFont.getHeight(str);
-                Vector2f fontCenter = getScreenCenter(width, height);
+                Vector2 fontCenter = getScreenCenter(width, height);
                 introFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
             }
             if (titleTick.getTickMillis() > 6400 && titleTick.getTickMillis() < 10500) {
                 String str = "Yet another space shooter...";
                 int width = introFont.getWidth(str), height = introFont.getHeight(str);
-                Vector2f fontCenter = getScreenCenter(width, height);
+                Vector2 fontCenter = getScreenCenter(width, height);
                 introFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
             }
             if (titleTick.getTickMillis() > 11000 && titleTick.getTickMillis() < 12000) {
@@ -569,19 +616,8 @@ public class Client {
     private void init() {
         initGL();
         resizeGL(displayMode.getWidth(), displayMode.getHeight());
-
-        fbo = glGenFramebuffersEXT();
-        tex = glGenTextures();
-
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
-
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 512, 512, 0, GL_RGBA, GL_INT, (ByteBuffer)null);
-        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, tex, 0);
-
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        setupAntiAliasing();
+        //Asteroid.init(glGenFramebuffersEXT());
     }
 
     private void initGL() {
@@ -601,7 +637,7 @@ public class Client {
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Temp code for Reference
     }
 
-    private void resizeGL(int width, int height) {
+    public void resizeGL(int width, int height) {
         // 2D Scene
         glViewport(0, 0, width, height);
 
@@ -627,6 +663,7 @@ public class Client {
 
     private void processMouse() {
         toploop: while (Mouse.next()) {
+            if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && !asteroids.containsKey(getMousePos())) asteroids.put(getMousePos(), AsteroidGenerator.generate());
             for (Screen screen : screenList)
                 if (!screen.processMouseEvent()) continue toploop;
         }
@@ -649,7 +686,7 @@ public class Client {
     }
     
     private void render() {
-        long time = System.nanoTime();
+        if (antiAliasing) glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFBO);
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
         
@@ -658,89 +695,40 @@ public class Client {
         for (Screen screen : screenList)
             screen.render();
         if (!gameStarted) gameStartupStuff(); // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
+        long renderTime = 0;
+        if (!asteroids.isEmpty()) {
+            Random rand = new Random(100);
+            long time = System.nanoTime();
+            for (Map.Entry<Vector2, Asteroid> entry : asteroids.entrySet()) {
+                int x = rand.nextInt(displayMode.getWidth());
+                int y = rand.nextInt(displayMode.getHeight());
+                Vector2 vec = entry.getKey();
+                glTranslatef(vec.getX(), vec.getY(), 0);
+                glRotatef(tick.getTicks(), 0.0F, 0.0F, 1.0F);
+                entry.getValue().render();
+                glRotatef(tick.getTicks(), 0.0F, 0.0F, -1.0F);
+                glTranslatef(-vec.getX(), -vec.getY(), 0);
+            }
+            renderTime = System.nanoTime() - time;
+        }
         Runtime runtime = Runtime.getRuntime();
         fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 5, Long.toString(fpsRender), org.newdawn.slick.Color.yellow);
         fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 25, "Memory: " + Util.bytesToMBString(runtime.totalMemory() - runtime.freeMemory()) + " / " + Util.bytesToMBString(runtime.maxMemory()), org.newdawn.slick.Color.yellow);
-        /*long time = System.nanoTime();
-        for (int i = 0; i < 100000; i++) {
-            Shape shape = new Polygon(AsteroidGenerator.generate(50, 10, 10, 30));
-        }
-        System.out.println(System.nanoTime() - time);*/
-        if (tick.getTickMillis() % 500 == 0) {
-        //if (testShapes.isEmpty()) {
-            testShapes.clear();
-            Shape shape = new Polygon(AsteroidGenerator.generatePoints(130, 10, 5, 10, 30));
-            //shape.setCenterX(displayMode.getWidth() / 2);
-            //shape.setCenterY(displayMode.getHeight() / 2);
-            shape.setCenterX(256);
-            shape.setCenterY(256);
-            Shape shape2 = shape.transform(Transform.createScaleTransform((shape.getWidth() + 6) / shape.getWidth(), (shape.getHeight() + 6) / shape.getHeight()));
-            //shape2.setCenterX(displayMode.getWidth() / 2);
-            //shape2.setCenterY(displayMode.getHeight() / 2);
-            shape2.setCenterX(256);
-            shape2.setCenterY(256);
-            testShapes.add(shape2);
-            testShapes.add(shape);
-            testShapes.addAll(Arrays.asList(AsteroidGenerator.generateCraters(shape, 10, 5, 200)));
-            //System.out.println(shape2.getMinX() + " " + shape2.getMinY() + " " + shape2.getMaxX() + " " + shape2.getMaxY());
-
-            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
-            resizeGL(512, 512);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            
-            //glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glLoadIdentity();
-            
-            for (int i = 0; i < testShapes.size(); i++) {
-                Shape sh = testShapes.get(i);
-                if (i == 0) glColor3f(1, 0, 0);
-                if (i == 1) glColor3f(1, 1, 0);
-                if (i == 2) glColor3f(0, 1, 1);
-                //glColor3f(1, 1, 1);
-                //ShapeRenderer.fill(sh);
-                glEnable(GL_TEXTURE_2D);
-                final Texture texture = textureManager.getTexture("asteroid.png", GL_NEAREST);
-                texture.bind();
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Temp code for Reference
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Temp code for Reference
-                /*glBegin(GL_QUADS);
-                glTexCoord2f(0, 0); glVertex2f(0, 0);
-                glTexCoord2f(8, 0); glVertex2f(512, 0);
-                glTexCoord2f(8, 8); glVertex2f(512, 512);
-                glTexCoord2f(0, 8); glVertex2f(0, 512);
-                glEnd();*/
-                /*try {
-                    Field f = ShapeRenderer.class.getDeclaredField("GL");
-                    f.setAccessible(true);
-                Object obj = f.get(null);
-                if (obj instanceof ImmediateModeOGLRenderer) System.out.println("YAY");
-                else System.out.println("BOO");
-                }catch(Exception ex){ex.printStackTrace();}*/
-                //ShapeRenderer.texture(sh, textureManager.getImage("asteroid.png"));
-                /*ShapeRenderer.texture(sh, new Image(textureManager.getTexture("asteroid.png")), new TexCoordGenerator() {
-                    @Override
-                    public org.newdawn.slick.geom.Vector2f getCoordFor(float x, float y) {
-                        return new org.newdawn.slick.geom.Vector2f(x / (float)texture.getImageWidth(), y /  (float)texture.getImageHeight());
-                    }
-                });*/
-                ShapeRenderer.textureFit(sh, textureManager.getImage("asteroid.png"), sh.getWidth() / texture.getTextureWidth(), sh.getHeight() / texture.getTextureHeight());
-            }
-            //glBindTexture(GL_TEXTURE_2D, tex);
-            //ByteBuffer pixels = ByteBuffer.allocateDirect(4 * 4 * 4);
-            //glReadPixels(0, 0, (int)Math.ceil(shape2.getWidth()), (int)Math.ceil(shape2.getHeight()), GL_BGRA, GL_UNSIGNED_BYTE, pixels);
-            //glBlitFramebuffer(0, 0, 512, 512, 0, 0, 512, 512, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-            resizeGL(displayMode.getWidth(), displayMode.getHeight());
-        }
-        if (tex > 0) {
-            Shape shape = testShapes.get(0);
-            glBindTexture(GL_TEXTURE_2D, tex);
-            //Circle c = new Circle(0, 0, shape.getBoundingCircleRadius());
-            //System.out.println(shape.getMaxY() - shape.getMinY());
-            RenderHelper.drawSquare(100, 100, 512, 512, (Color)Color.WHITE, true);
-        }
+        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 45, "Render time: " + renderTime / 1000, org.newdawn.slick.Color.yellow);
+        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 65, "Asteroids: " + asteroids.size(), org.newdawn.slick.Color.yellow);
         //System.out.println(System.nanoTime() - time);
+        
+        if (antiAliasing) {
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleFBO);
+            glBlitFramebuffer(0, 0, displayMode.getWidth(), displayMode.getHeight(), 0, 0, displayMode.getWidth(), displayMode.getHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            System.out.println("blit buffer " + multisampleFBO);
+        }
+        
+        int error = glGetError();
+        if (error != GL_NO_ERROR) { // TODO: Better logger
+            System.out.println("GL ERROR: " + error);
+        }
     }
 
     private void postProcess() {
@@ -750,10 +738,12 @@ public class Client {
     }
     
     private void run() throws LWJGLException {
-        //Dimension newDim;
         while(!Display.isCloseRequested() && !closeRequested) {
-            //newDim = newCanvasSize.getAndSet(null);
-            //if (newDim != null) resizeGL(newDim.width, newDim.height);
+            if (newDisplayMode != null) {
+                displayMode = newDisplayMode;
+                useDisplayMode();
+                newDisplayMode = null;
+            }
 
             timeSpentLastFrame = System.nanoTime() - timeLastFrame;
             fps = (int)Math.round(1000000000D / (double)timeSpentLastFrame);
@@ -813,15 +803,15 @@ public class Client {
         return new Vector2f((float)canvas.getWidth() / (float)displayMode.getWidth(), (float)canvas.getHeight() / (float)displayMode.getHeight());
     }*/
 
-    public Vector2f getScreenCenter(org.lwjgl.util.Dimension dim) {
-        return new Vector2f((displayMode.getWidth() / 2f) - (dim.getWidth() / 2f), (displayMode.getHeight() / 2f) - (dim.getHeight() / 2f));
+    public Vector2 getScreenCenter(org.lwjgl.util.Dimension dim) {
+        return new Vector2((displayMode.getWidth() / 2f) - (dim.getWidth() / 2f), (displayMode.getHeight() / 2f) - (dim.getHeight() / 2f));
     }
 
-    public Vector2f getScreenCenter(int width, int height) {
+    public Vector2 getScreenCenter(int width, int height) {
         return getScreenCenter(new org.lwjgl.util.Dimension(width, height));
     }
 
-    public Vector2f getScreenCenter() {
+    public Vector2 getScreenCenter() {
         return getScreenCenter(new org.lwjgl.util.Dimension());
     }
 
@@ -845,8 +835,8 @@ public class Client {
         return (int)(displayMode.getHeight() - Mouse.getY());
     }
     
-    public Vector2f getMousePos() {
-        return new Vector2f(getMouseX(), getMouseY());
+    public Vector2 getMousePos() {
+        return new Vector2(getMouseX(), getMouseY());
     }
     
     public void setMouseX(int x) {
@@ -863,8 +853,8 @@ public class Client {
         Mouse.setCursorPosition(new_x, new_y);
     }
     
-    public void setMousePos(Vector2f pos) {
-        setMousePos((int)pos.x, (int)pos.y);
+    public void setMousePos(Vector2 pos) {
+        setMousePos((int)pos.getX(), (int)pos.getY());
     }
 
     public Shape getMouseHitbox() {
@@ -899,8 +889,8 @@ public class Client {
         screenList.remove(screen);
     }
 
-    public void removeScreen(int index) {
-        screenList.remove(index);
+    public Screen removeScreen(int index) {
+        return screenList.remove(index);
     }
 
     public void clearScreens() {
@@ -945,7 +935,7 @@ public class Client {
     
     private void shutdownInternal() {
         running = false;
-        config.save();
+        if (config.hasChanged()) config.save();
         soundManager.getSoundSystem().cleanup();
         textureManager.cleanup();
         fontManager.cleanup();

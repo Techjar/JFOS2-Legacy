@@ -13,7 +13,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import org.lwjgl.util.Color;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 
@@ -53,9 +52,9 @@ public abstract class GUIContainer extends GUI {
     public void update() {
         GUIWindow lastWin = null, lastTopWin = null;
         List<GUI> toAdd = new ArrayList<>();
-        Iterator it = components.iterator();
+        Iterator<GUI> it = components.iterator();
         while (it.hasNext()) {
-            GUI gui = (GUI)it.next();
+            GUI gui = it.next();
             if (gui.isRemoveRequested()) it.remove();
             else {
                 if (gui.isVisible() && gui.isEnabled()) {
@@ -126,14 +125,17 @@ public abstract class GUIContainer extends GUI {
         component.setParent(null);
     }
     
-    public void removeComponent(int index) {
-        removeComponent(components.get(index));
+    public GUI removeComponent(int index) {
+        GUI component = components.get(index);
+        if (component != null) removeComponent(component);
+        return component;
     }
     
     public void removeAllComponents() {
         Iterator it = components.iterator();
         while (it.hasNext()) {
             GUI gui = (GUI)it.next();
+            gui.remove();
             gui.setParent(null);
             it.remove();
         }

@@ -2,29 +2,15 @@ package com.techjar.jfos2.client;
 
 import static org.lwjgl.opengl.GL11.*;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.lwjgl.BufferUtils;
 import org.newdawn.slick.Image;
-import org.newdawn.slick.SlickException;
-import org.newdawn.slick.opengl.ImageDataFactory;
-import static org.newdawn.slick.opengl.InternalTextureLoader.createTextureID;
-import static org.newdawn.slick.opengl.InternalTextureLoader.get2Fold;
-import org.newdawn.slick.opengl.LoadableImageData;
 import org.newdawn.slick.opengl.Texture;
-import org.newdawn.slick.opengl.TextureImpl;
 import org.newdawn.slick.opengl.TextureLoader;
-import org.newdawn.slick.opengl.renderer.SGL;
 
 /**
  *

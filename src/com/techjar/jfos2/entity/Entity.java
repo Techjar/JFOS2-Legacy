@@ -4,11 +4,11 @@
  */
 package com.techjar.jfos2.entity;
 
+import com.techjar.jfos2.util.Vector2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import org.lwjgl.input.Controller;
-import org.lwjgl.util.vector.Vector2f;
 
 /**
  *
@@ -17,7 +17,7 @@ import org.lwjgl.util.vector.Vector2f;
 public abstract class Entity {
     protected static int nextId;
     protected int id;
-    protected Vector2f position = new Vector2f();
+    protected Vector2 position = new Vector2();
     protected float angle;
 
     public Entity() {
@@ -69,16 +69,16 @@ public abstract class Entity {
         return id;
     }
 
-    public Vector2f getPosition() {
-        return new Vector2f(position);
+    public Vector2 getPosition() {
+        return position.copy();
     }
 
-    public void setPosition(Vector2f position) {
+    public void setPosition(Vector2 position) {
         this.position.set(position);
     }
 
     public void setPosition(float x, float y) {
-        setPosition(new Vector2f(x, y));
+        setPosition(new Vector2(x, y));
     }
 
     public float getX() {

@@ -12,6 +12,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Rectangle;
+import org.newdawn.slick.geom.Vector2f;
 
 /**
  *
@@ -36,12 +37,12 @@ public final class Util {
         return new org.lwjgl.util.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
     }
 
-    public static org.newdawn.slick.geom.Vector2f convertVector2f(org.lwjgl.util.vector.Vector2f vector) {
-        return new org.newdawn.slick.geom.Vector2f(vector.getX(), vector.getY());
+    public static Vector2f convertVector2(Vector2 vector) {
+        return new Vector2f(vector.getX(), vector.getY());
     }
 
-    public static org.lwjgl.util.vector.Vector2f convertVector2f(org.newdawn.slick.geom.Vector2f vector) {
-        return new org.lwjgl.util.vector.Vector2f(vector.getX(), vector.getY());
+    public static Vector2 convertVector2f(Vector2f vector) {
+        return new Vector2(vector.getX(), vector.getY());
     }
     
     public static org.lwjgl.util.Color addColors(org.lwjgl.util.Color color1, org.lwjgl.util.Color color2) {
@@ -50,6 +51,10 @@ public final class Util {
 
     public static org.lwjgl.util.Color subtractColors(org.lwjgl.util.Color color1, org.lwjgl.util.Color color2) {
         return new org.lwjgl.util.Color(MathHelper.clamp(color1.getRed() - color2.getRed(), 0, 255), MathHelper.clamp(color1.getGreen() - color2.getGreen(), 0, 255), MathHelper.clamp(color1.getBlue() - color2.getBlue(), 0, 255));
+    }
+
+    public static boolean isPowerOfTwo(int num) {
+        return (num != 0) && (num & (num - 1)) == 0;
     }
 
     public static float getAxisValue(Controller con, String name) {

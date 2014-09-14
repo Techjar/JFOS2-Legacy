@@ -5,9 +5,9 @@ import com.techjar.jfos2.util.Util;
 
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
+import com.techjar.jfos2.util.Vector2;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
 
 /**
@@ -21,10 +21,10 @@ public class GUIScrollBox extends GUIContainer {
     protected int scrollXIncrement;
     protected int scrollYIncrement;
     
-    protected Vector2f scrollOffset = new Vector2f();
-    protected Vector2f scrollOffsetStart = new Vector2f();
-    protected Vector2f scrollbarOffsetStart = new Vector2f();
-    protected Vector2f mouseStart = new Vector2f();
+    protected Vector2 scrollOffset = new Vector2();
+    protected Vector2 scrollOffsetStart = new Vector2();
+    protected Vector2 scrollbarOffsetStart = new Vector2();
+    protected Vector2 mouseStart = new Vector2();
     protected int scrolling;
 
     public GUIScrollBox(Color color) {
@@ -41,7 +41,7 @@ public class GUIScrollBox extends GUIContainer {
         if (!super.processMouseEvent()) return false;
         if (Mouse.getEventButton() == 0) {
             if (Mouse.getEventButtonState()) {
-                Vector2f scrollbarOffset = getScrollbarOffset();
+                Vector2 scrollbarOffset = getScrollbarOffset();
                 float[] sizeFactor = getScrollbarSizeFactor();
                 if (getScrollX()) {
                     Rectangle box = new Rectangle(getPosition().getX() + scrollbarOffset.getX() + 1, getPosition().getY() + dimension.getHeight() - 9, (int)((dimension.getWidth() - 2) * sizeFactor[0]) - (getScrollX() && getScrollY() ? 10 : 0), 8);
@@ -80,7 +80,7 @@ public class GUIScrollBox extends GUIContainer {
     @Override
     public void update() {
         if (scrolling != 0) {
-            Vector2f mouseOffset = Vector2f.sub(Client.getInstance().getMousePos(), mouseStart, null);
+            Vector2 mouseOffset = Client.getInstance().getMousePos().subtract(mouseStart);
             int[] maxScrollOffset = getMaxScrollOffset();
             int[] maxScrollbarOffset = getMaxScrollbarOffset();
             if (scrolling == 1 && maxScrollOffset[0] > 0) {
@@ -99,7 +99,7 @@ public class GUIScrollBox extends GUIContainer {
 
     @Override
     public void render() {
-        Vector2f scrollbarOffset = getScrollbarOffset();
+        Vector2 scrollbarOffset = getScrollbarOffset();
         float[] sizeFactor = getScrollbarSizeFactor();
         if (getScrollX()) {
             Color color2 = new Color(color);
@@ -124,8 +124,8 @@ public class GUIScrollBox extends GUIContainer {
     }
 
     @Override
-    public Vector2f getContainerPosition() {
-        return Vector2f.sub(getPosition(), scrollOffset, null);
+    public Vector2 getContainerPosition() {
+        return getPosition().subtract(scrollOffset);
     }
 
     @Override
@@ -185,33 +185,33 @@ public class GUIScrollBox extends GUIContainer {
         this.scrollYIncrement = scrollYIncrement;
     }
 
-    public Vector2f getScrollOffset() {
-        return new Vector2f(scrollOffset);
+    public Vector2 getScrollOffset() {
+        return scrollOffset.copy();
     }
 
-    public void setScrollOffset(Vector2f offset) {
+    public void setScrollOffset(Vector2 offset) {
         int[] maxOffset = getMaxScrollOffset();
-        this.scrollOffset = new Vector2f(MathHelper.clamp(offset.getX(), 0, maxOffset[0]), MathHelper.clamp(offset.getY(), 0, maxOffset[1]));
+        this.scrollOffset = new Vector2(MathHelper.clamp(offset.getX(), 0, maxOffset[0]), MathHelper.clamp(offset.getY(), 0, maxOffset[1]));
     }
 
     public void setScrollOffset(int x, int y) {
-        setScrollOffset(new Vector2f(x, y));
+        setScrollOffset(new Vector2(x, y));
     }
     
-    public Vector2f getScrollbarOffset() {
+    public Vector2 getScrollbarOffset() {
         int[] maxOffset = getMaxScrollOffset();
         int[] maxBarOffset = getMaxScrollbarOffset();
-        return new Vector2f((maxOffset[0] == 0 ? 0 : maxBarOffset[0] * (scrollOffset.getX() / (float)maxOffset[0])), (maxOffset[1] == 0 ? 0 : maxBarOffset[1] * (scrollOffset.getY() / (float)maxOffset[1])));
+        return new Vector2((maxOffset[0] == 0 ? 0 : maxBarOffset[0] * (scrollOffset.getX() / (float)maxOffset[0])), (maxOffset[1] == 0 ? 0 : maxBarOffset[1] * (scrollOffset.getY() / (float)maxOffset[1])));
     }
     
     public int[] getMaxScrollOffset() {
         int[] maxOffset = new int[2];
         GUI bottom = getBottomComponent(), right = getRightComponent();
         if (getScrollY(false) && bottom != null) {
-            maxOffset[1] = (int)MathHelper.clamp(bottom.getRawPosition().y + bottom.getDimension().getHeight() - dimension.getHeight() + (getScrollX(false) ? 10 : 0), 0, Integer.MAX_VALUE);
+            maxOffset[1] = (int)MathHelper.clamp(bottom.getRawPosition().getY() + bottom.getDimension().getHeight() - dimension.getHeight() + (getScrollX(false) ? 10 : 0), 0, Integer.MAX_VALUE);
         }
         if (getScrollX(false) && right != null) {
-            maxOffset[0] = (int)MathHelper.clamp(bottom.getRawPosition().x + bottom.getDimension().getWidth() - dimension.getWidth() + (getScrollY(false) ? 10 : 0), 0, Integer.MAX_VALUE);
+            maxOffset[0] = (int)MathHelper.clamp(bottom.getRawPosition().getX() + bottom.getDimension().getWidth() - dimension.getWidth() + (getScrollY(false) ? 10 : 0), 0, Integer.MAX_VALUE);
         }
         return maxOffset;
     }
@@ -228,11 +228,11 @@ public class GUIScrollBox extends GUIContainer {
         float[] size = new float[]{1, 1};
         GUI bottom = getBottomComponent(), right = getRightComponent();
         if (getScrollY(false) && bottom != null) {
-            float compPos = bottom.getRawPosition().y + bottom.getDimension().getHeight();
+            float compPos = bottom.getRawPosition().getY() + bottom.getDimension().getHeight();
             if (compPos > 0 && compPos >= dimension.getHeight() - (getScrollX(false) ? 10 : 0)) size[1] = (float)(dimension.getHeight() - (getScrollX(false) ? 10 : 0)) / compPos;
         }
         if (getScrollX(false) && right != null) {
-            float compPos = right.getRawPosition().x + right.getDimension().getWidth();
+            float compPos = right.getRawPosition().getX() + right.getDimension().getWidth();
             if (compPos > 0 && compPos >= dimension.getWidth() - (getScrollY(false) ? 10 : 0)) size[0] = (float)(dimension.getWidth() - (getScrollY(false) ? 10 : 0)) / compPos;
         }
         return size;
@@ -249,7 +249,7 @@ public class GUIScrollBox extends GUIContainer {
         GUI bottom = null;
         for (GUI gui : components) {
             if (bottom == null) bottom = gui;
-            else if (gui.getRawPosition().y > bottom.getRawPosition().y) bottom = gui;
+            else if (gui.getRawPosition().getY() > bottom.getRawPosition().getY()) bottom = gui;
         }
         return bottom;
     }
@@ -258,7 +258,7 @@ public class GUIScrollBox extends GUIContainer {
         GUI right = null;
         for (GUI gui : components) {
             if (right == null) right = gui;
-            else if (gui.getRawPosition().x > right.getRawPosition().x) right = gui;
+            else if (gui.getRawPosition().getX() > right.getRawPosition().getX()) right = gui;
         }
         return right;
     }

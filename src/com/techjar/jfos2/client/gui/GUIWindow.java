@@ -4,11 +4,11 @@ import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
+import com.techjar.jfos2.util.Vector2;
 import java.awt.Cursor;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
-import org.lwjgl.util.vector.Vector2f;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 
@@ -25,7 +25,7 @@ public class GUIWindow extends GUIContainer {
     protected boolean canResize = true;
     protected boolean onTop;
     
-    protected Vector2f mouseLast;
+    protected Vector2 mouseLast;
     protected Cursor currentCursor;
     protected boolean dragging;
     protected boolean startResize;
@@ -46,7 +46,6 @@ public class GUIWindow extends GUIContainer {
             @Override
             public void run() {
                 Object[] args = this.getArgs();
-                if (args.length < 1 || !(args[0] instanceof GUIWindow)) return;
                 GUIWindow window = (GUIWindow)args[0];
                 window.remove();
             }
@@ -123,8 +122,8 @@ public class GUIWindow extends GUIContainer {
         }
         if (canResize && !Client.getInstance().getMousePos().equals(mouseLast)) {
             if (isResizing()) {
-                Vector2f mouseDiff = Vector2f.sub(Client.getInstance().getMousePos(), mouseLast, null);
-                Vector2f newPos = new Vector2f(position);
+                Vector2 mouseDiff = Client.getInstance().getMousePos().subtract(mouseLast);
+                Vector2 newPos = position.copy();
                 Dimension newDim = new Dimension(dimension);
                 if (resizeX == 1) {
                     newDim.setWidth(dimension.getWidth() + (int)mouseDiff.getX());
@@ -192,7 +191,7 @@ public class GUIWindow extends GUIContainer {
             if (checkMouseIntersect(getComponentBox())) Client.getInstance().getFrame().setCursor(currentCursor);
         }
         if (dragging) {
-            setPosition(Vector2f.add(position, Vector2f.sub(Client.getInstance().getMousePos(), mouseLast, null), null));
+            setPosition(position.add(Client.getInstance().getMousePos().subtract(mouseLast)));
         }
         if (mouseLockX && !mouseLockY) mouseLast.setY(Client.getInstance().getMouseY());
         else if (!mouseLockX && mouseLockY) mouseLast.setX(Client.getInstance().getMouseX());
@@ -220,8 +219,8 @@ public class GUIWindow extends GUIContainer {
     }
 
     @Override
-    public Vector2f getContainerPosition() {
-        return Vector2f.add(getPosition(), new Vector2f(guiBg.getBorderSize(), 20), null);
+    public Vector2 getContainerPosition() {
+        return getPosition().add(new Vector2(guiBg.getBorderSize(), 20));
     }
 
     protected boolean checkMouseButtons() {

@@ -1,4 +1,4 @@
-package com.techjar.jfos2;
+package com.techjar.jfos2.util;
 
 import java.io.File;
 import java.io.FileReader;
@@ -22,6 +22,7 @@ public class ConfigManager {
     private boolean autoSave;
     private final Yaml yaml;
     private Map<String, Object> config;
+    private boolean changed;
     
     
     /**
@@ -71,6 +72,14 @@ public class ConfigManager {
      */
     public boolean fileExists() {
         return file != null && file.exists();
+    }
+
+    /**
+     * Returns whether the data has changed.
+     * @return <tt>true</tt> if the data has changed.
+     */
+    public boolean hasChanged() {
+        return changed;
     }
     
     /**
@@ -231,6 +240,7 @@ public class ConfigManager {
             }
             curmap = (Map)curmap.get(subkey);
         }
+        changed = true;
         return curmap.put(key, value);
     }
 
@@ -248,6 +258,7 @@ public class ConfigManager {
             }
             curmap = (Map)curmap.get(subkey);
         }
+        changed = true;
         return curmap.remove(key);
     }
 
@@ -295,7 +306,9 @@ public class ConfigManager {
         try {
             FileWriter fw = new FileWriter(file);
             yaml.dump(config, fw);
+            fw.flush();
             fw.close();
+            changed = false;
         } catch (IOException ex) {
             ex.printStackTrace();
         }

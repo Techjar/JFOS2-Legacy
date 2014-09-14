@@ -5,29 +5,36 @@ package com.techjar.jfos2.util;
  * @author Techjar
  */
 public class ArgumentParser {
-    
+    public static void parse(String[] args, Argument... objects) {
+        for (int i = 0; i < args.length; i++) {
+            for (Argument obj : objects) {
+                if (obj.getName().equals(args[i].toLowerCase())) {
+                    if (obj.getHasParameter()) {
+                        obj.runAction(args[++i].toLowerCase());
+                    } else obj.runAction(null);
+                    break;
+                }
+            }
+        }
+    }
 
-    public static class Argument {
-        private String argument;
+    public static abstract class Argument {
+        private String name;
         private boolean hasParameter;
-        private Runnable action;
 
-        public Argument(String argument, boolean hasParameter, Runnable action) {
-            this.argument = argument;
+        public Argument(String name, boolean hasParameter) {
+            this.name = name.toLowerCase();
             this.hasParameter = hasParameter;
-            this.action = action;
         }
 
-        public String getArgument() {
-            return argument;
+        public String getName() {
+            return name;
         }
 
-        public boolean hasParameter() {
+        public boolean getHasParameter() {
             return hasParameter;
         }
 
-        public void runAction() {
-            action.run();
-        }
+        public abstract void runAction(String paramater);
     }
 }
