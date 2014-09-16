@@ -9,24 +9,25 @@ import static org.lwjgl.opengl.EXTFramebufferObject.*;
 import static org.lwjgl.util.glu.GLU.*;
 
 import com.techjar.jfos2.util.ConfigManager;
-import com.techjar.jfos2.Constants;
+import com.techjar.jfos2.util.Constants;
 import org.lwjgl.opengl.DisplayMode;
-import com.techjar.jfos2.OperatingSystem;
+import com.techjar.jfos2.util.OperatingSystem;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
-import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.entity.EntityShip;
 import com.techjar.jfos2.util.ArgumentParser;
 import com.techjar.jfos2.util.Asteroid;
 import com.techjar.jfos2.util.AsteroidGenerator;
+import com.techjar.jfos2.util.GLErrorMap;
 import com.techjar.jfos2.util.Vector2;
+import com.techjar.jfos2.util.logging.LogHelper;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -48,6 +49,7 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.swing.JFrame;
 import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
@@ -65,6 +67,7 @@ import org.newdawn.slick.Image;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Circle;
+import org.newdawn.slick.geom.Line;
 import org.newdawn.slick.geom.Polygon;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
@@ -80,7 +83,7 @@ import org.newdawn.slick.opengl.Texture;
 public class Client {
     private static Client instance;
     private final File dataDir;
-    private Frame frame;
+    private JFrame frame;
     private Canvas canvas;
     private Rectangle mouseHitbox;
     private ConfigManager config;
@@ -89,20 +92,22 @@ public class Client {
     private SoundManager soundManager;
     private DisplayMode displayMode;
     private DisplayMode newDisplayMode;
-    private boolean borderless;
-    private boolean wasBorderless;
+    private DisplayMode configDisplayMode;
+    private boolean fullscreen;
+    private boolean newFullscreen;
     private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
     private TickCounter tick;
-    private List<Screen> screenList;
+    private List<GUIContainer> guiList;
     private List<GUICallback> resizeHandlers;
     private List<Runnable> preProcessors;
     private List<Runnable> postProcessors;
+    private int multisampleFBO;
     //private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
     private int fps;
     private int fpsRender;
-    private long timeLastFrame;
-    private long timeSpentLastFrame;
+    private long timeCounter;
+    private long deltaTime;
     private boolean closeRequested;
     public final boolean antiAliasingSupported;
     public final int antiAliasingMaxSamples;
@@ -111,9 +116,8 @@ public class Client {
     private boolean running = true;
     private boolean renderBackground;
     private List<String> validControllers = new ArrayList<>();
-    private Asteroid asteroid;
+    //private List<Asteroid> asteroids = new ArrayList<>();
     private Map<Vector2, Asteroid> asteroids = new HashMap<>();
-    private int multisampleFBO;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -127,10 +131,12 @@ public class Client {
     
     
     public Client() throws LWJGLException {
+        System.setProperty("sun.java2d.noddraw", "true");
+        LogHelper.init();
         dataDir = OperatingSystem.getDataDirectory("jfos2");
         mouseHitbox = new Rectangle(0, 0, 1, 1);
         tick = new TickCounter(Constants.TICK_RATE);
-        screenList = new ArrayList<>();
+        guiList = new ArrayList<>();
         resizeHandlers = new ArrayList<>();
         preProcessors = new ArrayList<>();
         postProcessors = new ArrayList<>();
@@ -143,30 +149,31 @@ public class Client {
         pb.destroy();
     }
     
-    public static void main(String[] args) {
-        if (getInstance() != null) throw new IllegalStateException("Client already running!");
-        try {
-            instance = new Client();
-            for (String arg : args) {
-                switch (arg) {
-                    case "--offline":
-                        instance.offline = true;
-                        break;
-                    default:
-                        System.out.println("Unknown argument: " + arg);
-                        break;
+    public static void main(final String[] args) {
+        if (instance != null) throw new IllegalStateException("Client already running!");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    instance = new Client();
+                    ArgumentParser.parse(args, new ArgumentParser.Argument("--offline", false) {
+                        @Override
+                        public void runAction(String paramater) {
+                            instance.offline = true;
+                        }
+                    });
+                    instance.start();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    try {
+                        crashException(ex);
+                    }
+                    catch (Exception ex2) {
+                        System.exit(0); // Everything broke, bail!
+                    }
                 }
             }
-            getInstance().start();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            try {
-                crashException(ex);
-            }
-            catch (Exception ex2) {
-                System.exit(0); // Everything broke, bail!
-            }
-        }
+        }, "Client Thread").start();
     }
 
     public static Client getInstance() {
@@ -178,12 +185,13 @@ public class Client {
         initDisplayModes();
         initConfig();
         
-        makeFrame(borderless);
         Display.setDisplayMode(displayMode);
         Display.setVSyncEnabled(true);
 
-        textureManager = new TextureManager();
         Display.create();
+        makeFrame();
+
+        textureManager = new TextureManager();
         init();
         drawSplash();
         Display.update();
@@ -295,12 +303,12 @@ public class Client {
         System.exit(0);
     }
 
-    private void makeFrame(boolean undecorated) throws LWJGLException {
-        frame = new Frame(Constants.GAME_TITLE);
+    private void makeFrame() throws LWJGLException {
+        if (frame != null) frame.dispose();
+        frame = new JFrame(Constants.GAME_TITLE);
         frame.setLayout(new BorderLayout());
         frame.setResizable(false);
         frame.setAlwaysOnTop(false);
-        frame.setUndecorated(undecorated);
         canvas = new Canvas();
 
         /*canvas.addComponentListener(new ComponentAdapter() {
@@ -325,29 +333,39 @@ public class Client {
         });
 
         frame.add(canvas, BorderLayout.CENTER);
+        resizeFrame(false);
+    }
 
-        canvas.setPreferredSize(new Dimension(displayMode.getWidth(), displayMode.getHeight()));
+    private void resizeFrame(boolean fullscreen) throws LWJGLException {
+        Display.setParent(null);
+        frame.dispose();
+        frame.setUndecorated(fullscreen);
+        if (fullscreen) GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().setFullScreenWindow(frame);
+        else GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().setFullScreenWindow(null);
+        //frame.setPreferredSize(new java.awt.Dimension(displayMode.getWidth(), displayMode.getHeight()));
+        canvas.setPreferredSize(new java.awt.Dimension(displayMode.getWidth(), displayMode.getHeight()));
         frame.pack();
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        java.awt.Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setLocation((dim.width - frame.getSize().width) / 2, (dim.height - frame.getSize().height) / 2);
         frame.setVisible(true);
         Display.setParent(canvas);
+        System.out.println("resized " + fullscreen);
     }
 
     public static void crashException(Throwable ex) {
         ex.printStackTrace();
-        if (getInstance() != null) {
+        if (instance != null) {
             try {
-                if (getInstance().frame != null) {
-                    getInstance().frame.setResizable(false);
-                    getInstance().frame.setSize(new Dimension(getInstance().displayMode.getWidth(), getInstance().displayMode.getHeight()));
+                if (instance.frame != null) {
+                    instance.frame.setResizable(false);
+                    instance.frame.setSize(new java.awt.Dimension(instance.displayMode.getWidth(), instance.displayMode.getHeight()));
                     // todo
-                    while (!getInstance().closeRequested) {
+                    while (!instance.closeRequested) {
                         try { Thread.sleep(100); }
                         catch (InterruptedException junk) { }
                     }
                 }
-                getInstance().shutdownInternal();
+                instance.shutdownInternal();
             } catch (Throwable ex2) {
                 ex2.printStackTrace();
                 System.exit(0);
@@ -374,7 +392,7 @@ public class Client {
         config.defaultProperty("display.height", displayMode.getHeight());
         config.defaultProperty("display.antialiasing", true);
         config.defaultProperty("display.antialiasingsamples", 4);
-        config.defaultProperty("display.borderless", false);
+        //config.defaultProperty("display.fullscreen", false);
         config.defaultProperty("sound.effectvolume", 1.0F);
         config.defaultProperty("sound.musicvolume", 1.0F);
 
@@ -384,8 +402,7 @@ public class Client {
         }
         antiAliasing = config.getBoolean("display.antialiasing");
         antiAliasingSamples = config.getInteger("display.antialiasingsamples");
-        borderless = config.getBoolean("display.borderless");
-        wasBorderless = borderless;
+        //fullscreen = config.getBoolean("display.fullscreen");
 
         if (!antiAliasingSupported) {
             antiAliasing = false;
@@ -410,7 +427,12 @@ public class Client {
 
     public void useDisplayMode() {
         try {
-            actuallyUseDisplayMode(displayMode, borderless);
+            DisplayMode desktopMode = Display.getDesktopDisplayMode();
+            if (fullscreen) {
+                if (!desktopMode.equals(displayMode)) displayMode = desktopMode;
+            } else displayMode = configDisplayMode;
+            resizeFrame(fullscreen);
+            Display.setDisplayMode(displayMode);
             resizeGL(displayMode.getWidth(), displayMode.getHeight());
             setupAntiAliasing();
             for (GUICallback callback : resizeHandlers) {
@@ -444,28 +466,18 @@ public class Client {
         DisplayMode mode = findDisplayMode(width, height);
         if (mode != null) {
             displayMode = mode;
+            configDisplayMode = mode;
             return true;
         }
         return false;
     }
 
-    public boolean isBorderless() {
-        return borderless;
+    public boolean isFullscreen() {
+        return fullscreen;
     }
 
-    public void setBorderless(boolean borderless) {
-        this.borderless = borderless;
-    }
-
-    private void actuallyUseDisplayMode(DisplayMode displayMode, boolean borderless) throws LWJGLException {
-        Display.setDisplayMode(displayMode);
-        if (borderless != wasBorderless) {
-            Frame oldFrame = frame;
-            oldFrame.setVisible(false);
-            makeFrame(borderless);
-            oldFrame.dispose();
-            wasBorderless = borderless;
-        }
+    public void setFullscreen(boolean fullscreen) {
+        this.newFullscreen = fullscreen;
     }
 
     private void setupAntiAliasing() {
@@ -656,16 +668,17 @@ public class Client {
     
     private void processKeyboard() {
         toploop: while (Keyboard.next()) {
-            for (Screen screen : screenList)
-                if (!screen.processKeyboardEvent()) continue toploop;
+            for (GUIContainer gui : guiList)
+                if (!gui.processKeyboardEvent()) continue toploop;
+            //if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
         }
     }
 
     private void processMouse() {
         toploop: while (Mouse.next()) {
             if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && !asteroids.containsKey(getMousePos())) asteroids.put(getMousePos(), AsteroidGenerator.generate());
-            for (Screen screen : screenList)
-                if (!screen.processMouseEvent()) continue toploop;
+            for (GUIContainer gui : guiList)
+                if (!gui.processMouseEvent()) continue toploop;
         }
     }
 
@@ -673,35 +686,55 @@ public class Client {
         toploop: while (Controllers.next()) {
             Controller con = Controllers.getEventSource();
             if (con.getName().equals(config.getString("controls.controller"))) {
-                for (Screen screen : screenList)
-                    if (!screen.processControllerEvent(con)) continue toploop;
+                for (GUIContainer gui : guiList)
+                    if (!gui.processControllerEvent(con)) continue toploop;
             }
         }
     }
 
     private void update() {
-        for (Screen screen : screenList)
-            screen.update();
-        //throw new RuntimeException();
+        GUIWindow lastWin = null, lastTopWin = null;
+        List<GUIContainer> toAdd = new ArrayList<>();
+        Iterator<GUIContainer> it = guiList.iterator();
+        while (it.hasNext()) {
+            GUIContainer gui = it.next();
+            if (gui.isRemoveRequested()) it.remove();
+            else {
+                if (gui.isVisible() && gui.isEnabled()) {
+                    gui.update();
+                    if (gui.isRemoveRequested()) it.remove();
+                    else if (gui instanceof GUIWindow) {
+                        GUIWindow win = (GUIWindow)gui;
+                        if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
+                        lastWin = win;
+                        win.setOnTop(true);
+                        if (win.isToBePutOnTop()) {
+                            it.remove();
+                            toAdd.add(gui);
+                            win.setToBePutOnTop(false);
+                            if (lastTopWin != null) lastTopWin.setOnTop(false);
+                            lastTopWin = win;
+                        }
+                    }
+                }
+            }
+        }
+        guiList.addAll(toAdd);
     }
     
     private void render() {
         if (antiAliasing) glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFBO);
+        long time = System.nanoTime();
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
         
         if (renderBackground) drawBackground();
 
-        for (Screen screen : screenList)
-            screen.render();
+        for (GUIContainer gui : guiList)
+            gui.render();
         if (!gameStarted) gameStartupStuff(); // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
-        long renderTime = 0;
         if (!asteroids.isEmpty()) {
-            Random rand = new Random(100);
-            long time = System.nanoTime();
             for (Map.Entry<Vector2, Asteroid> entry : asteroids.entrySet()) {
-                int x = rand.nextInt(displayMode.getWidth());
-                int y = rand.nextInt(displayMode.getHeight());
                 Vector2 vec = entry.getKey();
                 glTranslatef(vec.getX(), vec.getY(), 0);
                 glRotatef(tick.getTicks(), 0.0F, 0.0F, 1.0F);
@@ -709,12 +742,22 @@ public class Client {
                 glRotatef(tick.getTicks(), 0.0F, 0.0F, -1.0F);
                 glTranslatef(-vec.getX(), -vec.getY(), 0);
             }
-            renderTime = System.nanoTime() - time;
+            /*Random rand = new Random(100);
+            for (Asteroid as : asteroids) {
+                int x = rand.nextInt(displayMode.getWidth());
+                int y = rand.nextInt(displayMode.getHeight());
+                glTranslatef(x, y, 0);
+                glRotatef(tick.getTicks(), 0.0F, 0.0F, 1.0F);
+                as.render();
+                glRotatef(tick.getTicks(), 0.0F, 0.0F, -1.0F);
+                glTranslatef(-x, -y, 0);
+            }*/
         }
+        long renderTime = System.nanoTime() - time;
         Runtime runtime = Runtime.getRuntime();
         fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 5, Long.toString(fpsRender), org.newdawn.slick.Color.yellow);
         fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 25, "Memory: " + Util.bytesToMBString(runtime.totalMemory() - runtime.freeMemory()) + " / " + Util.bytesToMBString(runtime.maxMemory()), org.newdawn.slick.Color.yellow);
-        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 45, "Render time: " + renderTime / 1000, org.newdawn.slick.Color.yellow);
+        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 45, "Render time (microseconds): " + renderTime / 1000, org.newdawn.slick.Color.yellow);
         fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 65, "Asteroids: " + asteroids.size(), org.newdawn.slick.Color.yellow);
         //System.out.println(System.nanoTime() - time);
         
@@ -722,12 +765,11 @@ public class Client {
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleFBO);
             glBlitFramebuffer(0, 0, displayMode.getWidth(), displayMode.getHeight(), 0, 0, displayMode.getWidth(), displayMode.getHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-            System.out.println("blit buffer " + multisampleFBO);
         }
         
-        int error = glGetError();
-        if (error != GL_NO_ERROR) { // TODO: Better logger
-            System.out.println("GL ERROR: " + error);
+        int error;
+        while ((error = glGetError()) != GL_NO_ERROR) { // TODO: Better logger
+            System.err.println("OpenGL error: " + GLErrorMap.getName(error));
         }
     }
 
@@ -738,17 +780,27 @@ public class Client {
     }
     
     private void run() throws LWJGLException {
+        timeCounter = Sys.getTime();
         while(!Display.isCloseRequested() && !closeRequested) {
-            if (newDisplayMode != null) {
-                displayMode = newDisplayMode;
+            if (fullscreen && !frame.isFocused()) setFullscreen(false);
+            if (newDisplayMode != null || newFullscreen != fullscreen) {
+                if (newDisplayMode != null) {
+                    displayMode = newDisplayMode;
+                    configDisplayMode = newDisplayMode;
+                    config.setProperty("display.width", configDisplayMode.getWidth());
+                    config.setProperty("display.height", configDisplayMode.getHeight());
+                }
+                fullscreen = newFullscreen;
                 useDisplayMode();
                 newDisplayMode = null;
             }
 
-            timeSpentLastFrame = System.nanoTime() - timeLastFrame;
-            fps = (int)Math.round(1000000000D / (double)timeSpentLastFrame);
-            timeLastFrame = System.nanoTime();
-            if (tick.getTicks() % 6 == 0) fpsRender = fps;
+            if (getTime() - timeCounter > 1000) {
+                fpsRender = fps;
+                fps = 0;
+                timeCounter += 1000;
+            }
+            fps++;
             if(Display.isVisible()) {
                 mouseHitbox.setLocation(getMouseX(), getMouseY());
                 this.preProcess();
@@ -773,6 +825,17 @@ public class Client {
             Display.update();
             Display.sync(Constants.TICK_RATE);
         }
+    }
+
+    private long getTime() {
+        return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+    }
+
+    private double getDelta() {
+        long time = System.nanoTime();
+        double delta = (time - deltaTime) / 1000000000D;
+        deltaTime = time;
+        return delta;
     }
 
     public FontManager getFontManager() {
@@ -877,24 +940,24 @@ public class Client {
         return displayMode.getBitsPerPixel();
     }
     
-    public List<Screen> getScreenList() {
-        return Collections.unmodifiableList(screenList);
+    public List<GUIContainer> getGUIList() {
+        return Collections.unmodifiableList(guiList);
     }
 
-    public void addScreen(Screen screen) {
-        screenList.add(screen);
+    public void addGUI(GUIContainer gui) {
+        guiList.add(gui);
     }
 
-    public void removeScreen(Screen screen) {
-        screenList.remove(screen);
+    public void removeGUi(GUIContainer gui) {
+        guiList.remove(gui);
     }
 
-    public Screen removeScreen(int index) {
-        return screenList.remove(index);
+    public GUIContainer removeGUI(int index) {
+        return guiList.remove(index);
     }
 
     public void clearScreens() {
-        screenList.clear();
+        guiList.clear();
     }
 
     public TickCounter getTick() {

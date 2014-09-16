@@ -76,7 +76,7 @@ public class Vector2 {
     }
 
     public float angle(Vector2 other) {
-        return (float)Math.atan2(other.y - y, other.x - x);
+        return (float)Math.toDegrees(Math.atan2(other.y - y, other.x - x));
     }
 
     public float length() {
@@ -104,6 +104,7 @@ public class Vector2 {
     }
 
     public static Vector2 direction(float angle) {
+        angle = (float)Math.toRadians(angle);
         return new Vector2((float)Math.cos(angle), (float)Math.sin(angle));
     }
 

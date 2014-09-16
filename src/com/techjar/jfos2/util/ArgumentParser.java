@@ -1,5 +1,7 @@
 package com.techjar.jfos2.util;
 
+import com.techjar.jfos2.util.logging.LogHelper;
+
 /**
  *
  * @author Techjar
@@ -7,14 +9,17 @@ package com.techjar.jfos2.util;
 public class ArgumentParser {
     public static void parse(String[] args, Argument... objects) {
         for (int i = 0; i < args.length; i++) {
+            boolean found = false;
             for (Argument obj : objects) {
                 if (obj.getName().equals(args[i].toLowerCase())) {
                     if (obj.getHasParameter()) {
                         obj.runAction(args[++i].toLowerCase());
                     } else obj.runAction(null);
+                    found = true;
                     break;
                 }
             }
+            if (!found) LogHelper.warning("Unknown argument: %s", args[i]);
         }
     }
 

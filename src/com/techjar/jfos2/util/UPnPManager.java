@@ -1,6 +1,7 @@
-package com.techjar.jfos2;
+package com.techjar.jfos2.util;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import org.teleal.cling.UpnpService;
@@ -17,15 +18,8 @@ public class UPnPManager {
     private Map<Integer, UpnpService> upnpServices;
     
     
-    public UPnPManager() {
-        try {
-            this.localHost = InetAddress.getLocalHost();
-        }
-        catch(Exception ex) {
-            ex.printStackTrace();
-            System.exit(0);
-        }
-        
+    public UPnPManager() throws UnknownHostException {
+        this.localHost = InetAddress.getLocalHost();
         upnpServices = new HashMap<>();
     }
     

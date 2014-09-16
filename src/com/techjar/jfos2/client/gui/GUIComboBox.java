@@ -2,7 +2,7 @@ package com.techjar.jfos2.client.gui;
 
 import static org.lwjgl.opengl.GL11.*;
 
-import com.techjar.jfos2.MathHelper;
+import com.techjar.jfos2.util.MathHelper;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;

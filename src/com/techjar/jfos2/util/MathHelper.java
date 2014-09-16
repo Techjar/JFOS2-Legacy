@@ -1,4 +1,4 @@
-package com.techjar.jfos2;
+package com.techjar.jfos2.util;
 
 /**
  * Class containing extra math-based commands which don't exist in java.lang.Math, such as clamp().

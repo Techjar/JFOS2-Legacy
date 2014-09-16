@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.MathHelper;
+import com.techjar.jfos2.util.MathHelper;
 import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;

@@ -1,6 +1,6 @@
 package com.techjar.network.handler;
 
-import com.techjar.jfos2.Constants;
+import com.techjar.jfos2.util.Constants;
 import com.techjar.jfos2.server.Server;
 import com.techjar.network.*;
 import com.techjar.network.packet.*;

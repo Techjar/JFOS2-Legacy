@@ -24,7 +24,6 @@ public class GUITabbed extends GUI {
     protected GUICallback changeHandler;
     protected List<TabInfo> tabs = new ArrayList<>();
     protected int selectedTab = -1;
-
     protected int hoveredTab = -1;
 
     public GUITabbed(UnicodeFont font, Color color, GUIBackground guiBg) {

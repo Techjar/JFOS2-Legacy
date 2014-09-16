@@ -1,9 +1,10 @@
 package com.techjar.jfos2.server;
 
 import com.techjar.jfos2.util.ConfigManager;
-import com.techjar.jfos2.Constants;
+import com.techjar.jfos2.util.Constants;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.entity.Entity;
+import com.techjar.jfos2.util.logging.LogHelper;
 import com.techjar.network.NetworkManager;
 import com.techjar.network.NetworkServer;
 import com.techjar.network.NetworkUser;
@@ -34,6 +35,7 @@ public class Server {
     protected boolean shutdownRequested;
 
     public Server(boolean singlePlayer) {
+        LogHelper.init();
         this.singlePlayer = singlePlayer;
         tick = new TickCounter(Constants.TICK_RATE);
     }

@@ -1,6 +1,5 @@
 package com.techjar.jfos2.util;
 
-import com.techjar.jfos2.MathHelper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;

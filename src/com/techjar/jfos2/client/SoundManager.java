@@ -1,6 +1,6 @@
 package com.techjar.jfos2.client;
 
-import com.techjar.jfos2.MathHelper;
+import com.techjar.jfos2.util.MathHelper;
 import de.cuina.fireandfuel.CodecJLayerMP3;
 import java.io.File;
 import java.net.MalformedURLException;

@@ -1,4 +1,4 @@
-package com.techjar.jfos2;
+package com.techjar.jfos2.util;
 
 import java.io.File;
 

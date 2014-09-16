@@ -1,6 +1,5 @@
 package com.techjar.jfos2.util;
 
-import com.techjar.jfos2.MathHelper;
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.nio.ByteBuffer;
@@ -43,6 +42,7 @@ public class Asteroid {
     private int colorVBO;
     private int indices;
     private VBOData data;
+    public float colorMult = -1;
 
     public Asteroid(Polygon body, Circle[] craters) {
         shapes = new Shape[craters.length * 2 + 2];
@@ -85,10 +85,10 @@ public class Asteroid {
         int vboIndices = 0;
         List<Float> floatList = new ArrayList<>();
         List<Byte> byteList = new ArrayList<>();
-        float baseMult = 0.5F + random.nextFloat() * 1.75F;
+        if (colorMult < 0) colorMult = 0.5F + random.nextFloat() * 1.75F;
         for (int i = 0; i < shapes.length; i += 2) {
             Color color = new Color();
-            float mult = baseMult;
+            float mult = colorMult;
             float saturation = 0.59F;
             float brightness = 0.15f;
             if (i >= 2) mult -= 0.5F;

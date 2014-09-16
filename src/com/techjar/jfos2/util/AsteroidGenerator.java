@@ -1,6 +1,5 @@
 package com.techjar.jfos2.util;
 
-import com.techjar.jfos2.MathHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -23,8 +22,8 @@ public class AsteroidGenerator {
             double rad = Math.toRadians(deg);
             int difference = random.nextInt(maxDifference * 2) - maxDifference;
             deviation = MathHelper.clamp(difference + deviation, -maxDeviation, maxDeviation);
-            double x = Math.sin(rad) * (baseRadius + deviation);
-            double y = Math.cos(rad) * (baseRadius + deviation);
+            double x = Math.cos(rad) * (baseRadius + deviation);
+            double y = Math.sin(rad) * (baseRadius + deviation);
             points.add((float)x);
             points.add((float)y);
         }

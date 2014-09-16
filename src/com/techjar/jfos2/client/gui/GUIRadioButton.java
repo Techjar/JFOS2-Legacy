@@ -87,9 +87,6 @@ public class GUIRadioButton extends GUI {
     @Override
     public void setDimension(Dimension dimension) {
         super.setDimension(dimension);
-        //circle1.setRadii(dimension.getWidth() / 2, dimension.getHeight() / 2);
-        //circle2.setRadii((dimension.getWidth() / 2) - (guiBg.getBorderSize() * 2), (dimension.getHeight() / 2) - (guiBg.getBorderSize() * 2));
-        //circle3.setRadii((dimension.getWidth() / 2) - (guiBg.getBorderSize() * 5), (dimension.getHeight() / 2) - (guiBg.getBorderSize() * 5));
     }
 
     @Override

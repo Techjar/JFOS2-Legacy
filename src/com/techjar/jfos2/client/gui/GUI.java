@@ -1,7 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.client.Client;
-import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.util.Vector2;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +21,6 @@ public abstract class GUI {
     protected GUICallback removeHandler;
     protected GUIAlignment parentAlign = GUIAlignment.TOP_LEFT;
     protected GUI parent;
-    protected Screen screen;
     protected boolean visible = true;
     protected boolean enabled = true;
     protected boolean removeRequested;
@@ -237,7 +235,7 @@ public abstract class GUI {
 
     public List<GUI> getContainerList() {
         if (parent != null && parent instanceof GUIContainer) return ((GUIContainer)parent).getAllComponents();
-        return screen != null ? screen.getComponentList() : new ArrayList<GUI>();
+        return new ArrayList<>();
     }
     
     public Rectangle getContainerBox() {
@@ -254,14 +252,6 @@ public abstract class GUI {
 
     public void setParent(GUI parent) {
         this.parent = parent;
-    }
-
-    public Screen getScreen() {
-        return screen;
-    }
-
-    public void setScreen(Screen screen) {
-        this.screen = screen;
     }
 
     public GUIAlignment getParentAlignment() {
