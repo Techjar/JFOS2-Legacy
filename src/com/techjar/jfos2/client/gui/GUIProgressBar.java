@@ -1,10 +1,8 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.util.MathHelper;
 import com.techjar.jfos2.client.RenderHelper;
+import com.techjar.jfos2.util.MathHelper;
 import org.lwjgl.util.Color;
-import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 
 /**
  *
@@ -31,7 +29,7 @@ public class GUIProgressBar extends GUI {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
     }
 
     @Override

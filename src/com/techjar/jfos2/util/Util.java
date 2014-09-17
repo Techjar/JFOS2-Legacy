@@ -110,6 +110,14 @@ public final class Util {
         return getFileMD5(new File(file));
     }
 
+    public static long microTime() {
+        return System.nanoTime() / 1000L;
+    }
+
+    public static long milliTime() {
+        return System.nanoTime() / 1000000L;
+    }
+
     public static Rectangle clipRectangle(Rectangle toClip, Rectangle clipTo) {
         if (!toClip.intersects(clipTo)) return new Rectangle(0, 0, 0, 0);
         float newX = MathHelper.clamp(toClip.getX(), clipTo.getX(), clipTo.getMaxX());

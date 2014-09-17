@@ -6,7 +6,6 @@ import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
-import org.lwjgl.util.Rectangle;
 import org.newdawn.slick.opengl.Texture;
 
 /**
@@ -49,7 +48,7 @@ public class GUICheckBox extends GUI {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox()) || (label != null && checkMouseIntersect(label.getComponentBox()))) {
                 if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);

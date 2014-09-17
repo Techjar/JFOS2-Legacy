@@ -39,7 +39,7 @@ public class NetHandlerLogin extends NetHandler {
             return;
         }
         
-        netManager.queuePacket(new Packet1Login(Constants.VERSION, Server.server.getName(), false));
+        netManager.queuePacket(new Packet1Login(Constants.VERSION, Server.getInstance().getName(), false));
         netManager.setNetHandler(new NetHandlerServer());
         NetworkUser.users.add(netManager.user);
         

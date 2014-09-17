@@ -19,7 +19,7 @@ public class GUISpacer extends GUI {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
     }
 
     @Override

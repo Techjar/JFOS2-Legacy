@@ -1,10 +1,6 @@
 package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.util.MathHelper;
-import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.lwjgl.util.Color;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -12,7 +8,6 @@ import org.lwjgl.util.Dimension;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
 import com.techjar.jfos2.util.Util;
-import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -31,10 +26,10 @@ public class GUITextField extends GUIText {
     protected GUICallback changeHandler;
     
     // Timing stuff
-    protected long cursorLastMillis;
+    protected long cursorLastTime;
     protected boolean cursorState;
-    protected long repeatLastMillis;
-    protected long repeatLastMillis2;
+    protected long repeatLastTime;
+    protected long repeatLastTime2;
     protected int repeatLastKey;
     protected char repeatLastChar;
     protected boolean repeatState;
@@ -97,7 +92,7 @@ public class GUITextField extends GUIText {
                 }
                 repeatLastKey = Keyboard.getEventKey();
                 repeatLastChar = Keyboard.getEventCharacter();
-                repeatLastMillis = Client.getInstance().getTick().getTickMillis();
+                repeatLastTime = Util.milliTime();
             }
             else if (Keyboard.getEventKey() == repeatLastKey || Keyboard.getEventCharacter() == repeatLastChar) {
                 repeatState = false;
@@ -114,11 +109,11 @@ public class GUITextField extends GUIText {
     }
     
     @Override
-    public void update() {
-        super.update();
-        if (Client.getInstance().getTick().getTickMillis() - cursorLastMillis >= 500) {
+    public void update(double delta) {
+        super.update(delta);
+        if (Util.milliTime() - cursorLastTime >= 500) {
             cursorState = !cursorState;
-            cursorLastMillis = Client.getInstance().getTick().getTickMillis();
+            cursorLastTime = Util.milliTime();
         }
 
         if (Mouse.isButtonDown(0)) {
@@ -130,12 +125,12 @@ public class GUITextField extends GUIText {
                 focused = false;
         }
         
-        if (repeatState && Client.getInstance().getTick().getTickMillis() - repeatLastMillis >= 500) {
+        if (repeatState && Util.milliTime() - repeatLastTime >= 500) {
             if (!repeatState2) {
-                repeatLastMillis2 = Client.getInstance().getTick().getTickMillis() + 200;
+                repeatLastTime2 = Util.milliTime() + 200;
                 repeatState2 = true;
             }
-            if (Client.getInstance().getTick().getTickMillis() - repeatLastMillis2 >= 50) {
+            if (Util.milliTime() - repeatLastTime2 >= 50) {
                 if (Util.isValidCharacter(repeatLastChar) && text.length() < maxLength) {
                     text.append(repeatLastChar);
                     if (changeHandler != null) {
@@ -150,7 +145,7 @@ public class GUITextField extends GUIText {
                         changeHandler.run();
                     }
                 }
-                repeatLastMillis2 = Client.getInstance().getTick().getTickMillis();
+                repeatLastTime2 = Util.milliTime();
             }
         }
     }

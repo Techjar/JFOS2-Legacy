@@ -1,7 +1,5 @@
 package com.techjar.jfos2.client.gui;
 
-import static org.lwjgl.opengl.GL11.*;
-
 import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import com.techjar.jfos2.util.Vector2;
@@ -10,7 +8,6 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 
 /**
  *
@@ -60,8 +57,9 @@ public class GUIWindow extends GUIContainer {
     @Override
     public boolean processMouseEvent() {
         if (!super.processMouseEvent()) return false;
-        closeBtn.processMouseEvent();
+        if (!closeBtn.processMouseEvent()) return false;
         if (Mouse.getEventButton() == 0) {
+            if (!onTop && checkMouseIntersect(getComponentBox())) setToBePutOnTop(true);
             if (Mouse.getEventButtonState()) {
                 if (canResize) {
                     Rectangle[] boxes = getBoxes();
@@ -110,16 +108,16 @@ public class GUIWindow extends GUIContainer {
     }
 
     @Override
-    public void update() {
-        super.update();
-        closeBtn.update();
-        if (!wasMousePressed && checkMouseButtons()) {
+    public void update(double delta) {
+        super.update(delta);
+        closeBtn.update(delta);
+        /*if (!wasMousePressed && checkMouseButtons()) {
             wasMousePressed = true;
             if (!onTop) setToBePutOnTop(checkMouseIntersect(getComponentBox()));
         }
         else if (wasMousePressed && !checkMouseButtons()) {
             wasMousePressed = false;
-        }
+        }*/
         if (canResize && !Client.getInstance().getMousePos().equals(mouseLast)) {
             if (isResizing()) {
                 Vector2 mouseDiff = Client.getInstance().getMousePos().subtract(mouseLast);

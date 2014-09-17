@@ -7,7 +7,6 @@ import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 
 /**
  *
@@ -51,7 +50,7 @@ public class GUISlider extends GUI {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
         if (dragging) {
             int mouseX = Client.getInstance().getMouseX() - (int)getPosition().getX() - draggerWidth / 2;
             value = (float)MathHelper.clamp(mouseX, 0, dimension.getWidth() - draggerWidth) / (float)(dimension.getWidth() - draggerWidth);

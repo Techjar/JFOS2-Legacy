@@ -5,7 +5,6 @@ import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import com.techjar.jfos2.util.Vector2;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.lwjgl.input.Mouse;
@@ -60,9 +59,9 @@ public class GUITabbed extends GUI {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
         TabInfo tab = getSelectedTab();
-        if (tab != null) tab.getContainer().update();
+        if (tab != null) tab.getContainer().update(delta);
         Rectangle[] boxes = getTabBoxes();
         boolean tabIntersected = false;
         for (int i = 0; i < boxes.length; i++) {

@@ -2,13 +2,11 @@ package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.Client;
-import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.opengl.Texture;
 
 /**
  *
@@ -56,7 +54,7 @@ public class GUIButton extends GUIText {
     }
     
     @Override
-    public void update() {
+    public void update(double delta) {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(!windowClose, getComponentBox())) {
                 if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);

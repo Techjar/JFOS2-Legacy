@@ -18,6 +18,7 @@ manifest.mf
 logs/
 resources/sounds/
 javadoc/
+config.yml
 
 # Keep This Shit
 !/lib/*.jar

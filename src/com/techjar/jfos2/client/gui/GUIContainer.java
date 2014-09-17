@@ -1,20 +1,12 @@
 package com.techjar.jfos2.client.gui;
 
-import com.techjar.jfos2.util.Util;
-import org.lwjgl.input.Controller;
-import static org.lwjgl.opengl.GL11.*;
-
-import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.client.RenderHelper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import org.lwjgl.util.Color;
+import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 
 /**
  *
@@ -49,7 +41,7 @@ public abstract class GUIContainer extends GUI {
     }
     
     @Override
-    public void update() {
+    public void update(double delta) {
         GUIWindow lastWin = null, lastTopWin = null;
         List<GUI> toAdd = new ArrayList<>();
         Iterator<GUI> it = components.iterator();
@@ -58,16 +50,16 @@ public abstract class GUIContainer extends GUI {
             if (gui.isRemoveRequested()) it.remove();
             else {
                 if (gui.isVisible() && gui.isEnabled()) {
-                    gui.update();
+                    gui.update(delta);
                     if (gui.isRemoveRequested()) it.remove();
                     else if (gui instanceof GUIWindow) {
                         GUIWindow win = (GUIWindow)gui;
                         if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
                         lastWin = win;
-                        win.setOnTop(true);
                         if (win.isToBePutOnTop()) {
                             it.remove();
                             toAdd.add(gui);
+                            win.setOnTop(true);
                             win.setToBePutOnTop(false);
                             if (lastTopWin != null) lastTopWin.setOnTop(false);
                             lastTopWin = win;

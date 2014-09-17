@@ -14,7 +14,7 @@ import org.lwjgl.input.Controller;
  *
  * @author Techjar
  */
-public abstract class Entity {
+public abstract class Entity implements Comparable<Entity> {
     protected static int nextId;
     protected int id;
     protected Vector2 position = new Vector2();
@@ -28,9 +28,9 @@ public abstract class Entity {
         this.id = id;
     }
 
-    public abstract void update();
-    public abstract void updateClient();
-    public abstract void updateServer();
+    public abstract void update(double delta);
+    public abstract void updateClient(double delta);
+    public abstract void updateServer(double delta);
     public abstract void render();
 
     public void readData(DataInputStream stream) throws IOException {
@@ -69,6 +69,10 @@ public abstract class Entity {
         return id;
     }
 
+    public int getRenderPriority() {
+        return 0;
+    }
+
     public Vector2 getPosition() {
         return position.copy();
     }
@@ -103,5 +107,40 @@ public abstract class Entity {
 
     public void setAngle(float angle) {
         this.angle = angle;
+    }
+
+    @Override
+    public int compareTo(Entity other) {
+        if (other == null) return 1;
+        if (this.getRenderPriority() < other.getRenderPriority()) return -1;
+        if (this.getRenderPriority() > other.getRenderPriority()) return 1;
+        return 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 23 * hash + this.id;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Entity other = (Entity) obj;
+        if (this.id != other.id) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Entity{" + "id=" + id + ", position=" + position + ", angle=" + angle + '}';
     }
 }

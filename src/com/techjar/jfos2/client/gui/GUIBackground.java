@@ -2,8 +2,6 @@ package com.techjar.jfos2.client.gui;
 
 import com.techjar.jfos2.client.RenderHelper;
 import org.lwjgl.util.Color;
-import org.newdawn.slick.geom.Rectangle;
-import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.opengl.Texture;
 
 /**
@@ -42,7 +40,7 @@ public class GUIBackground extends GUI {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
     }
 
     @Override

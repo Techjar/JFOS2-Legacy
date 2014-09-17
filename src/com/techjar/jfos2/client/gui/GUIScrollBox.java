@@ -78,7 +78,7 @@ public class GUIScrollBox extends GUIContainer {
     }
 
     @Override
-    public void update() {
+    public void update(double delta) {
         if (scrolling != 0) {
             Vector2 mouseOffset = Client.getInstance().getMousePos().subtract(mouseStart);
             int[] maxScrollOffset = getMaxScrollOffset();
@@ -94,7 +94,7 @@ public class GUIScrollBox extends GUIContainer {
                 else scrollOffset.setY(offset);
             }
         }
-        super.update();
+        super.update(delta);
     }
 
     @Override

@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @author Techjar
  */
 public class Server {
-    public static Server server;
+    private static Server instance;
     private final boolean singlePlayer;
     protected int port;
     protected InetAddress ip;
@@ -42,13 +42,16 @@ public class Server {
 
     public static void main(String[] args) {
         try {
-            server = new Server(false);
-            server.start();
+            instance = new Server(false);
+            instance.start();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            System.exit(0);
         }
+    }
+
+    public static Server getInstance() {
+        return instance;
     }
 
     public void run() {
@@ -73,7 +76,6 @@ public class Server {
         netServer = new NetworkServer(ip, port);
         run();
         netServer.shutdown();
-        System.exit(0);
     }
 
     private void initConfig() throws UnknownHostException {

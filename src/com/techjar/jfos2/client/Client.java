@@ -15,11 +15,12 @@ import com.techjar.jfos2.util.OperatingSystem;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
+import com.techjar.jfos2.client.world.ClientWorld;
+import com.techjar.jfos2.entity.Entity;
 import com.techjar.jfos2.entity.EntityShip;
 import com.techjar.jfos2.util.ArgumentParser;
 import com.techjar.jfos2.util.Asteroid;
 import com.techjar.jfos2.util.AsteroidGenerator;
-import com.techjar.jfos2.util.GLErrorMap;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.util.logging.LogHelper;
 import java.awt.BorderLayout;
@@ -63,6 +64,7 @@ import org.lwjgl.opengl.GLContext;
 import org.lwjgl.opengl.Pbuffer;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.Color;
+import org.lwjgl.util.glu.GLU;
 import org.newdawn.slick.Image;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
@@ -97,14 +99,14 @@ public class Client {
     private boolean newFullscreen;
     private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
-    private TickCounter tick;
     private List<GUIContainer> guiList;
     private List<GUICallback> resizeHandlers;
     private List<Runnable> preProcessors;
     private List<Runnable> postProcessors;
     private int multisampleFBO;
+    private int multisampleTexture;
     //private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
-    private int fps;
+    private int fpsCounter;
     private int fpsRender;
     private long timeCounter;
     private long deltaTime;
@@ -115,9 +117,9 @@ public class Client {
     private int antiAliasingSamples = 4;
     private boolean running = true;
     private boolean renderBackground;
+    public boolean renderDebug = true;
     private List<String> validControllers = new ArrayList<>();
-    //private List<Asteroid> asteroids = new ArrayList<>();
-    private Map<Vector2, Asteroid> asteroids = new HashMap<>();
+    private ClientWorld world;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -126,7 +128,7 @@ public class Client {
     private String titleMusic;
     private boolean titleStarted;
     private boolean titleScreenVisible;
-    private TickCounter titleTick;
+    //private TickCounter titleTick;
     private UnicodeFont introFont;
     
     
@@ -135,7 +137,6 @@ public class Client {
         LogHelper.init();
         dataDir = OperatingSystem.getDataDirectory("jfos2");
         mouseHitbox = new Rectangle(0, 0, 1, 1);
-        tick = new TickCounter(Constants.TICK_RATE);
         guiList = new ArrayList<>();
         resizeHandlers = new ArrayList<>();
         preProcessors = new ArrayList<>();
@@ -186,7 +187,6 @@ public class Client {
         initConfig();
         
         Display.setDisplayMode(displayMode);
-        Display.setVSyncEnabled(true);
 
         Display.create();
         makeFrame();
@@ -349,7 +349,6 @@ public class Client {
         frame.setLocation((dim.width - frame.getSize().width) / 2, (dim.height - frame.getSize().height) / 2);
         frame.setVisible(true);
         Display.setParent(canvas);
-        System.out.println("resized " + fullscreen);
     }
 
     public static void crashException(Throwable ex) {
@@ -412,7 +411,10 @@ public class Client {
             config.setProperty("display.antialiasingsamples", 4);
         }
 
-        config.setProperty("version", Constants.VERSION);
+        if (config.getInteger("version") < Constants.VERSION) {
+            config.setProperty("version", Constants.VERSION);
+        }
+        
         if (config.hasChanged()) config.save();
     }
 
@@ -482,18 +484,20 @@ public class Client {
 
     private void setupAntiAliasing() {
         if (multisampleFBO != 0) {
+            glDeleteTextures(multisampleTexture);
             glDeleteFramebuffers(multisampleFBO);
+            multisampleTexture = 0;
             multisampleFBO = 0;
         }
         if (antiAliasing) {
-            int tex = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
+            multisampleTexture = glGenTextures();
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, multisampleTexture);
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, antiAliasingSamples, GL_RGBA8, displayMode.getWidth(), displayMode.getHeight(), false);
             multisampleFBO = glGenFramebuffers();
             glBindFramebuffer(GL_FRAMEBUFFER, multisampleFBO);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, multisampleTexture, 0);
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                throw new RuntimeException("anti-aliasing framebuffer is invalid");
+                throw new RuntimeException("Anti-aliasing framebuffer is invalid.");
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
@@ -555,34 +559,25 @@ public class Client {
     }
     
     private void drawBackground() {
+        drawSplash();
+    }
+
+    private void drawSplash() {
         textureManager.getTexture("background.png").bind();
         RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), true);
     }
 
-    private void drawSplash() {
-        drawBackground();
-    }
-
-    private void gameStartupStuff() {
-        if (!resourcesDone) {
-            if (ResourceDownloader.isCompleted()) {
-                resourcesDone = true;
-                preloadData();
-                initIntro();
-            }
-            else {
-                drawBackground();
-                UnicodeFont theFont = fontManager.getFont("batmfa_", 50, false, false).getUnicodeFont();
-                int width = theFont.getWidth(ResourceDownloader.getStatus());
-                Vector2 fontCenter = getScreenCenter(width, 0);
-                theFont.drawString(fontCenter.getX(), fontCenter.getY() - 60, ResourceDownloader.getStatus(), org.newdawn.slick.Color.white);
-                float barWidth = 600;
-                Vector2 barCenter = getScreenCenter((int)barWidth, 0);
-                RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth, 30, new Color(50, 50, 50));
-                RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth * ResourceDownloader.getProgress(), 30, new Color(0, 100, 0));
-            }
-        }
-        if (titleStarted || soundManager.isPlaying(titleMusic)) {
+    private void renderResourceProgress() {
+        drawSplash();
+        UnicodeFont theFont = fontManager.getFont("batmfa_", 50, false, false).getUnicodeFont();
+        int width = theFont.getWidth(ResourceDownloader.getStatus());
+        Vector2 fontCenter = getScreenCenter(width, 0);
+        theFont.drawString(fontCenter.getX(), fontCenter.getY() - 60, ResourceDownloader.getStatus(), org.newdawn.slick.Color.white);
+        float barWidth = 600;
+        Vector2 barCenter = getScreenCenter((int)barWidth, 0);
+        RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth, 30, new Color(50, 50, 50));
+        RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth * ResourceDownloader.getProgress(), 30, new Color(0, 100, 0));
+        /*if (titleStarted || soundManager.isPlaying(titleMusic)) {
             titleStarted = true;
             if (titleTick.getTickMillis() > 12000) gameStarted = true;
             if (titleTick.getTickMillis() > 11000 && !titleScreenVisible) {
@@ -617,19 +612,21 @@ public class Client {
                 RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)titleTick.getTickMillis() / 1000f)))));
             }
             titleTick.incTicks();
-        }
+        }*/
     }
 
     private void initIntro() {
         titleMusic = soundManager.playMusic("music/title.mp3", true);
-        titleTick = new TickCounter(Constants.TICK_RATE);
+        //titleTick = new TickCounter(Constants.TICK_RATE);
+        gameStarted = true;
+        titleScreenVisible = true;
+        GUICreator.setupTitleScreen(this);
     }
     
     private void init() {
         initGL();
         resizeGL(displayMode.getWidth(), displayMode.getHeight());
         setupAntiAliasing();
-        //Asteroid.init(glGenFramebuffersEXT());
     }
 
     private void initGL() {
@@ -669,16 +666,18 @@ public class Client {
     private void processKeyboard() {
         toploop: while (Keyboard.next()) {
             for (GUIContainer gui : guiList)
-                if (!gui.processKeyboardEvent()) continue toploop;
+                if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) continue toploop;
+            if (world != null && !world.processKeyboardEvent()) continue;
             //if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
         }
     }
 
     private void processMouse() {
         toploop: while (Mouse.next()) {
-            if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && !asteroids.containsKey(getMousePos())) asteroids.put(getMousePos(), AsteroidGenerator.generate());
             for (GUIContainer gui : guiList)
-                if (!gui.processMouseEvent()) continue toploop;
+                if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) continue toploop;
+            if (world != null && !world.processMouseEvent()) continue;
+            //if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && !asteroids.containsKey(getMousePos())) asteroids.put(getMousePos(), AsteroidGenerator.generate());
         }
     }
 
@@ -687,12 +686,17 @@ public class Client {
             Controller con = Controllers.getEventSource();
             if (con.getName().equals(config.getString("controls.controller"))) {
                 for (GUIContainer gui : guiList)
-                    if (!gui.processControllerEvent(con)) continue toploop;
+                    if (gui.isVisible() && gui.isEnabled() && !gui.processControllerEvent(con)) continue toploop;
+                if (world != null && !world.processControllerEvent(con)) continue;
             }
         }
     }
 
     private void update() {
+        double delta = getDelta();
+
+        if (world != null) world.update(delta);
+
         GUIWindow lastWin = null, lastTopWin = null;
         List<GUIContainer> toAdd = new ArrayList<>();
         Iterator<GUIContainer> it = guiList.iterator();
@@ -701,16 +705,16 @@ public class Client {
             if (gui.isRemoveRequested()) it.remove();
             else {
                 if (gui.isVisible() && gui.isEnabled()) {
-                    gui.update();
+                    gui.update(delta);
                     if (gui.isRemoveRequested()) it.remove();
                     else if (gui instanceof GUIWindow) {
                         GUIWindow win = (GUIWindow)gui;
                         if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
                         lastWin = win;
-                        win.setOnTop(true);
                         if (win.isToBePutOnTop()) {
                             it.remove();
                             toAdd.add(gui);
+                            win.setOnTop(true);
                             win.setToBePutOnTop(false);
                             if (lastTopWin != null) lastTopWin.setOnTop(false);
                             lastTopWin = win;
@@ -723,59 +727,56 @@ public class Client {
     }
     
     private void render() {
+        checkGLError("Pre render");
         if (antiAliasing) glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFBO);
         long time = System.nanoTime();
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
         
         if (renderBackground) drawBackground();
-
-        for (GUIContainer gui : guiList)
-            gui.render();
-        if (!gameStarted) gameStartupStuff(); // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
-        if (!asteroids.isEmpty()) {
-            for (Map.Entry<Vector2, Asteroid> entry : asteroids.entrySet()) {
-                Vector2 vec = entry.getKey();
-                glTranslatef(vec.getX(), vec.getY(), 0);
-                glRotatef(tick.getTicks(), 0.0F, 0.0F, 1.0F);
-                entry.getValue().render();
-                glRotatef(tick.getTicks(), 0.0F, 0.0F, -1.0F);
-                glTranslatef(-vec.getX(), -vec.getY(), 0);
+        if (!resourcesDone) { // We're gonna be a bit dirty here and do "update" code in the render method, makes things easier.
+            renderResourceProgress();
+            if (ResourceDownloader.isCompleted()) {
+                resourcesDone = true;
+                preloadData();
+                initIntro();
             }
-            /*Random rand = new Random(100);
-            for (Asteroid as : asteroids) {
-                int x = rand.nextInt(displayMode.getWidth());
-                int y = rand.nextInt(displayMode.getHeight());
-                glTranslatef(x, y, 0);
-                glRotatef(tick.getTicks(), 0.0F, 0.0F, 1.0F);
-                as.render();
-                glRotatef(tick.getTicks(), 0.0F, 0.0F, -1.0F);
-                glTranslatef(-x, -y, 0);
-            }*/
         }
+
+        if (world != null) world.render();
+        for (GUIContainer gui : guiList)
+            if (gui.isVisible()) gui.render();
+        
         long renderTime = System.nanoTime() - time;
-        Runtime runtime = Runtime.getRuntime();
-        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 5, Long.toString(fpsRender), org.newdawn.slick.Color.yellow);
-        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 25, "Memory: " + Util.bytesToMBString(runtime.totalMemory() - runtime.freeMemory()) + " / " + Util.bytesToMBString(runtime.maxMemory()), org.newdawn.slick.Color.yellow);
-        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 45, "Render time (microseconds): " + renderTime / 1000, org.newdawn.slick.Color.yellow);
-        fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont().drawString(5, 65, "Asteroids: " + asteroids.size(), org.newdawn.slick.Color.yellow);
-        //System.out.println(System.nanoTime() - time);
+        if (renderDebug) {
+            Runtime runtime = Runtime.getRuntime();
+            UnicodeFont debugFont = fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont();
+            debugFont.drawString(5, 5, "FPS: " + fpsRender, org.newdawn.slick.Color.yellow);
+            debugFont.drawString(5, 25, "Memory: " + Util.bytesToMBString(runtime.totalMemory() - runtime.freeMemory()) + " / " + Util.bytesToMBString(runtime.maxMemory()), org.newdawn.slick.Color.yellow);
+            debugFont.drawString(5, 45, "Render time: " + (renderTime / 1000000D), org.newdawn.slick.Color.yellow);
+            debugFont.drawString(5, 65, "Entities: " + (world != null ? world.getEntityCount() : 0), org.newdawn.slick.Color.yellow);
+        }
         
         if (antiAliasing) {
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleFBO);
             glBlitFramebuffer(0, 0, displayMode.getWidth(), displayMode.getHeight(), 0, 0, displayMode.getWidth(), displayMode.getHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
         }
-        
-        int error;
-        while ((error = glGetError()) != GL_NO_ERROR) { // TODO: Better logger
-            System.err.println("OpenGL error: " + GLErrorMap.getName(error));
-        }
+        checkGLError("Post render");
     }
 
     private void postProcess() {
         for (Runnable runnable : postProcessors) {
             runnable.run();
+        }
+    }
+
+    private void checkGLError(String stage) {
+        int error;
+        while ((error = glGetError()) != GL_NO_ERROR) {
+            LogHelper.severe("########## GL ERROR ##########");
+            LogHelper.severe("@ %s", stage);
+            LogHelper.severe("%d: %s", error, gluErrorString(error));
         }
     }
     
@@ -791,39 +792,28 @@ public class Client {
                     config.setProperty("display.height", configDisplayMode.getHeight());
                 }
                 fullscreen = newFullscreen;
-                useDisplayMode();
                 newDisplayMode = null;
+                useDisplayMode();
             }
 
-            if (getTime() - timeCounter > 1000) {
-                fpsRender = fps;
-                fps = 0;
+            if (getTime() - timeCounter >= 1000) {
+                fpsRender = fpsCounter;
+                fpsCounter = 0;
                 timeCounter += 1000;
             }
-            fps++;
-            if(Display.isVisible()) {
-                mouseHitbox.setLocation(getMouseX(), getMouseY());
-                this.preProcess();
-                this.processKeyboard();
-                this.processMouse();
-                this.processController();
-                this.update();
-                this.render();
-                this.postProcess();
-                tick.incTicks();
-            }
-            else {
-                if(Display.isDirty()) {
-                    this.render();
-                }
-                try {
-                    Thread.sleep(100);
-                }
-                catch(InterruptedException ex) {
-                }
-            }
+            fpsCounter++;
+
+            mouseHitbox.setLocation(getMouseX(), getMouseY());
+            soundManager.update();
+            this.preProcess();
+            this.processKeyboard();
+            this.processMouse();
+            this.processController();
+            this.update();
+            this.render();
+            this.postProcess();
+            
             Display.update();
-            Display.sync(Constants.TICK_RATE);
         }
     }
 
@@ -956,16 +946,12 @@ public class Client {
         return guiList.remove(index);
     }
 
-    public void clearScreens() {
+    public void clearGUI() {
         guiList.clear();
     }
 
-    public TickCounter getTick() {
-        return tick;
-    }
-
-    public long getFps() {
-        return fps;
+    public long getFPS() {
+        return fpsRender;
     }
 
     public Frame getFrame() {

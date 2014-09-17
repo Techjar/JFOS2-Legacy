@@ -28,7 +28,7 @@ public abstract class GUI {
     
     public abstract boolean processKeyboardEvent();
     public abstract boolean processMouseEvent();
-    public abstract void update();
+    public abstract void update(double delta);
     public abstract void render();
 
     public boolean processControllerEvent(Controller controller) {

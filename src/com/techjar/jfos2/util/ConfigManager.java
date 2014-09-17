@@ -228,6 +228,7 @@ public class ConfigManager {
 
     private Object putYamlKey(Map<String, Object> map, String key, Object value) {
         if (key.indexOf('.') == -1) {
+            changed = true;
             return map.put(key, value);
         }
         Map<String, Object> curmap = map;
@@ -246,6 +247,7 @@ public class ConfigManager {
 
     private Object removeYamlKey(Map<String, Object> map, String key) {
         if (key.indexOf('.') == -1) {
+            changed = true;
             return map.remove(key);
         }
         Map<String, Object> curmap = map;

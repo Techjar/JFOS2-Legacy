@@ -1,29 +1,21 @@
 package com.techjar.jfos2.util;
 
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+
 import com.techjar.jfos2.client.Client;
-import com.techjar.jfos2.client.RenderHelper;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.EXTFramebufferObject.*;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Circle;
 
 import org.newdawn.slick.geom.Polygon;
 import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.geom.Transform;
-import org.newdawn.slick.geom.ShapeRenderer;
 import org.newdawn.slick.geom.Triangulator;
 import org.newdawn.slick.opengl.Texture;
 
@@ -33,8 +25,6 @@ import org.newdawn.slick.opengl.Texture;
  */
 public class Asteroid {
     private static final Random random = new Random();
-    private static final int textureWidth = 64;
-    private static final int textureHeight = 64;
     private Shape[] shapes;
     private Shape[] minimalShapes;
     private Shape collisionBox;
@@ -42,9 +32,10 @@ public class Asteroid {
     private int colorVBO;
     private int indices;
     private VBOData data;
-    public float colorMult = -1;
+    private float colorMult = -1;
 
-    public Asteroid(Polygon body, Circle[] craters) {
+    public Asteroid(Polygon body, Circle[] craters, float colorMult) {
+        this.colorMult = colorMult;
         shapes = new Shape[craters.length * 2 + 2];
         minimalShapes = new Shape[craters.length + 1];
         body.setCenterX(0);
@@ -61,6 +52,10 @@ public class Asteroid {
         }
         minimalShapes[0] = body;
         System.arraycopy(craters, 0, minimalShapes, 1, craters.length);
+    }
+
+    public Asteroid(Polygon body, Circle[] craters) {
+        this(body, craters, 0.5F + random.nextFloat() * 1.75F);
     }
 
     public Shape getCollisionBox() {
@@ -85,7 +80,7 @@ public class Asteroid {
         int vboIndices = 0;
         List<Float> floatList = new ArrayList<>();
         List<Byte> byteList = new ArrayList<>();
-        if (colorMult < 0) colorMult = 0.5F + random.nextFloat() * 1.75F;
+        Texture tex = Client.getInstance().getTextureManager().getTexture("asteroid.png");
         for (int i = 0; i < shapes.length; i += 2) {
             Color color = new Color();
             float mult = colorMult;
@@ -103,8 +98,8 @@ public class Asteroid {
                         float[] point = triangles.getTrianglePoint(j, k % 3);
                         floatList.add(point[0]);
                         floatList.add(point[1]);
-                        floatList.add((point[0] - sh.getMinX()) / textureWidth);
-                        floatList.add((point[1] - sh.getMinY()) / textureHeight);
+                        floatList.add((point[0] - sh.getMinX()) / tex.getWidth());
+                        floatList.add((point[1] - sh.getMinY()) / tex.getHeight());
                         byteList.add(color.getRedByte());
                         byteList.add(color.getGreenByte());
                         byteList.add(color.getBlueByte());
@@ -125,7 +120,7 @@ public class Asteroid {
     }
 
     public void uploadVBOData(VBOData data) {
-        if (vertexVBO != 0) throw new IllegalStateException("VBO data already inserted!");
+        if (vertexVBO != 0) throw new IllegalStateException("VBO data already upload!");
         indices = data.getIndices();
         float[] vertices = data.getVertices();
         byte[] colors = data.getColors();
