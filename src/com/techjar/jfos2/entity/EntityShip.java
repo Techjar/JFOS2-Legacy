@@ -43,7 +43,7 @@ public class EntityShip extends EntityFriendly {
         glPushMatrix();
         glTranslatef(position.getX(), position.getY(), 0);
         glRotatef(angle, 0, 0, 1);
-        glTranslatef(-(139 >> 1), -(148 >> 1), 0);
+        glTranslatef(-(139 / 2), -(148 / 2), 0);
         glColor3f(1, 1, 1);
         glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(0, 0);

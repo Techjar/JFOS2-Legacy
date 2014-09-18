@@ -120,7 +120,7 @@ public class Asteroid {
     }
 
     public void uploadVBOData(VBOData data) {
-        if (vertexVBO != 0) throw new IllegalStateException("VBO data already upload!");
+        if (vertexVBO != 0) throw new IllegalStateException("VBO data already uploaded!");
         indices = data.getIndices();
         float[] vertices = data.getVertices();
         byte[] colors = data.getColors();

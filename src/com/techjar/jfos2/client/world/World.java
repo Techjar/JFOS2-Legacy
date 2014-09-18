@@ -50,7 +50,8 @@ public abstract class World {
         entityMap.remove(id);
         Iterator<Entity> it = entityList.iterator();
         Entity entity;
-        while ((entity = it.next()) != null) {
+        while (it.hasNext()) {
+            entity = it.next();
             if (entity.getId() == id) {
                 it.remove();
                 break;

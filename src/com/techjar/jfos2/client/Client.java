@@ -15,6 +15,8 @@ import com.techjar.jfos2.util.OperatingSystem;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
+import com.techjar.jfos2.client.gui.screen.Screen;
+import com.techjar.jfos2.client.gui.screen.ScreenIntro;
 import com.techjar.jfos2.client.world.ClientWorld;
 import com.techjar.jfos2.entity.Entity;
 import com.techjar.jfos2.entity.EntityShip;
@@ -99,7 +101,8 @@ public class Client {
     private boolean newFullscreen;
     private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
-    private List<GUIContainer> guiList;
+    private List<Screen> screenList;
+    private List<ScreenHolder> screensToAdd;
     private List<GUICallback> resizeHandlers;
     private List<Runnable> preProcessors;
     private List<Runnable> postProcessors;
@@ -124,12 +127,6 @@ public class Client {
     // Some State Junk
     private boolean resourcesDone;
     private boolean offline;
-    private boolean gameStarted;
-    private String titleMusic;
-    private boolean titleStarted;
-    private boolean titleScreenVisible;
-    //private TickCounter titleTick;
-    private UnicodeFont introFont;
     
     
     public Client() throws LWJGLException {
@@ -137,7 +134,8 @@ public class Client {
         LogHelper.init();
         dataDir = OperatingSystem.getDataDirectory("jfos2");
         mouseHitbox = new Rectangle(0, 0, 1, 1);
-        guiList = new ArrayList<>();
+        screenList = new ArrayList<>();
+        screensToAdd = new ArrayList<>();
         resizeHandlers = new ArrayList<>();
         preProcessors = new ArrayList<>();
         postProcessors = new ArrayList<>();
@@ -225,7 +223,6 @@ public class Client {
             fontManager.getFont("batmfa_", 50, false, false);
             ResourceDownloader.checkAndDownload();
         }
-        introFont = fontManager.getFont("astronbo", 64, true, false).getUnicodeFont();
         
         GUIWindow slider = new GUIWindow(new GUIBackground());
         slider.setDimension(500, 500);
@@ -521,32 +518,32 @@ public class Client {
         return -1;
     }
 
-    public void removeResizeHandler(GUICallback resizeHandler) {
-        resizeHandlers.remove(resizeHandler);
+    public boolean removeResizeHandler(GUICallback resizeHandler) {
+        return resizeHandlers.remove(resizeHandler);
     }
 
-    public void removeResizeHandler(int index) {
-        resizeHandlers.remove(index);
+    public GUICallback removeResizeHandler(int index) {
+        return resizeHandlers.remove(index);
     }
 
     public void clearResizeHandlers() {
         resizeHandlers.clear();
     }
 
-    public void addPreProcesor(Runnable processor) {
-        preProcessors.add(processor);
+    public boolean addPreProcesor(Runnable processor) {
+        return preProcessors.add(processor);
     }
 
-    public void removePreProcesor(Runnable processor) {
-        preProcessors.remove(processor);
+    public boolean removePreProcesor(Runnable processor) {
+        return preProcessors.remove(processor);
     }
 
-    public void addPostProcesor(Runnable processor) {
-        postProcessors.add(processor);
+    public boolean addPostProcesor(Runnable processor) {
+        return postProcessors.add(processor);
     }
 
-    public void removePostProcesor(Runnable processor) {
-        postProcessors.remove(processor);
+    public boolean removePostProcesor(Runnable processor) {
+        return postProcessors.remove(processor);
     }
 
     private void preloadData() {
@@ -616,11 +613,7 @@ public class Client {
     }
 
     private void initIntro() {
-        titleMusic = soundManager.playMusic("music/title.mp3", true);
-        //titleTick = new TickCounter(Constants.TICK_RATE);
-        gameStarted = true;
-        titleScreenVisible = true;
-        GUICreator.setupTitleScreen(this);
+        this.addScreen(new ScreenIntro());
     }
     
     private void init() {
@@ -665,8 +658,8 @@ public class Client {
     
     private void processKeyboard() {
         toploop: while (Keyboard.next()) {
-            for (GUIContainer gui : guiList)
-                if (gui.isVisible() && gui.isEnabled() && !gui.processKeyboardEvent()) continue toploop;
+            for (Screen screen : screenList)
+                if (screen.isVisible() && screen.isEnabled() && !screen.processKeyboardEvent()) continue toploop;
             if (world != null && !world.processKeyboardEvent()) continue;
             //if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
         }
@@ -674,8 +667,8 @@ public class Client {
 
     private void processMouse() {
         toploop: while (Mouse.next()) {
-            for (GUIContainer gui : guiList)
-                if (gui.isVisible() && gui.isEnabled() && !gui.processMouseEvent()) continue toploop;
+            for (Screen screen : screenList)
+                if (screen.isVisible() && screen.isEnabled() && !screen.processMouseEvent()) continue toploop;
             if (world != null && !world.processMouseEvent()) continue;
             //if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && !asteroids.containsKey(getMousePos())) asteroids.put(getMousePos(), AsteroidGenerator.generate());
         }
@@ -685,8 +678,8 @@ public class Client {
         toploop: while (Controllers.next()) {
             Controller con = Controllers.getEventSource();
             if (con.getName().equals(config.getString("controls.controller"))) {
-                for (GUIContainer gui : guiList)
-                    if (gui.isVisible() && gui.isEnabled() && !gui.processControllerEvent(con)) continue toploop;
+                for (Screen screen : screenList)
+                    if (screen.isVisible() && screen.isEnabled() && !screen.processControllerEvent(con)) continue toploop;
                 if (world != null && !world.processControllerEvent(con)) continue;
             }
         }
@@ -695,37 +688,25 @@ public class Client {
     private void update() {
         double delta = getDelta();
 
-        if (world != null) world.update(delta);
-
-        GUIWindow lastWin = null, lastTopWin = null;
-        List<GUIContainer> toAdd = new ArrayList<>();
-        Iterator<GUIContainer> it = guiList.iterator();
+        Iterator<Screen> it = screenList.iterator();
         while (it.hasNext()) {
-            GUIContainer gui = it.next();
-            if (gui.isRemoveRequested()) it.remove();
-            else {
-                if (gui.isVisible() && gui.isEnabled()) {
-                    gui.update(delta);
-                    if (gui.isRemoveRequested()) it.remove();
-                    else if (gui instanceof GUIWindow) {
-                        GUIWindow win = (GUIWindow)gui;
-                        if (lastWin != null && lastWin != lastTopWin) lastWin.setOnTop(false);
-                        lastWin = win;
-                        if (win.isToBePutOnTop()) {
-                            it.remove();
-                            toAdd.add(gui);
-                            win.setOnTop(true);
-                            win.setToBePutOnTop(false);
-                            if (lastTopWin != null) lastTopWin.setOnTop(false);
-                            lastTopWin = win;
-                        }
-                    }
-                }
+            Screen screen = it.next();
+            if (screen.isRemoveRequested()) it.remove();
+            else if (screen.isVisible() && screen.isEnabled()) screen.update(delta);
+        }
+
+        for (ScreenHolder holder : screensToAdd) {
+            if (holder.getIndex() < 0) {
+                screenList.add(holder.getScreen());
+            } else {
+                screenList.add(holder.getIndex(), holder.getScreen());
             }
         }
-        guiList.addAll(toAdd);
+        screensToAdd.clear();
+
+        if (world != null) world.update(delta);
     }
-    
+
     private void render() {
         checkGLError("Pre render");
         if (antiAliasing) glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFBO);
@@ -744,8 +725,8 @@ public class Client {
         }
 
         if (world != null) world.render();
-        for (GUIContainer gui : guiList)
-            if (gui.isVisible()) gui.render();
+        for (Screen screen : screenList)
+            if (screen.isVisible()) screen.render();
         
         long renderTime = System.nanoTime() - time;
         if (renderDebug) {
@@ -930,24 +911,34 @@ public class Client {
         return displayMode.getBitsPerPixel();
     }
     
-    public List<GUIContainer> getGUIList() {
-        return Collections.unmodifiableList(guiList);
+    public List<Screen> getScreenList() {
+        return Collections.unmodifiableList(screenList);
     }
 
-    public void addGUI(GUIContainer gui) {
-        guiList.add(gui);
+    public void addScreen(Screen screen) {
+        screensToAdd.add(new ScreenHolder(-1, screen));
     }
 
-    public void removeGUi(GUIContainer gui) {
-        guiList.remove(gui);
+    public void addScreen(int index, Screen screen) {
+        screensToAdd.add(new ScreenHolder(index, screen));
     }
 
-    public GUIContainer removeGUI(int index) {
-        return guiList.remove(index);
+    public boolean removeScreen(Screen screen) {
+        boolean ret = screenList.remove(screen);
+        if (ret) screen.remove();
+        return ret;
     }
 
-    public void clearGUI() {
-        guiList.clear();
+    public Screen removeScreen(int index) {
+        Screen screen = screenList.get(index);
+        screen.remove();
+        return screen;
+    }
+
+    public void clearScreens() {
+        for (Screen screen : screenList)
+            screen.remove();
+        screenList.clear();
     }
 
     public long getFPS() {
@@ -995,5 +986,23 @@ public class Client {
     
     public File getDataDirectory() {
         return dataDir;
+    }
+
+    private class ScreenHolder {
+        int index;
+        Screen screen;
+
+        public ScreenHolder(int index, Screen screen) {
+            this.index = index;
+            this.screen = screen;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public Screen getScreen() {
+            return screen;
+        }
     }
 }
