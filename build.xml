@@ -9,21 +9,39 @@
 <!-- in the project's Project Properties dialog box.-->
 <project name="Junk_from_Outer_Space_2" default="default" basedir=".">
     <description>Builds, tests, and runs the project Junk from Outer Space 2.</description>
-    <import file="nbproject/build-impl.xml"/>
+    <import file="nbproject/build-impl.xml" />
+    <property environment="env" />
     <target name="-post-jar">
-        <echo message="Copying natives..."/>
+        <echo message="Copying natives..." />
 		<copy todir="dist/lib/native/">
 			<fileset dir="lib/native/">
-				<include name="**/**"/>
+				<include name="**/**" />
 			</fileset>
 		</copy>
         
-        <echo message="Copying resources..."/>
+        <echo message="Copying resources..." />
         <copy todir="dist/resources/">
 			<fileset dir="resources/">
-				<include name="**/**"/>
+				<include name="**/**" />
 			</fileset>
 		</copy>
+        
+        <echo message="Archiving dist..." />
+        <zip destfile="archive/JFOS2-build${env.BUILD_NUMBER}.zip">
+            <fileset dir="dist/">
+                <exclude name="README.TXT" />
+            </fileset>
+            <fileset dir=".">
+                <include name="*.bat" />
+                <include name="*.sh" />
+            </fileset>
+        </zip>
+    </target>
+    
+    <target name="-post-clean">
+        <delete includeEmptyDirs="true">
+            <fileset dir="archive/" includes="**/*" defaultexcludes="no" />
+    	</delete>
     </target>
     <!--
 
