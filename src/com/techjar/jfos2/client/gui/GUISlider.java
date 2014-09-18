@@ -50,7 +50,7 @@ public class GUISlider extends GUI {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         if (dragging) {
             int mouseX = Client.getInstance().getMouseX() - (int)getPosition().getX() - draggerWidth / 2;
             value = (float)MathHelper.clamp(mouseX, 0, dimension.getWidth() - draggerWidth) / (float)(dimension.getWidth() - draggerWidth);

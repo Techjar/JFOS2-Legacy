@@ -18,7 +18,10 @@ public abstract class Entity implements Comparable<Entity> {
     protected static int nextId;
     protected int id;
     protected Vector2 position = new Vector2();
+    protected Vector2 velocity = new Vector2();
     protected float angle;
+    protected float angularVelocity;
+    protected boolean dead;
 
     public Entity() {
         this(nextId++);
@@ -28,10 +31,20 @@ public abstract class Entity implements Comparable<Entity> {
         this.id = id;
     }
 
-    public abstract void update(double delta);
-    public abstract void updateClient(double delta);
-    public abstract void updateServer(double delta);
-    public abstract void render();
+    public void update(float delta) {
+    }
+
+    public void updateClient(float delta) {
+        // TODO
+    }
+
+    public void updateServer(float delta) {
+        position = position.add(velocity.multiply(delta));
+        angle += angularVelocity * delta;
+    }
+
+    public void render() {
+    }
 
     public void readData(DataInputStream stream) throws IOException {
         position.setX(stream.readFloat());
@@ -101,12 +114,59 @@ public abstract class Entity implements Comparable<Entity> {
         position.setY(y);
     }
 
+    public Vector2 getVelocity() {
+        return velocity.copy();
+    }
+
+    public void setVelocity(Vector2 velocity) {
+        this.velocity.set(velocity);
+    }
+
+    public void setVelocity(float x, float y) {
+        setVelocity(new Vector2(x, y));
+    }
+
+    public float getVelocityX() {
+        return velocity.getX();
+    }
+
+    public void setVelocityX(float x) {
+        velocity.setX(x);
+    }
+
+    public float getVelocityY() {
+        return velocity.getY();
+    }
+
+    public void setVelocityY(float y) {
+        velocity.setY(y);
+    }
+
     public float getAngle() {
         return angle;
     }
 
     public void setAngle(float angle) {
         this.angle = angle;
+    }
+
+    public float getAngularVelocity() {
+        return angularVelocity;
+    }
+
+    public void setAngularVelocity(float angularVelocity) {
+        this.angularVelocity = angularVelocity;
+    }
+
+    public boolean isDead() {
+        return dead;
+    }
+
+    public void setDead() {
+        dead = true;
+    }
+
+    public void onCollide(Entity other) {
     }
 
     @Override

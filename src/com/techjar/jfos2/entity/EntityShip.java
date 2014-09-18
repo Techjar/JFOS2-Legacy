@@ -23,17 +23,17 @@ public class EntityShip extends EntityFriendly {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void updateClient(double delta) {
+    public void updateClient(float delta) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void updateServer(double delta) {
+    public void updateServer(float delta) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

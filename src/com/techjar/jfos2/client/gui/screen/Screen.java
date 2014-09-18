@@ -48,7 +48,7 @@ public abstract class Screen {
         return container.processControllerEvent(controller);
     }
 
-    public void update(double delta) {
+    public void update(float delta) {
         container.update(delta);
     }
 

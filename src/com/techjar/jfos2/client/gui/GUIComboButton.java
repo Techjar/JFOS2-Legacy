@@ -59,7 +59,7 @@ public class GUIComboButton extends GUI {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         if (!Mouse.isButtonDown(0)) {
             if (checkMouseIntersect(getComponentBox())) {
                 if (!hovered) Client.getInstance().getSoundManager().playEffect("ui/rollover.wav", false);

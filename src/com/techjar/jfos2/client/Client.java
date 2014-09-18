@@ -686,7 +686,7 @@ public class Client {
     }
 
     private void update() {
-        double delta = getDelta();
+        float delta = getDelta();
 
         Iterator<Screen> it = screenList.iterator();
         while (it.hasNext()) {
@@ -802,9 +802,9 @@ public class Client {
         return (Sys.getTime() * 1000) / Sys.getTimerResolution();
     }
 
-    private double getDelta() {
+    private float getDelta() {
         long time = System.nanoTime();
-        double delta = (time - deltaTime) / 1000000000D;
+        float delta = (time - deltaTime) / 1000000000F;
         deltaTime = time;
         return delta;
     }

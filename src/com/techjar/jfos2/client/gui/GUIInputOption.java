@@ -80,7 +80,7 @@ public class GUIInputOption extends GUI {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         if (!Mouse.isButtonDown(0) && !assign) {
             Rectangle box = new Rectangle(getPosition().getX(), getPosition().getY(), dimension.getWidth(), dimension.getHeight());
             if (checkMouseIntersect(box)) {

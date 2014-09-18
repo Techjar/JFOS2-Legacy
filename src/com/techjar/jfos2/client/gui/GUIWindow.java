@@ -108,7 +108,7 @@ public class GUIWindow extends GUIContainer {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         super.update(delta);
         closeBtn.update(delta);
         /*if (!wasMousePressed && checkMouseButtons()) {

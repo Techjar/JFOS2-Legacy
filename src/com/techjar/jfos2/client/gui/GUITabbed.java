@@ -59,7 +59,7 @@ public class GUITabbed extends GUI {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         TabInfo tab = getSelectedTab();
         if (tab != null) tab.getContainer().update(delta);
         Rectangle[] boxes = getTabBoxes();

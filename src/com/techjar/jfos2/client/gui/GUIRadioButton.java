@@ -52,7 +52,7 @@ public class GUIRadioButton extends GUI {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         //circle1.setLocation(getPosition().getX() + (dimension.getWidth() / 2), getPosition().getY() + (dimension.getHeight() / 2));
         //circle2.setLocation(getPosition().getX() + (dimension.getWidth() / 2), getPosition().getY() + (dimension.getHeight() / 2));
         //circle2.setLocation(getPosition().getX() + (dimension.getWidth() / 2), getPosition().getY() + (dimension.getHeight() / 2));

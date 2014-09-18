@@ -41,7 +41,7 @@ public abstract class GUIContainer extends GUI {
     }
     
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         GUIWindow lastWin = null, lastTopWin = null;
         List<GUI> toAdd = new ArrayList<>();
         Iterator<GUI> it = components.iterator();

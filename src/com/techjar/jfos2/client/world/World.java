@@ -17,7 +17,7 @@ public abstract class World {
     protected List<Entity> entityList = new ArrayList<>();
     protected Map<Integer, Entity> entityMap = new HashMap<>();
 
-    public abstract void update(double delta);
+    public abstract void update(float delta);
     public abstract void render();
 
     public int getEntityCount() {

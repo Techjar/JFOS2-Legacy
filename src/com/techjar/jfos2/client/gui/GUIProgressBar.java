@@ -29,7 +29,7 @@ public class GUIProgressBar extends GUI {
     }
 
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
     }
 
     @Override

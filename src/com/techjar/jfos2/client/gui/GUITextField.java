@@ -109,7 +109,7 @@ public class GUITextField extends GUIText {
     }
     
     @Override
-    public void update(double delta) {
+    public void update(float delta) {
         super.update(delta);
         if (Util.milliTime() - cursorLastTime >= 500) {
             cursorState = !cursorState;
