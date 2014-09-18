@@ -28,12 +28,11 @@
         
         <echo message="Archiving dist..." />
         <zip destfile="archive/JFOS2-build${env.BUILD_NUMBER}.zip">
-            <fileset dir="dist/">
-                <exclude name="README.TXT" />
-            </fileset>
             <fileset dir=".">
                 <include name="*.bat" />
                 <include name="*.sh" />
+                <include name="dist/**" />
+                <exclude name="dist/README.TXT" />
             </fileset>
         </zip>
     </target>
