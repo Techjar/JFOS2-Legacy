@@ -39,7 +39,7 @@
     </target>
     
     <target name="-post-clean">
-        <delete includeEmptyDirs="true">
+        <delete includeEmptyDirs="true" failonerror="false">
             <fileset dir="archive/" includes="**/*" defaultexcludes="no" />
     	</delete>
     </target>
