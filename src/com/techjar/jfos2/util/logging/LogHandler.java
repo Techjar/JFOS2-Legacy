@@ -34,10 +34,8 @@ public final class LogHandler extends Handler {
         checkDateChanged();
         String line = getFormatter().format(record);
         stream.println(line);
-        if (systemOut == null)
-            System.out.println(line);
-        else
-            systemOut.println(line);
+        if (systemOut == null) System.out.println(line);
+        else systemOut.println(line);
     }
     
     @Override

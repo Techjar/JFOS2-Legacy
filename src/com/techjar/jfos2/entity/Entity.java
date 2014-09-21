@@ -32,15 +32,14 @@ public abstract class Entity implements Comparable<Entity> {
     }
 
     public void update(float delta) {
+        position = position.add(velocity.multiply(delta));
+        angle += angularVelocity * delta;
     }
 
     public void updateClient(float delta) {
-        // TODO
     }
 
     public void updateServer(float delta) {
-        position = position.add(velocity.multiply(delta));
-        angle += angularVelocity * delta;
     }
 
     public void render() {

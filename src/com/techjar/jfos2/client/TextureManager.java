@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Lombok;
+import lombok.SneakyThrows;
 import org.newdawn.slick.Image;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
@@ -23,11 +25,11 @@ public class TextureManager {
     protected Texture lastBind;
     protected static final Constructor<Image> imageConstructor;
 
-    static { // We have to reflectively initialize this to bypass the clampTexture() call...
+    static { // We have to reflectively initialize Image to bypass the clampTexture() call...
         try {
             imageConstructor = Image.class.getDeclaredConstructor();
             imageConstructor.setAccessible(true);
-        } catch (Exception ex) {
+        } catch (NoSuchMethodException | SecurityException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -37,36 +39,28 @@ public class TextureManager {
         cache = new HashMap<>();
         imageCache = new HashMap<>();
     }
-    
+
+    @SneakyThrows(IOException.class)
     public Texture getTexture(String file, int filter) {
-        try {
-            Texture cached = cache.get(file);
-            if (cached != null) return cached;
-            Texture tex = TextureLoader.getTexture(file.substring(file.indexOf('.') + 1).toLowerCase(), new FileInputStream(new File(texturePath, file)), filter);
-            cache.put(file, tex);
-            return tex;
-        }
-        catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        Texture cached = cache.get(file);
+        if (cached != null) return cached;
+        Texture tex = TextureLoader.getTexture(file.substring(file.indexOf('.') + 1).toLowerCase(), new FileInputStream(new File(texturePath, file)), filter);
+        cache.put(file, tex);
+        return tex;
     }
     
     public Texture getTexture(String file) {
         return getTexture(file, GL_LINEAR);
     }
 
+    @SneakyThrows
     public Image getImage(String file, int filter) {
-        try {
-            Image cached = imageCache.get(file);
-            if (cached != null) return cached;
-            Image img = imageConstructor.newInstance();
-            img.setTexture(getTexture(file));
-            imageCache.put(file, img);
-            return img;
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        Image cached = imageCache.get(file);
+        if (cached != null) return cached;
+        Image img = imageConstructor.newInstance();
+        img.setTexture(getTexture(file));
+        imageCache.put(file, img);
+        return img;
     }
 
     public Image getImage(String file) {

@@ -53,6 +53,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JFrame;
+import lombok.Value;
 import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
@@ -114,11 +115,12 @@ public class Client {
     private long timeCounter;
     private long deltaTime;
     private boolean closeRequested;
+    private boolean hasCrashed;
     public final boolean antiAliasingSupported;
     public final int antiAliasingMaxSamples;
     private boolean antiAliasing;
     private int antiAliasingSamples = 4;
-    private boolean running = true;
+    private boolean running;
     private boolean renderBackground;
     public boolean renderDebug = true;
     private List<String> validControllers = new ArrayList<>();
@@ -180,6 +182,8 @@ public class Client {
     }
     
     public void start() throws LWJGLException, SlickException, IOException {
+        if (running) throw new IllegalStateException("Client already running!");
+        running = true;
         Runtime.getRuntime().addShutdownHook(new ShutdownThread());
         initDisplayModes();
         initConfig();
@@ -200,7 +204,7 @@ public class Client {
             if (con.getAxisCount() >= 2) {
                 validControllers.add(con.getName());
                 config.defaultProperty("controls.controller", con.getName());
-                System.out.println("Found controller: " + con.getName() + " (" + con.getRumblerCount() + " Rumblers)");
+                LogHelper.config("Found controller: %s (%d Rumblers)", con.getName(), con.getRumblerCount());
             }
         }
         if (validControllers.size() < 1) config.setProperty("controls.controller", "");
@@ -296,7 +300,6 @@ public class Client {
         //sound.playMusic("music/title.mp3", true);
         
         run();
-        shutdownInternal();
         System.exit(0);
     }
 
@@ -424,7 +427,7 @@ public class Client {
         return null;
     }
 
-    public void useDisplayMode() {
+    public void useDisplayMode() throws LWJGLException {
         try {
             DisplayMode desktopMode = Display.getDesktopDisplayMode();
             if (fullscreen) {
@@ -440,7 +443,7 @@ public class Client {
         }
         catch (LWJGLException ex) {
             crashException(ex);
-            System.exit(0);
+            shutdownInternal();
         }
     }
 
@@ -661,7 +664,7 @@ public class Client {
             for (Screen screen : screenList)
                 if (screen.isVisible() && screen.isEnabled() && !screen.processKeyboardEvent()) continue toploop;
             if (world != null && !world.processKeyboardEvent()) continue;
-            //if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
         }
     }
 
@@ -760,42 +763,56 @@ public class Client {
             LogHelper.severe("%d: %s", error, gluErrorString(error));
         }
     }
-    
+
     private void run() throws LWJGLException {
         timeCounter = Sys.getTime();
         while(!Display.isCloseRequested() && !closeRequested) {
-            if (fullscreen && !frame.isFocused()) setFullscreen(false);
-            if (newDisplayMode != null || newFullscreen != fullscreen) {
-                if (newDisplayMode != null) {
-                    displayMode = newDisplayMode;
-                    configDisplayMode = newDisplayMode;
-                    config.setProperty("display.width", configDisplayMode.getWidth());
-                    config.setProperty("display.height", configDisplayMode.getHeight());
+            if (!hasCrashed) {
+                try {
+                    runGameLoop();
+                } catch (Exception ex) {
+
                 }
-                fullscreen = newFullscreen;
-                newDisplayMode = null;
-                useDisplayMode();
+            } else {
+                closeRequested = true;
             }
-
-            if (getTime() - timeCounter >= 1000) {
-                fpsRender = fpsCounter;
-                fpsCounter = 0;
-                timeCounter += 1000;
-            }
-            fpsCounter++;
-
-            mouseHitbox.setLocation(getMouseX(), getMouseY());
-            soundManager.update();
-            this.preProcess();
-            this.processKeyboard();
-            this.processMouse();
-            this.processController();
-            this.update();
-            this.render();
-            this.postProcess();
-            
-            Display.update();
         }
+        shutdownInternal();
+    }
+    
+    private void runGameLoop() throws LWJGLException {
+        if (fullscreen && !frame.isFocused()) setFullscreen(false);
+        if (newDisplayMode != null || newFullscreen != fullscreen) {
+            if (newDisplayMode != null) {
+                displayMode = newDisplayMode;
+                configDisplayMode = newDisplayMode;
+                config.setProperty("display.width", configDisplayMode.getWidth());
+                config.setProperty("display.height", configDisplayMode.getHeight());
+            }
+            fullscreen = newFullscreen;
+            newDisplayMode = null;
+            useDisplayMode();
+        }
+
+        if (getTime() - timeCounter >= 1000) {
+            fpsRender = fpsCounter;
+            fpsCounter = 0;
+            timeCounter += 1000;
+        }
+        fpsCounter++;
+
+        mouseHitbox.setLocation(getMouseX(), getMouseY());
+        soundManager.update();
+        this.preProcess();
+        this.processKeyboard();
+        this.processMouse();
+        this.processController();
+        this.update();
+        this.render();
+        this.postProcess();
+
+        Display.update();
+        Thread.yield();
     }
 
     private long getTime() {
@@ -973,36 +990,23 @@ public class Client {
         closeRequested = true;
     }
     
-    private void shutdownInternal() {
+    private void shutdownInternal() throws LWJGLException {
         running = false;
         if (config.hasChanged()) config.save();
         soundManager.getSoundSystem().cleanup();
         textureManager.cleanup();
         fontManager.cleanup();
-        Display.destroy();
         Keyboard.destroy();
         Mouse.destroy();
+        Display.destroy();
     }
     
     public File getDataDirectory() {
         return dataDir;
     }
 
-    private class ScreenHolder {
-        int index;
-        Screen screen;
-
-        public ScreenHolder(int index, Screen screen) {
-            this.index = index;
-            this.screen = screen;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public Screen getScreen() {
-            return screen;
-        }
+    @Value private class ScreenHolder {
+        private int index;
+        private Screen screen;
     }
 }

@@ -48,30 +48,30 @@ public final class LogHelper {
     }
 
     public static void severe(String message, Object... params) {
-        logger.log(Level.SEVERE, message, params);
+        logger.log(Level.SEVERE, String.format(message, params));
     }
 
     public static void warning(String message, Object... params) {
-        logger.log(Level.WARNING, message, params);
+        logger.log(Level.WARNING, String.format(message, params));
     }
 
     public static void info(String message, Object... params) {
-        logger.log(Level.INFO, message, params);
+        logger.log(Level.INFO, String.format(message, params));
     }
 
     public static void config(String message, Object... params) {
-        logger.log(Level.CONFIG, message, params);
+        logger.log(Level.CONFIG, String.format(message, params));
     }
 
     public static void fine(String message, Object... params) {
-        logger.log(Level.FINE, message, params);
+        logger.log(Level.FINE, String.format(message, params));
     }
 
     public static void finer(String message, Object... params) {
-        logger.log(Level.FINER, message, params);
+        logger.log(Level.FINER, String.format(message, params));
     }
 
     public static void finest(String message, Object... params) {
-        logger.log(Level.FINEST, message, params);
+        logger.log(Level.FINEST, String.format(message, params));
     }
 }

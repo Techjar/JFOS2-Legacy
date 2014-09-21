@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import lombok.SneakyThrows;
 import paulscode.sound.SoundSystem;
 import paulscode.sound.SoundSystemConfig;
 import paulscode.sound.SoundSystemException;
@@ -54,12 +55,9 @@ public class SoundManager {
         return fil;
     }
 
+    @SneakyThrows(MalformedURLException.class)
     public void loadSound(String file) {
-        try {
-            soundSystem.loadSound(getFile(file).toURI().toURL(), file);
-        } catch (MalformedURLException ex) {
-            throw new RuntimeException(ex);
-        }
+        soundSystem.loadSound(getFile(file).toURI().toURL(), file);
     }
 
     public void unloadSound(String file) {

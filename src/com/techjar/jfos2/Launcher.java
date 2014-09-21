@@ -13,7 +13,7 @@ public class Launcher {
     public static void main(String[] args) {
         LogHelper.init();
         if (OperatingSystem.isUnknown()) {
-            System.out.println("Unsupported OS detected, exiting...");
+            LogHelper.severe("Unsupported OS detected, exiting...");
             System.exit(0);
         }
         try {
@@ -23,7 +23,6 @@ public class Launcher {
             System.setProperty("net.java.games.input.librarypath", natives.getPath());
             
             Client.main(args);
-            //FBOTest.main(args);
         }
         catch (Throwable ex) {
             ex.printStackTrace();

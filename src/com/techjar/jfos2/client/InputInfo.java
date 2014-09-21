@@ -1,5 +1,8 @@
 package com.techjar.jfos2.client;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.lwjgl.input.Controller;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -8,22 +11,10 @@ import org.lwjgl.input.Mouse;
  *
  * @author Techjar
  */
+@Getter @AllArgsConstructor @EqualsAndHashCode
 public class InputInfo {
     private Type type;
     private int button;
-
-    public InputInfo(Type type, int button) {
-        this.type = type;
-        this.button = button;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public int getButton() {
-        return button;
-    }
 
     public String getDisplayString() {
         switch (type) {
@@ -67,32 +58,6 @@ public class InputInfo {
     @Override
     public String toString() {
         return new StringBuilder(type.toString()).append(button).toString();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final InputInfo other = (InputInfo) obj;
-        if (this.type != other.type) {
-            return false;
-        }
-        if (this.button != other.button) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 59 * hash + (this.type != null ? this.type.hashCode() : 0);
-        hash = 59 * hash + this.button;
-        return hash;
     }
 
     public static enum Type {

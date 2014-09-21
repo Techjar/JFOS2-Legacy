@@ -1,12 +1,15 @@
 package com.techjar.jfos2.client.gui;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  *
  * @author Techjar
  */
 public abstract class GUICallback implements Runnable {
-    private GUI component;
-    private Object[] args;
+    @Getter @Setter private GUI component;
+    @Getter private Object[] args;
     
     public GUICallback() {
         this.args = new Object[0];
@@ -14,17 +17,5 @@ public abstract class GUICallback implements Runnable {
     
     public GUICallback(Object... args) {
         this.args = args;
-    }
-
-    public final GUI getComponent() {
-        return component;
-    }
-
-    public final void setComponent(GUI component) {
-        this.component = component;
-    }
-
-    public final Object[] getArgs() {
-        return args;
     }
 }

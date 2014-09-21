@@ -5,6 +5,7 @@
 package com.techjar.jfos2.client;
 
 import com.techjar.jfos2.util.Util;
+import com.techjar.jfos2.util.logging.LogHelper;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,7 +39,7 @@ public class ResourceDownloader {
     public static void checkAndDownload() {
         try {
             List<URI> downloads = new ArrayList<>();
-            System.out.println("Retrieving download list...");
+            LogHelper.info("Retrieving download list...");
             HttpURLConnection conn = (HttpURLConnection)url.toURL().openConnection();
             //conn.setRequestMethod("GET");
             //conn.connect();
@@ -62,7 +63,7 @@ public class ResourceDownloader {
             }
             else {
                 completed = true;
-                System.out.println("All files are up to date!");
+                LogHelper.info("All files are up to date!");
             }
         }
         catch (Exception ex) {
@@ -98,7 +99,7 @@ public class ResourceDownloader {
                     String path = "resources/" + uri.toString().replace(urlPart, "");
                     status = new StringBuilder("Downloading ").append(i).append(" of ").append(urls.size()).append("... ").toString();
                     progress = 0;
-                    System.out.println("Downloading " + path);
+                    LogHelper.info("Downloading %s", path);
                     File file = new File(path);
                     File dir = new File(path.substring(0, path.lastIndexOf('/')));
                     if (file.exists()) file.delete();
@@ -121,7 +122,7 @@ public class ResourceDownloader {
                 }
                 status = "Downloads completed!";
                 completed = true;
-                System.out.println("All files are up to date!");
+                LogHelper.info("All files are up to date!");
             }
             catch (Exception ex) {
                 Client.crashException(ex);
