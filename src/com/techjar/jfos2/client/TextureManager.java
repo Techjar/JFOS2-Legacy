@@ -53,7 +53,7 @@ public class TextureManager {
         return getTexture(file, GL_LINEAR);
     }
 
-    @SneakyThrows
+    @SneakyThrows(Exception.class)
     public Image getImage(String file, int filter) {
         Image cached = imageCache.get(file);
         if (cached != null) return cached;

@@ -25,7 +25,7 @@ public class UPnPManager {
     
     public boolean start(int port) {
         if(upnpServices.containsKey(port)) return false;
-        upnpServices.put(port, new UpnpServiceImpl(new PortMappingListener(new PortMapping(Constants.PORT, localHost.getHostAddress(), PortMapping.Protocol.TCP)))).getControlPoint().search();
+        upnpServices.put(port, new UpnpServiceImpl(new PortMappingListener(new PortMapping(port, localHost.getHostAddress(), PortMapping.Protocol.TCP)))).getControlPoint().search();
         return true;
     }
     

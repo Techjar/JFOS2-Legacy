@@ -4,10 +4,8 @@ import com.techjar.jfos2.util.ConfigManager;
 import com.techjar.jfos2.util.Constants;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.entity.Entity;
+import com.techjar.jfos2.util.ArgumentParser;
 import com.techjar.jfos2.util.logging.LogHelper;
-import com.techjar.network.NetworkManager;
-import com.techjar.network.NetworkServer;
-import com.techjar.network.NetworkUser;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -15,6 +13,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  *
@@ -26,7 +25,6 @@ public class Server {
     protected int port;
     protected InetAddress ip;
     protected String name;
-    protected NetworkServer netServer;
     protected ConfigManager config;
     protected List<Entity> entities = new ArrayList<>();
     protected TickCounter tick;
@@ -38,14 +36,25 @@ public class Server {
         tick = new TickCounter(Constants.TICK_RATE);
     }
 
-    public static void main(String[] args) {
-        try {
-            instance = new Server(false);
-            instance.start();
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public static void main(final String[] args) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    instance = new Server(false);
+                    ArgumentParser.parse(args, new ArgumentParser.Argument(true, "--loglevel") {
+                        @Override
+                        public void runAction(String paramater) {
+                            LogHelper.setLevel(Level.parse(paramater));
+                        }
+                    });
+                    instance.start();
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }, "Server Thread").start();
     }
 
     public static Server getInstance() {
@@ -53,11 +62,11 @@ public class Server {
     }
 
     public void run() {
-        Iterator it; final long tickTime = 1000000000 / Constants.TICK_RATE;
+        final long tickTime = 1000000000 / Constants.TICK_RATE;
+        final float delta = 1F / Constants.TICK_RATE;
+        Iterator it;
         while (!shutdownRequested) {
             long time = System.nanoTime();
-            it = NetworkServer.pendingConn.iterator(); while(it.hasNext()) ((NetworkManager)it.next()).processPackets();
-            it = NetworkUser.users.iterator(); while(it.hasNext()) ((NetworkUser)it.next()).netManager.processPackets();
             // Begin Game Logic
 
             // End Game Logic
@@ -70,15 +79,13 @@ public class Server {
     }
 
     public void start() throws IOException {
-        initConfig();
-        netServer = new NetworkServer(ip, port);
+        if (!singlePlayer) initConfig();
         run();
-        netServer.shutdown();
     }
 
     private void initConfig() throws UnknownHostException {
         config = new ConfigManager(new File("config.yml"));
-        config.defaultProperty("socket.port", Constants.PORT);
+        config.defaultProperty("socket.port", Constants.DEFAULT_PORT);
         config.defaultProperty("socket.ip", "");
 
         port = config.getInteger("socket.port");

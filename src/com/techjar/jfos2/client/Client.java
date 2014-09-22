@@ -1,60 +1,41 @@
 package com.techjar.jfos2.client;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL32.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.EXTFramebufferObject.*;
 import static org.lwjgl.util.glu.GLU.*;
 
 import com.techjar.jfos2.util.ConfigManager;
 import com.techjar.jfos2.util.Constants;
 import org.lwjgl.opengl.DisplayMode;
 import com.techjar.jfos2.util.OperatingSystem;
-import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
 import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.client.gui.screen.ScreenIntro;
 import com.techjar.jfos2.client.world.ClientWorld;
-import com.techjar.jfos2.entity.Entity;
-import com.techjar.jfos2.entity.EntityShip;
 import com.techjar.jfos2.util.ArgumentParser;
-import com.techjar.jfos2.util.Asteroid;
-import com.techjar.jfos2.util.AsteroidGenerator;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.util.logging.LogHelper;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
-import java.awt.Font;
 import java.awt.Frame;
-import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Stack;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JFrame;
 import lombok.Value;
-import net.java.games.input.ControllerEnvironment;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Controller;
@@ -62,24 +43,14 @@ import org.lwjgl.input.Controllers;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GLContext;
 import org.lwjgl.opengl.Pbuffer;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.Color;
-import org.lwjgl.util.glu.GLU;
-import org.newdawn.slick.Image;
+import org.lwjgl.util.Dimension;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
-import org.newdawn.slick.geom.Circle;
-import org.newdawn.slick.geom.Line;
-import org.newdawn.slick.geom.Polygon;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
-import org.newdawn.slick.geom.ShapeRenderer;
-import org.newdawn.slick.geom.TexCoordGenerator;
-import org.newdawn.slick.geom.Transform;
-import org.newdawn.slick.opengl.Texture;
 
 /**
  *
@@ -123,7 +94,7 @@ public class Client {
     private boolean running;
     private boolean renderBackground;
     public boolean renderDebug = true;
-    private List<String> validControllers = new ArrayList<>();
+    private Map<String, Integer> validControllers = new HashMap<>();
     private ClientWorld world;
 
     // Some State Junk
@@ -148,6 +119,7 @@ public class Client {
         antiAliasingMaxSamples = glGetInteger(GL_MAX_SAMPLES);
         antiAliasingSupported = antiAliasingMaxSamples > 0;
         pb.destroy();
+        LogHelper.config("AA Supported: %s / Max Samples: %d", antiAliasingSupported ? "yes" : "no", antiAliasingMaxSamples);
     }
     
     public static void main(final String[] args) {
@@ -157,15 +129,19 @@ public class Client {
             public void run() {
                 try {
                     instance = new Client();
-                    ArgumentParser.parse(args, new ArgumentParser.Argument("--offline", false) {
+                    ArgumentParser.parse(args, new ArgumentParser.Argument(false, "--offline") {
                         @Override
                         public void runAction(String paramater) {
                             instance.offline = true;
                         }
+                    }, new ArgumentParser.Argument(true, "--loglevel") {
+                        @Override
+                        public void runAction(String paramater) {
+                            LogHelper.setLevel(Level.parse(paramater));
+                        }
                     });
                     instance.start();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
                     try {
                         crashException(ex);
                     }
@@ -199,16 +175,18 @@ public class Client {
         Display.update();
 
         Controllers.create();
+        String defaultController = "";
         for (int i = 0; i < Controllers.getControllerCount(); i++) {
             Controller con = Controllers.getController(i);
             if (con.getAxisCount() >= 2) {
-                validControllers.add(con.getName());
+                validControllers.put(con.getName(), i);
                 config.defaultProperty("controls.controller", con.getName());
+                if (defaultController.isEmpty()) defaultController = con.getName();
                 LogHelper.config("Found controller: %s (%d Rumblers)", con.getName(), con.getRumblerCount());
             }
         }
         if (validControllers.size() < 1) config.setProperty("controls.controller", "");
-        else if (!validControllers.contains(config.getString("controls.controller"))) config.setProperty("controls.controller", validControllers.get(0));
+        else if (!validControllers.containsKey(config.getString("controls.controller"))) config.setProperty("controls.controller", defaultController);
         if (config.hasChanged()) config.save();
         
         Keyboard.create();
@@ -843,37 +821,28 @@ public class Client {
     }
 
     public Controller getController(String name) {
-        for (int i = 0; i < Controllers.getControllerCount(); i++) {
-            Controller con = Controllers.getController(i);
-            if (con.getName().equals(name)) return con;
-        }
-        return null;
+        Integer index = validControllers.get(name);
+        return index != null ? Controllers.getController(index) : null;
     }
 
     /*public Vector2f getViewportScale() {
         return new Vector2f((float)canvas.getWidth() / (float)displayMode.getWidth(), (float)canvas.getHeight() / (float)displayMode.getHeight());
     }*/
 
-    public Vector2 getScreenCenter(org.lwjgl.util.Dimension dim) {
+    public Vector2 getScreenCenter(Dimension dim) {
         return new Vector2((displayMode.getWidth() / 2f) - (dim.getWidth() / 2f), (displayMode.getHeight() / 2f) - (dim.getHeight() / 2f));
     }
 
     public Vector2 getScreenCenter(int width, int height) {
-        return getScreenCenter(new org.lwjgl.util.Dimension(width, height));
+        return getScreenCenter(new Dimension(width, height));
     }
 
     public Vector2 getScreenCenter() {
-        return getScreenCenter(new org.lwjgl.util.Dimension());
+        return getScreenCenter(new Dimension());
     }
 
     public Controller getActiveController() {
-        for (int i = 0; i < Controllers.getControllerCount(); i++) {
-            Controller con = Controllers.getController(i);
-            if (con.getName().equals(config.getString("controls.controller"))) {
-                return con;
-            }
-        }
-        return null;
+        return getController(config.getString("controls.controller"));
     }
     
     public int getMouseX() {
@@ -992,13 +961,13 @@ public class Client {
     
     private void shutdownInternal() throws LWJGLException {
         running = false;
-        if (config.hasChanged()) config.save();
-        soundManager.getSoundSystem().cleanup();
-        textureManager.cleanup();
-        fontManager.cleanup();
+        if (config != null && config.hasChanged()) config.save();
+        if (soundManager != null) soundManager.getSoundSystem().cleanup();
+        if (textureManager != null) textureManager.cleanup();
+        if (fontManager != null) fontManager.cleanup();
         Keyboard.destroy();
         Mouse.destroy();
-        Display.destroy();
+        Display.destroy(); // Why the fuck is this causing a segmentation fault!?
     }
     
     public File getDataDirectory() {

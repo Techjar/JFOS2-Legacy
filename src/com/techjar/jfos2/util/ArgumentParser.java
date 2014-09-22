@@ -10,13 +10,15 @@ public class ArgumentParser {
     public static void parse(String[] args, Argument... objects) {
         for (int i = 0; i < args.length; i++) {
             boolean found = false;
-            for (Argument obj : objects) {
-                if (obj.getName().equals(args[i].toLowerCase())) {
-                    if (obj.getHasParameter()) {
-                        obj.runAction(args[++i].toLowerCase());
-                    } else obj.runAction(null);
-                    found = true;
-                    break;
+            argloop: for (Argument obj : objects) {
+                for (String name : obj.getNames()) {
+                    if (name.toLowerCase().equals(args[i].toLowerCase())) {
+                        if (obj.getHasParameter()) {
+                            obj.runAction(args[++i]);
+                        } else obj.runAction(null);
+                        found = true;
+                        break argloop;
+                    }
                 }
             }
             if (!found) LogHelper.warning("Unknown argument: %s", args[i]);
@@ -24,16 +26,16 @@ public class ArgumentParser {
     }
 
     public static abstract class Argument {
-        private String name;
-        private boolean hasParameter;
+        private final String[] names;
+        private final boolean hasParameter;
 
-        public Argument(String name, boolean hasParameter) {
-            this.name = name.toLowerCase();
+        public Argument(boolean hasParameter, String... names) {
             this.hasParameter = hasParameter;
+            this.names = names;
         }
 
-        public String getName() {
-            return name;
+        public String[] getNames() {
+            return names;
         }
 
         public boolean getHasParameter() {
