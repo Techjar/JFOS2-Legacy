@@ -4,24 +4,34 @@
  */
 package com.techjar.jfos2.entity;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.techjar.jfos2.network.NetworkedObject;
+import com.techjar.jfos2.network.Packet;
+import com.techjar.jfos2.network.PacketBuffer;
+import com.techjar.jfos2.player.Player;
 import com.techjar.jfos2.util.Vector2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
+import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
 
 /**
  *
  * @author Techjar
  */
-public abstract class Entity implements Comparable<Entity> {
-    protected static int nextId;
-    protected int id;
+public abstract class Entity implements NetworkedObject, Comparable<Entity> {
+    private static int nextId;
+    private static final BiMap<Integer, Class<? extends Entity>> entityMap = HashBiMap.create();
+    protected final int id;
     protected Vector2 position = new Vector2();
     protected Vector2 velocity = new Vector2();
     protected float angle;
     protected float angularVelocity;
     protected boolean dead;
+    protected boolean needsSync;
 
     public Entity() {
         this(nextId++);
@@ -29,6 +39,23 @@ public abstract class Entity implements Comparable<Entity> {
 
     public Entity(int id) {
         this.id = id;
+    }
+
+    @SneakyThrows(Exception.class)
+    public static Entity generateEntity(int type) {
+        return entityMap.get(type).newInstance();
+    }
+
+    @SneakyThrows(Exception.class)
+    public static Entity generateEntity(int type, int id) {
+        return entityMap.get(type).getConstructor(Integer.class).newInstance(id);
+    }
+
+    public static void registerEntity(int type, Class<? extends Entity> clazz) {
+        if (Modifier.isAbstract(clazz.getModifiers())) throw new IllegalArgumentException("Cannot register abstract entity class: " + clazz.getName());
+        if (entityMap.containsKey(type)) throw new RuntimeException("Entity type already in use: " + type);
+        if (entityMap.inverse().containsKey(clazz)) throw new RuntimeException("Entity class already registered: " + clazz.getName());
+        entityMap.put(type, clazz);
     }
 
     public void update(float delta) {
@@ -45,26 +72,6 @@ public abstract class Entity implements Comparable<Entity> {
     public void render() {
     }
 
-    public void readData(DataInputStream stream) throws IOException {
-        position.setX(stream.readFloat());
-        position.setY(stream.readFloat());
-        angle = stream.readFloat();
-    }
-    
-    public void writeData(DataOutputStream stream) throws IOException {
-        stream.writeFloat(position.getX());
-        stream.writeFloat(position.getY());
-        stream.writeFloat(angle);
-    }
-
-    public void readSpawnData(DataInputStream stream) throws IOException {
-        readData(stream);
-    }
-
-    public void writeSpawnData(DataOutputStream stream) throws IOException {
-        writeData(stream);
-    }
-
     public boolean processKeyboardEvent() {
         return true;
     }
@@ -79,6 +86,10 @@ public abstract class Entity implements Comparable<Entity> {
 
     public int getId() {
         return id;
+    }
+
+    public final int getType() {
+        return entityMap.inverse().get(this.getClass());
     }
 
     public int getRenderPriority() {
@@ -119,6 +130,7 @@ public abstract class Entity implements Comparable<Entity> {
 
     public void setVelocity(Vector2 velocity) {
         this.velocity.set(velocity);
+        needsSync = true;
     }
 
     public void setVelocity(float x, float y) {
@@ -155,6 +167,7 @@ public abstract class Entity implements Comparable<Entity> {
 
     public void setAngularVelocity(float angularVelocity) {
         this.angularVelocity = angularVelocity;
+        needsSync = true;
     }
 
     public boolean isDead() {
@@ -166,6 +179,41 @@ public abstract class Entity implements Comparable<Entity> {
     }
 
     public void onCollide(Entity other) {
+    }
+
+    @Override
+    public void readSyncData(PacketBuffer buffer) {
+        position.setX(buffer.readFloat());
+        position.setY(buffer.readFloat());
+        velocity.setX(buffer.readFloat());
+        velocity.setY(buffer.readFloat());
+        angle = buffer.readFloat();
+        angularVelocity = buffer.readFloat();
+    }
+
+    @Override
+    public void writeSyncData(PacketBuffer buffer) {
+        buffer.writeFloat(position.getX());
+        buffer.writeFloat(position.getY());
+        buffer.writeFloat(velocity.getX());
+        buffer.writeFloat(velocity.getY());
+        buffer.writeFloat(angle);
+        buffer.writeFloat(angularVelocity);
+    }
+
+    @Override
+    public boolean isSynced() {
+        return !needsSync;
+    }
+
+    @Override
+    public void markSynced() {
+        needsSync = false;
+    }
+
+    @Override
+    public boolean shouldSendToPlayer(Player player) {
+        return true;
     }
 
     @Override
@@ -188,7 +236,7 @@ public abstract class Entity implements Comparable<Entity> {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof Entity)) {
             return false;
         }
         final Entity other = (Entity) obj;

@@ -4,28 +4,31 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.SneakyThrows;
 import org.teleal.cling.UpnpService;
 import org.teleal.cling.UpnpServiceImpl;
 import org.teleal.cling.support.igd.PortMappingListener;
 import org.teleal.cling.support.model.PortMapping;
+import org.teleal.cling.support.model.PortMapping.Protocol;
 
 /**
  *
  * @author Techjar
  */
 public class UPnPManager {
-    private InetAddress localHost;
-    private Map<Integer, UpnpService> upnpServices;
+    public static final UPnPManager INSTANCE = new UPnPManager();
+    private final InetAddress localHost;
+    private final Map<Integer, UpnpService> upnpServices;
     
-    
-    public UPnPManager() throws UnknownHostException {
+    @SneakyThrows(UnknownHostException.class)
+    private UPnPManager() {
         this.localHost = InetAddress.getLocalHost();
         upnpServices = new HashMap<>();
     }
     
-    public boolean start(int port) {
+    public boolean start(int port, Protocol protocol) {
         if(upnpServices.containsKey(port)) return false;
-        upnpServices.put(port, new UpnpServiceImpl(new PortMappingListener(new PortMapping(port, localHost.getHostAddress(), PortMapping.Protocol.TCP)))).getControlPoint().search();
+        upnpServices.put(port, new UpnpServiceImpl(new PortMappingListener(new PortMapping(port, localHost.getHostAddress(), protocol)))).getControlPoint().search();
         return true;
     }
     
@@ -41,7 +44,7 @@ public class UPnPManager {
         upnpServices.clear();
     }
     
-    public UpnpService get(int port) {
+    protected UpnpService get(int port) {
         return upnpServices.get(port);
     }
 }

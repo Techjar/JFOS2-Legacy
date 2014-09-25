@@ -1,5 +1,5 @@
 
-package com.techjar.jfos2.client.world;
+package com.techjar.jfos2.world;
 
 import com.techjar.jfos2.entity.Entity;
 import java.util.Iterator;

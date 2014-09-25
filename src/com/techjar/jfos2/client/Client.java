@@ -14,7 +14,7 @@ import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
 import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.client.gui.screen.ScreenIntro;
-import com.techjar.jfos2.client.world.ClientWorld;
+import com.techjar.jfos2.world.ClientWorld;
 import com.techjar.jfos2.util.ArgumentParser;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.util.logging.LogHelper;
@@ -555,42 +555,6 @@ public class Client {
         Vector2 barCenter = getScreenCenter((int)barWidth, 0);
         RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth, 30, new Color(50, 50, 50));
         RenderHelper.drawSquare(barCenter.getX(), barCenter.getY(), barWidth * ResourceDownloader.getProgress(), 30, new Color(0, 100, 0));
-        /*if (titleStarted || soundManager.isPlaying(titleMusic)) {
-            titleStarted = true;
-            if (titleTick.getTickMillis() > 12000) gameStarted = true;
-            if (titleTick.getTickMillis() > 11000 && !titleScreenVisible) {
-                titleScreenVisible = true;
-                GUICreator.setupTitleScreen(this);
-            }
-            if (titleTick.getTickMillis() < 5400) {
-                String str = "Techjar Presents";
-                int width = introFont.getWidth(str), height = introFont.getHeight(str);
-                Vector2 fontCenter = getScreenCenter(width, height);
-                introFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
-            }
-            if (titleTick.getTickMillis() > 6400 && titleTick.getTickMillis() < 10500) {
-                String str = "Yet another space shooter...";
-                int width = introFont.getWidth(str), height = introFont.getHeight(str);
-                Vector2 fontCenter = getScreenCenter(width, height);
-                introFont.drawString(fontCenter.getX(), fontCenter.getY(), str, org.newdawn.slick.Color.white);
-            }
-            if (titleTick.getTickMillis() > 11000 && titleTick.getTickMillis() < 12000) {
-                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)(titleTick.getTickMillis() - 11000) / 1000f)))));
-            }
-            if (titleTick.getTickMillis() > 9500 && titleTick.getTickMillis() < 10500) {
-                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * ((float)(titleTick.getTickMillis() - 9500) / 1000f))));
-            }
-            if (titleTick.getTickMillis() > 6400 && titleTick.getTickMillis() < 7400) {
-                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)(titleTick.getTickMillis() - 6400) / 1000f)))));
-            }
-            if (titleTick.getTickMillis() > 4400 && titleTick.getTickMillis() < 5400) {
-                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * ((float)(titleTick.getTickMillis() - 4400) / 1000f))));
-            }
-            if (titleTick.getTickMillis() < 1000) {
-                RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), new Color(0, 0, 0, (int)(255 * (1 - ((float)titleTick.getTickMillis() / 1000f)))));
-            }
-            titleTick.incTicks();
-        }*/
     }
 
     private void initIntro() {

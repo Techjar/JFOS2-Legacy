@@ -17,6 +17,10 @@ import org.lwjgl.input.Controller;
  * @author Techjar
  */
 public class EntityShip extends EntityFriendly {
+    public EntityShip() {
+        super();
+    }
+
     public EntityShip(int id) {
         super(id);
         angle = 90;
@@ -52,16 +56,6 @@ public class EntityShip extends EntityFriendly {
             glTexCoord2f(0, 0.578125f); glVertex2f(0, 148);
         glEnd();
         glPopMatrix();
-    }
-
-    @Override
-    public void readData(DataInputStream stream) throws IOException {
-        super.readData(stream);
-    }
-
-    @Override
-    public void writeData(DataOutputStream stream) throws IOException {
-        super.writeData(stream);
     }
 
     @Override

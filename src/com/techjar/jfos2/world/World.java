@@ -1,5 +1,5 @@
 
-package com.techjar.jfos2.client.world;
+package com.techjar.jfos2.world;
 
 import com.techjar.jfos2.entity.Entity;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public abstract class World {
     }
 
     public void addEntity(Entity entity) {
-        if (entityMap.containsKey(entity.getId())) throw new RuntimeException("Entity ID already in use!");
+        if (entityMap.containsKey(entity.getId())) throw new IllegalArgumentException("Entity ID already in use!");
         entityMap.put(entity.getId(), entity);
         entityList.add(entity);
         Collections.sort(entityList);
