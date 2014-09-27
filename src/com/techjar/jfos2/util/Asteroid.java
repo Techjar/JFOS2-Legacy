@@ -10,6 +10,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Circle;
 
@@ -124,10 +125,10 @@ public class Asteroid {
         indices = data.getIndices();
         float[] vertices = data.getVertices();
         byte[] colors = data.getColors();
-        FloatBuffer floatBuffer = ByteBuffer.allocateDirect(vertices.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(vertices.length);
         floatBuffer.put(vertices);
         floatBuffer.rewind();
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(colors.length).order(ByteOrder.nativeOrder());
+        ByteBuffer byteBuffer = BufferUtils.createByteBuffer(colors.length);
         byteBuffer.put(colors);
         byteBuffer.rewind();
         vertexVBO = glGenBuffers();

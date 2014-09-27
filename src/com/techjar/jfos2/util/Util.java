@@ -1,5 +1,7 @@
 package com.techjar.jfos2.util;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -18,6 +20,8 @@ import org.newdawn.slick.geom.Vector2f;
  * @author Techjar
  */
 public final class Util {
+    public static final Gson GSON = new GsonBuilder().create();
+
     public static boolean isValidCharacter(char ch) {
         return ch >= 32 && ch <= 126;
     }
@@ -136,7 +140,8 @@ public final class Util {
     }
 
     public static int getNextPowerOfTwo(int number) {
-        return Integer.highestOneBit(number) << 1;
+        int ret = Integer.highestOneBit(number);
+        return ret < number ? ret << 1 : ret;
     }
 
     public static final class IPInfo {

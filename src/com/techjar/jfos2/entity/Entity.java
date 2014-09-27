@@ -48,7 +48,7 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
 
     @SneakyThrows(Exception.class)
     public static Entity generateEntity(int type, int id) {
-        return entityMap.get(type).getConstructor(Integer.class).newInstance(id);
+        return entityMap.get(type).getConstructor(int.class).newInstance(id);
     }
 
     public static void registerEntity(int type, Class<? extends Entity> clazz) {
@@ -176,6 +176,10 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
 
     public void setDead() {
         dead = true;
+    }
+
+    public boolean canCollide(Entity other) {
+        return true;
     }
 
     public void onCollide(Entity other) {

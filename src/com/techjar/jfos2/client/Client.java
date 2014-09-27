@@ -51,6 +51,7 @@ import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
+import org.newdawn.slick.opengl.Texture;
 
 /**
  *
@@ -287,6 +288,7 @@ public class Client {
         frame.setLayout(new BorderLayout());
         frame.setResizable(false);
         frame.setAlwaysOnTop(false);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         canvas = new Canvas();
 
         /*canvas.addComponentListener(new ComponentAdapter() {
@@ -633,6 +635,8 @@ public class Client {
     private void update() {
         float delta = getDelta();
 
+        textureManager.update(delta);
+
         Iterator<Screen> it = screenList.iterator();
         while (it.hasNext()) {
             Screen screen = it.next();
@@ -668,6 +672,17 @@ public class Client {
                 initIntro();
             }
         }
+
+        Texture tex = textureManager.getTexture("animated3.png");
+        tex.bind();
+        glTranslatef(256, 256, 0);
+        glBegin(GL_QUADS);
+            glTexCoord2f(0, 0); glVertex2f(0, 0);
+            glTexCoord2f(0, tex.getHeight()); glVertex2f(0, tex.getImageHeight());
+            glTexCoord2f(tex.getWidth(), tex.getHeight()); glVertex2f(tex.getImageWidth(), tex.getImageHeight());
+            glTexCoord2f(tex.getWidth(), 0); glVertex2f(tex.getImageWidth(), 0);
+        glEnd();
+        glTranslatef(-256, -256, 0);
 
         if (world != null) world.render();
         for (Screen screen : screenList)
@@ -713,7 +728,8 @@ public class Client {
                 try {
                     runGameLoop();
                 } catch (Exception ex) {
-
+                    ex.printStackTrace();
+                    hasCrashed = true;
                 }
             } else {
                 closeRequested = true;
@@ -931,7 +947,7 @@ public class Client {
         if (fontManager != null) fontManager.cleanup();
         Keyboard.destroy();
         Mouse.destroy();
-        Display.destroy(); // Why the fuck is this causing a segmentation fault!?
+        Display.destroy();
     }
     
     public File getDataDirectory() {
