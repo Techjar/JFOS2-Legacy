@@ -6,7 +6,6 @@ import static org.lwjgl.opengl.GL11.*;
 import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.util.json.TextureMeta;
 import com.techjar.jfos2.util.json.TextureMeta.Animation.Frame;
-import com.techjar.jfos2.util.logging.LogHelper;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +16,6 @@ import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +23,7 @@ import lombok.Cleanup;
 import lombok.SneakyThrows;
 import org.lwjgl.BufferUtils;
 import org.newdawn.slick.Image;
-import org.newdawn.slick.opengl.ImageDataFactory;
-import org.newdawn.slick.opengl.LoadableImageData;
+import org.newdawn.slick.opengl.PNGDecoder;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureImpl;
 import org.newdawn.slick.opengl.TextureLoader;
@@ -110,27 +107,20 @@ public class TextureManager {
         return getImage(file, GL_LINEAR);
     }
 
-    private TextureAnimated loadAnimatedTexture(String ref, InputStream in, int filter, TextureMeta meta) throws IOException { // , String resourceName, int target, int magFilter, int minFilter, boolean flipped, int[] transparent
-        LoadableImageData imageData = ImageDataFactory.getImageDataFor(ref);
-    	ByteBuffer imageBuffer = imageData.loadImage(new BufferedInputStream(in));
+    private TextureAnimated loadAnimatedTexture(String ref, InputStream in, int filter, TextureMeta meta) throws IOException {
+        PNGDecoder decoder = new PNGDecoder(new BufferedInputStream(in));
+        if (!decoder.isRGB()) throw new IOException("Only RGB formatted images are supported by the PNGDecoder");
 
-        boolean hasAlpha = imageData.getDepth() == 32;
+        boolean hasAlpha = decoder.hasAlpha();
         int componentCount = hasAlpha ? 4 : 3;
         //int pixelFormat = hasAlpha ? GL_RGBA : GL_RGB;
-        int width = imageData.getWidth() / meta.animation.width;
-        int height = imageData.getHeight() / meta.animation.height;
+        int width = decoder.getWidth() / meta.animation.width;
+        int height = decoder.getHeight() / meta.animation.height;
         int texWidth = Util.getNextPowerOfTwo(width);
         int texHeight = Util.getNextPowerOfTwo(height);
 
-        // Copy data into a buffer with real image dimensions, not texture dimensions...
-        ByteBuffer buffer = ByteBuffer.allocate(imageData.getWidth() * imageData.getHeight() * componentCount).order(ByteOrder.nativeOrder());
-        byte[] rowBuffer = new byte[imageData.getWidth() * componentCount];
-        for (int y = 0; y < imageData.getHeight(); y++) {
-            imageBuffer.position(y * imageData.getTexWidth() * componentCount);
-            imageBuffer.get(rowBuffer, 0, imageData.getWidth() * componentCount);
-            buffer.put(rowBuffer);
-        }
-        buffer.rewind();
+        ByteBuffer buffer = ByteBuffer.allocate(decoder.getWidth() * decoder.getHeight() * componentCount).order(ByteOrder.nativeOrder());
+        decoder.decode(buffer, decoder.getWidth() * componentCount, hasAlpha ? PNGDecoder.RGBA : PNGDecoder.RGB);
 
         int max = glGetInteger(GL_MAX_TEXTURE_SIZE);
         if (texWidth > max || texHeight > max) {
@@ -138,11 +128,11 @@ public class TextureManager {
         }
 
         List<byte[]> textureData = new ArrayList<>();
-        for (int y = 0; y < imageData.getHeight(); y += height) {
-            for (int x = imageData.getWidth() - width; x >= 0; x -= width) {
+        for (int y = 0; y < decoder.getHeight(); y += height) {
+            for (int x = 0; x < decoder.getWidth(); x += width) {
                 byte[] bytes = new byte[texWidth * texHeight * componentCount];
                 for (int y2 = 0; y2 < height; y2++) {
-                    buffer.position(((y + y2) * imageData.getWidth() + x) * componentCount);
+                    buffer.position(((y + y2) * decoder.getWidth() + x) * componentCount);
                     buffer.get(bytes, texWidth * y2 * componentCount, width * componentCount);
                 }
                 textureData.add(bytes);
