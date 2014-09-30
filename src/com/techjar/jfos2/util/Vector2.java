@@ -25,6 +25,16 @@ public class Vector2 {
         this.y = other.y;
     }
 
+    public Vector2(org.newdawn.slick.geom.Vector2f other) {
+        this.x = other.x;
+        this.y = other.y;
+    }
+
+    public Vector2(org.lwjgl.util.vector.Vector2f other) {
+        this.x = other.x;
+        this.y = other.y;
+    }
+
     public Vector2 copy() {
         return new Vector2(this);
     }

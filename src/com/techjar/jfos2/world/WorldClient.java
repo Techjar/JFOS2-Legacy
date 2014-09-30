@@ -9,7 +9,7 @@ import org.lwjgl.input.Controller;
  *
  * @author Techjar
  */
-public class ClientWorld extends World {
+public class WorldClient extends World {
     @Override
     public void update(float delta) {
         Iterator<Entity> it = entityList.iterator();

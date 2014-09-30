@@ -14,6 +14,8 @@ import com.techjar.jfos2.util.Vector2;
 import java.lang.reflect.Modifier;
 import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
+import org.newdawn.slick.geom.Point;
+import org.newdawn.slick.geom.Shape;
 
 /**
  *
@@ -79,6 +81,10 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
 
     public boolean processControllerEvent(Controller controller) {
         return true;
+    }
+
+    public Shape getBoundingBox() {
+        return new Point(position.getX(), position.getY());
     }
 
     public final int getEntityType() {
@@ -233,32 +239,5 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
         if (this.getRenderPriority() < other.getRenderPriority()) return -1;
         if (this.getRenderPriority() > other.getRenderPriority()) return 1;
         return 0;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 23 * hash + this.id;
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof Entity)) {
-            return false;
-        }
-        final Entity other = (Entity) obj;
-        if (this.id != other.id) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "Entity{" + "id=" + id + ", position=" + position + ", angle=" + angle + '}';
     }
 }

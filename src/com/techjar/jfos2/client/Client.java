@@ -14,7 +14,7 @@ import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
 import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.client.gui.screen.ScreenIntro;
-import com.techjar.jfos2.world.ClientWorld;
+import com.techjar.jfos2.world.WorldClient;
 import com.techjar.jfos2.util.ArgumentParser;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.util.logging.LogHelper;
@@ -49,6 +49,7 @@ import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
+import org.newdawn.slick.geom.Point;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.opengl.Texture;
@@ -62,7 +63,7 @@ public class Client {
     private final File dataDir;
     private JFrame frame;
     private Canvas canvas;
-    private Rectangle mouseHitbox;
+    private Point mouseHitbox;
     private ConfigManager config;
     private FontManager fontManager;
     private TextureManager textureManager;
@@ -96,7 +97,7 @@ public class Client {
     private boolean renderBackground;
     public boolean renderDebug = true;
     private Map<String, Integer> validControllers = new HashMap<>();
-    private ClientWorld world;
+    private WorldClient world;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -107,7 +108,7 @@ public class Client {
         System.setProperty("sun.java2d.noddraw", "true");
         LogHelper.init();
         dataDir = OperatingSystem.getDataDirectory("jfos2");
-        mouseHitbox = new Rectangle(0, 0, 1, 1);
+        mouseHitbox = new Point(0, 0);
         screenList = new ArrayList<>();
         screensToAdd = new ArrayList<>();
         resizeHandlers = new ArrayList<>();

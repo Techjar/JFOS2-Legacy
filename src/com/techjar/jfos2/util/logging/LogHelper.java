@@ -43,35 +43,35 @@ public final class LogHelper {
         logger.setLevel(level);
     }
 
-    public static void error(String message, Throwable error) {
-        logger.log(Level.SEVERE, message, error);
+    public static void error(Object message, Throwable error) {
+        logger.log(Level.SEVERE, message.toString(), error);
     }
 
-    public static void severe(String message, Object... params) {
-        logger.log(Level.SEVERE, String.format(message, params));
+    public static void severe(Object message, Object... params) {
+        logger.log(Level.SEVERE, String.format(message.toString(), params));
     }
 
-    public static void warning(String message, Object... params) {
-        logger.log(Level.WARNING, String.format(message, params));
+    public static void warning(Object message, Object... params) {
+        logger.log(Level.WARNING, String.format(message.toString(), params));
     }
 
-    public static void info(String message, Object... params) {
-        logger.log(Level.INFO, String.format(message, params));
+    public static void info(Object message, Object... params) {
+        logger.log(Level.INFO, String.format(message.toString(), params));
     }
 
-    public static void config(String message, Object... params) {
-        logger.log(Level.CONFIG, String.format(message, params));
+    public static void config(Object message, Object... params) {
+        logger.log(Level.CONFIG, String.format(message.toString(), params));
     }
 
-    public static void fine(String message, Object... params) {
-        logger.log(Level.FINE, String.format(message, params));
+    public static void fine(Object message, Object... params) {
+        logger.log(Level.FINE, String.format(message.toString(), params));
     }
 
-    public static void finer(String message, Object... params) {
-        logger.log(Level.FINER, String.format(message, params));
+    public static void finer(Object message, Object... params) {
+        logger.log(Level.FINER, String.format(message.toString(), params));
     }
 
-    public static void finest(String message, Object... params) {
-        logger.log(Level.FINEST, String.format(message, params));
+    public static void finest(Object message, Object... params) {
+        logger.log(Level.FINEST, String.format(message.toString(), params));
     }
 }
