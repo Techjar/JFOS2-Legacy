@@ -544,7 +544,7 @@ public class Client {
 
     private void drawSplash() {
         textureManager.getTexture("background.png").bind();
-        RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), true);
+        RenderHelper.drawSquare(0, 0, displayMode.getWidth(), displayMode.getHeight(), textureManager.getTexture("background.png"));
     }
 
     private void renderResourceProgress() {
@@ -608,7 +608,7 @@ public class Client {
             for (Screen screen : screenList)
                 if (screen.isVisible() && screen.isEnabled() && !screen.processKeyboardEvent()) continue toploop;
             if (world != null && !world.processKeyboardEvent()) continue;
-            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
+            //if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
         }
     }
 
@@ -673,16 +673,14 @@ public class Client {
             }
         }
 
-        Texture tex = textureManager.getTexture("animated3.png");
+        //glColor3f(1, 1, 1);
+        Texture tex = textureManager.getTexture("alientest.png", GL_NEAREST);
         tex.bind();
-        glTranslatef(256, 256, 0);
-        glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(0, 0);
-            glTexCoord2f(0, tex.getHeight()); glVertex2f(0, tex.getImageHeight());
-            glTexCoord2f(tex.getWidth(), tex.getHeight()); glVertex2f(tex.getImageWidth(), tex.getImageHeight());
-            glTexCoord2f(tex.getWidth(), 0); glVertex2f(tex.getImageWidth(), 0);
-        glEnd();
-        glTranslatef(-256, -256, 0);
+        for (int x = 0; x < displayMode.getWidth(); x += tex.getImageWidth()) {
+            for (int y = 0; y < displayMode.getHeight(); y += tex.getImageHeight()) {
+                RenderHelper.drawSquare(x, y, tex.getImageWidth(), tex.getImageHeight(), tex);
+            }
+        }
 
         if (world != null) world.render();
         for (Screen screen : screenList)

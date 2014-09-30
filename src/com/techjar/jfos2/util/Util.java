@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,6 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import lombok.Cleanup;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Vector2f;
@@ -87,30 +90,21 @@ public final class Util {
         return new IPInfo(InetAddress.getByName(ip), port, ipv6);
     }
 
-    public static String getFileMD5(File file) {
-        try {
-            InputStream is = new FileInputStream(file);
-            byte[] bytes = new byte[(int)file.length()];
-            is.read(bytes); is.close();
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(bytes);
-            byte[] digest = md.digest();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < digest.length; i++) {
-                sb.append(Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1));
-            }
-            return sb.toString();
+    public static String getFileMD5(File file) throws IOException, NoSuchAlgorithmException {
+        @Cleanup InputStream is = new FileInputStream(file);
+        byte[] bytes = new byte[(int)file.length()];
+        is.read(bytes);
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(bytes);
+        byte[] digest = md.digest();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < digest.length; i++) {
+            sb.append(Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1));
         }
-        catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("MD5 cryptography not supported!", ex);
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return "";
+        return sb.toString();
     }
 
-    public static String getFileMD5(String file) {
+    public static String getFileMD5(String file) throws IOException, NoSuchAlgorithmException {
         return getFileMD5(new File(file));
     }
 

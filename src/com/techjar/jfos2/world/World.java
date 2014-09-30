@@ -33,16 +33,16 @@ public abstract class World {
     }
 
     public void addEntity(Entity entity) {
-        if (entityMap.containsKey(entity.getId())) throw new IllegalArgumentException("Entity ID already in use!");
-        entityMap.put(entity.getId(), entity);
+        if (entityMap.containsKey(entity.getID())) throw new IllegalArgumentException("Entity ID already in use!");
+        entityMap.put(entity.getID(), entity);
         entityList.add(entity);
         Collections.sort(entityList);
     }
 
     public void removeEntity(Entity entity) {
-        if (!entityMap.containsKey(entity.getId())) return;
-        entityMap.remove(entity.getId());
-        entityList.remove(entity.getId());
+        if (!entityMap.containsKey(entity.getID())) return;
+        entityMap.remove(entity.getID());
+        entityList.remove(entity.getID());
     }
 
     public void removeEntity(int id) {
@@ -52,7 +52,7 @@ public abstract class World {
         Entity entity;
         while (it.hasNext()) {
             entity = it.next();
-            if (entity.getId() == id) {
+            if (entity.getID() == id) {
                 it.remove();
                 break;
             }

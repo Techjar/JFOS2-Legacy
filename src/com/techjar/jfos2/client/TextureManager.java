@@ -119,7 +119,7 @@ public class TextureManager {
         int texWidth = Util.getNextPowerOfTwo(width);
         int texHeight = Util.getNextPowerOfTwo(height);
 
-        ByteBuffer buffer = ByteBuffer.allocate(decoder.getWidth() * decoder.getHeight() * componentCount).order(ByteOrder.nativeOrder());
+        ByteBuffer buffer = ByteBuffer.allocate(decoder.getWidth() * decoder.getHeight() * componentCount);
         decoder.decode(buffer, decoder.getWidth() * componentCount, hasAlpha ? PNGDecoder.RGBA : PNGDecoder.RGB);
 
         int max = glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -183,12 +183,21 @@ public class TextureManager {
             this.buffer = buffer;
             this.textureData = textureData;
             this.frameInfo = meta.animation.frames;
-            for (Frame frame : frameInfo) {
-                if (frame.index >= textureData.size()) {
-                    throw new IllegalArgumentException("Invalid frame index: " + frame.index);
+            if (frameInfo == null || frameInfo.length < 1) {
+                frameInfo = new Frame[textureData.size()];
+                for (int i = 0; i < textureData.size(); i++) {
+                    frameInfo[i] = new Frame();
+                    frameInfo[i].index = i;
+                    frameInfo[i].time = meta.animation.frametime;
                 }
-                if (frame.time <= 0) {
-                    frame.time = meta.animation.frametime;
+            } else {
+                for (Frame frame : frameInfo) {
+                    if (frame.index >= textureData.size()) {
+                        throw new IllegalArgumentException("Invalid frame index: " + frame.index);
+                    }
+                    if (frame.time <= 0) {
+                        frame.time = meta.animation.frametime;
+                    }
                 }
             }
         }

@@ -2,6 +2,7 @@
 package com.techjar.jfos2.network;
 
 import com.techjar.jfos2.player.Player;
+import com.techjar.jfos2.util.ObjectType;
 
 /**
  * Interface for objects that need data synchronized across the network.
@@ -34,6 +35,20 @@ public interface NetworkedObject {
      * Called when the object's data has been sent to clients.
      */
     public void markSynced();
+
+    /**
+     * Should return a type-unique ID for this object.
+     *
+     * @return type-unique ID for this object
+     */
+    public int getID();
+
+    /**
+     * Should return a ObjectType enum indicating the type of this object.
+     *
+     * @return enum indicating the type of this object
+     */
+    public ObjectType getObjectType();
 
     /**
      * Should return true if this object should be sent to the passed player.

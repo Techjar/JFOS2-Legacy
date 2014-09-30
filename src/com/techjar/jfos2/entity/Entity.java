@@ -7,13 +7,10 @@ package com.techjar.jfos2.entity;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.techjar.jfos2.network.NetworkedObject;
-import com.techjar.jfos2.network.Packet;
 import com.techjar.jfos2.network.PacketBuffer;
 import com.techjar.jfos2.player.Player;
+import com.techjar.jfos2.util.ObjectType;
 import com.techjar.jfos2.util.Vector2;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Modifier;
 import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
@@ -84,11 +81,7 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
         return true;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public final int getType() {
+    public final int getEntityType() {
         return entityMap.inverse().get(this.getClass());
     }
 
@@ -178,6 +171,10 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
         dead = true;
     }
 
+    public boolean isInert() {
+        return false;
+    }
+
     public boolean canCollide(Entity other) {
         return true;
     }
@@ -213,6 +210,16 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
     @Override
     public void markSynced() {
         needsSync = false;
+    }
+
+    @Override
+    public int getID() {
+        return id;
+    }
+
+    @Override
+    public ObjectType getObjectType() {
+        return ObjectType.ENTITY;
     }
 
     @Override

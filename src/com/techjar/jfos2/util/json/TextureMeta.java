@@ -8,13 +8,13 @@ package com.techjar.jfos2.util.json;
 public class TextureMeta {
     public Animation animation;
 
-    public class Animation {
+    public static class Animation {
         public int width;
         public int height;
         public float frametime;
         public Frame[] frames;
 
-        public class Frame {
+        public static class Frame {
             public int index;
             public float time;
         }

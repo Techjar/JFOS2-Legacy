@@ -11,6 +11,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import org.lwjgl.input.Controller;
+import org.newdawn.slick.opengl.Texture;
 
 /**
  *
@@ -43,7 +44,9 @@ public class EntityShip extends EntityFriendly {
 
     @Override
     public void render() {
-        Client.getInstance().getTextureManager().getTexture("ship.png").bind();
+        Texture tex = Client.getInstance().getTextureManager().getTexture("ship.png");
+        tex.bind();
+        
         glPushMatrix();
         glTranslatef(position.getX(), position.getY(), 0);
         glRotatef(angle, 0, 0, 1);
@@ -51,9 +54,9 @@ public class EntityShip extends EntityFriendly {
         glColor3f(1, 1, 1);
         glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(0, 0);
-            glTexCoord2f(0.54296875f, 0); glVertex2f(139, 0);
-            glTexCoord2f(0.54296875f, 0.578125f); glVertex2f(139, 148);
-            glTexCoord2f(0, 0.578125f); glVertex2f(0, 148);
+            glTexCoord2f(tex.getWidth(), 0); glVertex2f(tex.getImageWidth(), 0);
+            glTexCoord2f(tex.getWidth(), tex.getHeight()); glVertex2f(tex.getImageWidth(), tex.getImageHeight());
+            glTexCoord2f(0, tex.getHeight()); glVertex2f(0, tex.getImageHeight());
         glEnd();
         glPopMatrix();
     }
