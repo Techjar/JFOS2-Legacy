@@ -13,9 +13,8 @@ import java.util.logging.Level;
  */
 public class Launcher {
     public static void main(String[] args) {
-        LogHelper.init();
         if (OperatingSystem.isUnknown()) {
-            LogHelper.severe("Unsupported OS detected, exiting...");
+            System.out.println("Unsupported OS detected, exiting...");
             System.exit(0);
         }
         try {

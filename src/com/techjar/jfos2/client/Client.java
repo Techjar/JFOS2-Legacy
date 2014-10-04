@@ -1,5 +1,6 @@
 package com.techjar.jfos2.client;
 
+import com.techjar.jfos2.LongSleeperThread;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL32.*;
@@ -50,7 +51,6 @@ import org.lwjgl.util.Dimension;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
 import org.newdawn.slick.geom.Point;
-import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.opengl.Texture;
 
@@ -60,10 +60,10 @@ import org.newdawn.slick.opengl.Texture;
  */
 public class Client {
     private static Client instance;
-    private final File dataDir;
+    private final File dataDir = OperatingSystem.getDataDirectory("jfos2");
     private JFrame frame;
     private Canvas canvas;
-    private Point mouseHitbox;
+    private Point mouseHitbox = new Point(0, 0);
     private ConfigManager config;
     private FontManager fontManager;
     private TextureManager textureManager;
@@ -75,11 +75,11 @@ public class Client {
     private boolean newFullscreen;
     private List<DisplayMode> displayModeList;
     private PixelFormat pixelFormat;
-    private List<Screen> screenList;
-    private List<ScreenHolder> screensToAdd;
-    private List<GUICallback> resizeHandlers;
-    private List<Runnable> preProcessors;
-    private List<Runnable> postProcessors;
+    private List<Screen> screenList = new ArrayList<>();
+    private List<ScreenHolder> screensToAdd = new ArrayList<>();
+    private List<GUICallback> resizeHandlers = new ArrayList<>();
+    private List<Runnable> preProcessors = new ArrayList<>();
+    private List<Runnable> postProcessors = new ArrayList<>();
     private int multisampleFBO;
     private int multisampleTexture;
     //private AtomicReference<Dimension> newCanvasSize = new AtomicReference<Dimension>();
@@ -92,7 +92,7 @@ public class Client {
     public final boolean antiAliasingSupported;
     public final int antiAliasingMaxSamples;
     private boolean antiAliasing;
-    private int antiAliasingSamples = 4;
+    private int antiAliasingSamples;
     private boolean running;
     private boolean renderBackground;
     public boolean renderDebug = true;
@@ -106,17 +106,9 @@ public class Client {
     
     public Client() throws LWJGLException {
         System.setProperty("sun.java2d.noddraw", "true");
-        LogHelper.init();
-        dataDir = OperatingSystem.getDataDirectory("jfos2");
-        mouseHitbox = new Point(0, 0);
-        screenList = new ArrayList<>();
-        screensToAdd = new ArrayList<>();
-        resizeHandlers = new ArrayList<>();
-        preProcessors = new ArrayList<>();
-        postProcessors = new ArrayList<>();
+        LogHelper.init(new File(Constants.DATA_DIRECTORY, "logs"));
         
-        PixelFormat format = new PixelFormat(32, 0, 24, 8, 0);
-        Pbuffer pb = new Pbuffer(800, 600, format, null);
+        Pbuffer pb = new Pbuffer(800, 600, new PixelFormat(32, 0, 24, 8, 0), null);
         pb.makeCurrent();
         antiAliasingMaxSamples = glGetInteger(GL_MAX_SAMPLES);
         antiAliasingSupported = antiAliasingMaxSamples > 0;
@@ -126,6 +118,7 @@ public class Client {
     
     public static void main(final String[] args) {
         if (instance != null) throw new IllegalStateException("Client already running!");
+        LongSleeperThread.startSleeper();
         new Thread(new Runnable() {
             @Override
             public void run() {

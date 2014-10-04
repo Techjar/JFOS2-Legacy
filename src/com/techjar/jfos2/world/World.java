@@ -2,12 +2,12 @@
 package com.techjar.jfos2.world;
 
 import com.techjar.jfos2.entity.Entity;
-import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.util.Vector2;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.newdawn.slick.geom.Shape;
@@ -18,10 +18,20 @@ import org.newdawn.slick.geom.Shape;
  */
 public abstract class World {
     protected List<Entity> entityList = new ArrayList<>();
+    protected List<Entity> toAddEntityList = new LinkedList<>();
     protected Map<Integer, Entity> entityMap = new HashMap<>();
+    public void update(float delta) {
+        if (toAddEntityList.size() > 0) {
+            for (Entity entity : toAddEntityList) {
+                internalAddEntity(entity);
+            }
+            toAddEntityList.clear();
+        }
+    }
 
-    public abstract void update(float delta);
-    public abstract void render();
+    public void render() {
+        throw new UnsupportedOperationException("Not a renderable world.");
+    }
 
     public int getEntityCount() {
         return entityList.size();
@@ -63,14 +73,19 @@ public abstract class World {
     }
 
     public void addEntity(Entity entity) {
+        toAddEntityList.add(entity);
+    }
+
+    protected void internalAddEntity(Entity entity) {
         if (entityMap.containsKey(entity.getID())) throw new IllegalArgumentException("Entity ID already in use!");
+        entity.setWorld(this);
         entityMap.put(entity.getID(), entity);
         entityList.add(entity);
-        Collections.sort(entityList);
     }
 
     public void removeEntity(Entity entity) {
         if (!entityMap.containsKey(entity.getID())) return;
+        entity.setWorld(null);
         entityMap.remove(entity.getID());
         entityList.remove(entity.getID());
     }
@@ -83,6 +98,7 @@ public abstract class World {
         while (it.hasNext()) {
             entity = it.next();
             if (entity.getID() == id) {
+                entity.setWorld(null);
                 it.remove();
                 break;
             }

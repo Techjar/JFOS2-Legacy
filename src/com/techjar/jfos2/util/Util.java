@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -57,10 +56,6 @@ public final class Util {
 
     public static org.lwjgl.util.Color subtractColors(org.lwjgl.util.Color color1, org.lwjgl.util.Color color2) {
         return new org.lwjgl.util.Color(MathHelper.clamp(color1.getRed() - color2.getRed(), 0, 255), MathHelper.clamp(color1.getGreen() - color2.getGreen(), 0, 255), MathHelper.clamp(color1.getBlue() - color2.getBlue(), 0, 255));
-    }
-
-    public static boolean isPowerOfTwo(int num) {
-        return (num != 0) && (num & (num - 1)) == 0;
     }
 
     public static float getAxisValue(Controller con, String name) {
@@ -136,6 +131,10 @@ public final class Util {
     public static int getNextPowerOfTwo(int number) {
         int ret = Integer.highestOneBit(number);
         return ret < number ? ret << 1 : ret;
+    }
+
+    public static boolean isPowerOfTwo(int number) {
+        return (number != 0) && (number & (number - 1)) == 0;
     }
 
     public static final class IPInfo {

@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +36,6 @@ public class TextureManager {
     protected Map<String, Texture> cache;
     protected Map<String, TextureAnimated> animated;
     protected Map<String, Image> imageCache;
-    protected Texture lastBind;
     protected static final Constructor<Image> imageConstructor;
 
     static { // We have to reflectively initialize Image to bypass the clampTexture() call...

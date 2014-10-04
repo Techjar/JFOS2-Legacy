@@ -58,7 +58,7 @@ public final class LogHandler extends Handler {
     }
 
     public boolean checkDateChanged() {
-        File newFile = new File(new File(Constants.DATA_DIRECTORY, "logs"), new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()) + ".txt");
+        File newFile = new File(LogHelper.getDirectory(), new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()) + ".txt");
         if (newFile.equals(this.file)) return false;
         this.file = newFile;
         this.openStream();

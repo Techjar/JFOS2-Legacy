@@ -26,8 +26,140 @@ public class PacketBuffer extends ByteBuf {
         this.buffer = buffer;
     }
 
+    /**
+     * Returns the number of bytes needed for a variable length integer.
+     * See <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">Google Protocol Buffers</a>
+     *
+     * @param value integer to check
+     * @return number of bytes
+     */
+    public static int getVarIntSize(int value) {
+        value = (value << 1) ^ (value >> 31);
+        if ((value & (-1 << 7)) == 0) {
+            return 1;
+        } else if ((value & (-1 << 14)) == 0) {
+            return 2;
+        } else if ((value & (-1 << 21)) == 0) {
+            return 3;
+        } else if ((value & (-1 << 28)) == 0) {
+            return 4;
+        }
+        return 5;
+    }
+
+    /**
+     * Returns the number of bytes needed for a variable length long.
+     * See <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">Google Protocol Buffers</a>
+     *
+     * @param value long to check
+     * @return number of bytes
+     */
+    public static int getVarLongSize(long value) {
+        value = (value << 1) ^ (value >> 63);
+        if ((value & (-1L << 7)) == 0) {
+            return 1;
+        } else if ((value & (-1L << 14)) == 0) {
+            return 2;
+        } else if ((value & (-1L << 21)) == 0) {
+            return 3;
+        } else if ((value & (-1L << 28)) == 0) {
+            return 4;
+        } else if ((value & (-1L << 35)) == 0) {
+            return 5;
+        } else if ((value & (-1L << 42)) == 0) {
+            return 6;
+        } else if ((value & (-1L << 49)) == 0) {
+            return 7;
+        } else if ((value & (-1L << 56)) == 0) {
+            return 8;
+        }
+        return 9;
+    }
+
+    /**
+     * Reads a variable length integer from the buffer.
+     * See <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">Google Protocol Buffers</a>
+     *
+     * @return integer read from buffer
+     * @throws IOException if number of bytes read exceeds expected maximum
+     */
+    public int readVarInt() throws IOException {
+        int value = 0;
+        int i = 0;
+        byte b;
+
+        do {
+            b = this.readByte();
+            value |= (b & 0x7F) << i++ * 7;
+            if (i > 5) {
+                throw new IOException("Variable length number too large");
+            }
+        } while ((b & 0x80) == 0x80);
+
+        int temp = (((value << 31) >> 31) ^ value) >> 1;
+        return temp ^ (value & (1 << 31));
+    }
+
+    /**
+     * Writes a variable length integer to the buffer.
+     * See <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">Google Protocol Buffers</a>
+     *
+     * @param value integer to write
+     * @return this ByteBuf
+     */
+    public ByteBuf writeVarInt(int value) {
+        value = (value << 1) ^ (value >> 31);
+        while ((value & (-1 << 7)) != 0) {
+            this.writeByte(value & 0x7F | 0x80);
+            value >>>= 7;
+        }
+        this.writeByte(value);
+        return this;
+    }
+
+    /**
+     * Reads a variable length long from the buffer.
+     * See <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">Google Protocol Buffers</a>
+     *
+     * @return long read from buffer
+     * @throws IOException if number of bytes read exceeds expected maximum
+     */
+    public long readVarLong() throws IOException {
+        long value = 0;
+        int i = 0;
+        byte b;
+
+        do {
+            b = this.readByte();
+            value |= (b & 0x7FL) << i++ * 7;
+            if (i > 9) {
+                throw new IOException("Variable length number too large");
+            }
+        } while ((b & 0x80) == 0x80);
+
+        long temp = (((value << 63) >> 63) ^ value) >> 1;
+        return temp ^ (value & (1L << 63));
+    }
+
+    /**
+     * Writes a variable length long to the buffer.
+     * See <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">Google Protocol Buffers</a>
+     *
+     * @param value long to write
+     * @return this ByteBuf
+     */
+    public ByteBuf writeVarLong(long value) {
+        value = (value << 1) ^ (value >> 63);
+        while ((value & (-1L << 7)) != 0) {
+            this.writeByte((int)(value & 0x7F | 0x80));
+            value >>>= 7;
+        }
+        this.writeByte((int)value);
+        return this;
+    }
+
     public String readString() throws IOException {
-        int length = buffer.readInt();
+        int length = this.readVarInt();
         if (length > maxStringLength * 4) {
             throw new IOException("Recieved string bytes larger than maximum allowed (" + length + " > " + maxStringLength * 4 + ")");
         }
@@ -47,7 +179,7 @@ public class PacketBuffer extends ByteBuf {
             throw new IOException("String length longer than maximum allowed (" + value.length() + " > " + maxStringLength + ")");
         }
         byte[] bytes = value.getBytes(Charsets.UTF_8);
-        this.writeInt(bytes.length);
+        this.writeVarInt(bytes.length);
         this.writeBytes(bytes);
         return this;
     }

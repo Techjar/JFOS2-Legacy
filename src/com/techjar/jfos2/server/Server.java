@@ -1,5 +1,7 @@
 package com.techjar.jfos2.server;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.techjar.jfos2.LongSleeperThread;
 import com.techjar.jfos2.util.ConfigManager;
 import com.techjar.jfos2.util.Constants;
 import com.techjar.jfos2.TickCounter;
@@ -13,7 +15,13 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import lombok.SneakyThrows;
 
 /**
  *
@@ -21,7 +29,7 @@ import java.util.logging.Level;
  */
 public class Server {
     private static Server instance;
-    private final boolean singlePlayer;
+    private final boolean local;
     protected int port;
     protected InetAddress ip;
     protected String name;
@@ -30,60 +38,84 @@ public class Server {
     protected TickCounter tick;
     protected boolean shutdownRequested;
 
-    public Server(boolean singlePlayer) {
-        LogHelper.init();
-        this.singlePlayer = singlePlayer;
+    public Server(boolean local) {
+        if (!local) LogHelper.init(new File("logs"));
+        this.local = local;
         tick = new TickCounter(Constants.TICK_RATE);
     }
 
     public static void main(final String[] args) {
-        new Thread(new Runnable() {
+        ArgumentParser.parse(args, new ArgumentParser.Argument(true, "--loglevel") {
             @Override
-            public void run() {
-                try {
-                    instance = new Server(false);
-                    ArgumentParser.parse(args, new ArgumentParser.Argument(true, "--loglevel") {
-                        @Override
-                        public void runAction(String paramater) {
-                            LogHelper.setLevel(Level.parse(paramater));
-                        }
-                    });
-                    instance.start();
-                }
-                catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+            public void runAction(String paramater) {
+                LogHelper.setLevel(Level.parse(paramater));
             }
-        }, "Server Thread").start();
+        });
+        startThread(false);
     }
 
     public static Server getInstance() {
         return instance;
     }
 
-    public void run() {
-        final long tickTime = 1000000000 / Constants.TICK_RATE;
-        final float delta = 1F / Constants.TICK_RATE;
-        Iterator it;
-        while (!shutdownRequested) {
-            long time = System.nanoTime();
-            // Begin Game Logic
+    protected final void setInstance(Server server) {
+        instance = server;
+    }
 
-            // End Game Logic
-            tick.incTicks();
-            long sleepTime = tickTime - (System.nanoTime() - time);
-            long millis = sleepTime / 1000000;
-            try { Thread.sleep(millis, (int)(sleepTime - (millis * 1000000))); }
-            catch (InterruptedException ex) { }
+    public void runTick() {
+        try {
+            float delta = 1F / Constants.TICK_RATE;
+            if (!shutdownRequested) {
+                // Begin Game Logic
+
+                // End Game Logic
+                tick.incTicks();
+                if (tick.getTicks() % Constants.TICK_RATE == 0) System.out.println(tick.getTicks() + " " + (System.nanoTime() % 1000000000L) / 1000000);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace(); // TODO: Better error handling.
+            shutdownRequested = true;
         }
     }
 
-    public void start() throws IOException {
-        if (!singlePlayer) initConfig();
-        run();
+    @SneakyThrows(IOException.class)
+    public static void startThread(final boolean local) {
+        if (instance != null) throw new IllegalStateException("Server already running!");
+        LongSleeperThread.startSleeper();
+        instance = new Server(local);
+        instance.start();
+        final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("Server Thread").build());
+        final long tickTime = 1000000000 / Constants.TICK_RATE;
+        executor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                instance.runTick();
+            }
+        }, 0, tickTime, TimeUnit.NANOSECONDS);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (!instance.shutdownRequested) {
+                        Thread.sleep(100);
+                    }
+                    executor.shutdown();
+                    executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+                    instance = null;
+                } catch (InterruptedException ex) {}
+            }
+        }, "Server Wait Thread").start();
     }
 
-    private void initConfig() throws UnknownHostException {
+    public void start() throws IOException {
+        if (!local) initConfig();
+    }
+
+    public void shutdown() {
+        shutdownRequested = true;
+    }
+
+    protected void initConfig() throws UnknownHostException {
         config = new ConfigManager(new File("config.yml"));
         config.defaultProperty("socket.port", Constants.DEFAULT_PORT);
         config.defaultProperty("socket.ip", "");
@@ -101,7 +133,7 @@ public class Server {
         this.name = name;
     }
 
-    public boolean isSinglePlayer() {
-        return singlePlayer;
+    public boolean isLocal() {
+        return local;
     }
 }

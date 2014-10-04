@@ -2,6 +2,7 @@
 package com.techjar.jfos2.world;
 
 import com.techjar.jfos2.entity.Entity;
+import java.util.Collections;
 import java.util.Iterator;
 import org.lwjgl.input.Controller;
 
@@ -12,6 +13,7 @@ import org.lwjgl.input.Controller;
 public class WorldClient extends World {
     @Override
     public void update(float delta) {
+        super.update(delta);
         Iterator<Entity> it = entityList.iterator();
         Entity entity;
         while (it.hasNext()) {
@@ -28,7 +30,13 @@ public class WorldClient extends World {
     @Override
     public void render() {
         for (Entity entity : entityList)
-            entity.render();
+            if (!entity.isDead()) entity.render();
+    }
+
+    @Override
+    protected void internalAddEntity(Entity entity) {
+        super.internalAddEntity(entity);
+        Collections.sort(entityList);
     }
 
     public boolean processKeyboardEvent() {

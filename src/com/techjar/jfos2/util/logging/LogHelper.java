@@ -9,25 +9,28 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import lombok.Getter;
 
 /**
  *
  * @author Techjar
  */
 public final class LogHelper {
-    public static final Logger logger;
-    public static final PrintStream realSystemOut;
-    public static final PrintStream realSystemErr;
+    private static Logger logger;
+    @Getter private static PrintStream realSystemOut;
+    @Getter private static PrintStream realSystemErr;
+    @Getter private static File directory;
 
-    static {
+    public static void init(File dir) {
+        if (logger != null) throw new IllegalStateException("Already initialized!");
+        directory = dir;
         realSystemOut = System.out;
         realSystemErr = System.err;
         logger = Logger.getLogger("JFOS2");
         logger.setLevel(Level.CONFIG);
         try {
-            File logDir = new File(Constants.DATA_DIRECTORY, "logs");
-            logDir.mkdirs();
-            logger.addHandler(new LogHandler(new File(logDir, new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()) + ".txt")).setSystemOut(System.out));
+            directory.mkdirs();
+            logger.addHandler(new LogHandler(new File(directory, new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()) + ".txt")).setSystemOut(System.out));
             logger.setUseParentHandlers(false);
             System.setOut(new PrintStream(new LogOutputStream(logger, Level.INFO), true));
             System.setErr(new PrintStream(new LogOutputStream(logger, Level.SEVERE), true));
@@ -36,8 +39,6 @@ public final class LogHelper {
             System.exit(-1);
         }
     }
-
-    public static void init() {} // Dummy method
 
     public static void setLevel(Level level) {
         logger.setLevel(level);

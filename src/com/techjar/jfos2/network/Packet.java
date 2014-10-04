@@ -12,6 +12,7 @@ import lombok.SneakyThrows;
  * @author Techjar
  */
 public abstract class Packet {
+    public static final int MAX_SIZE = 2097152;
     private static final BiMap<Integer, Class<? extends Packet>> packetMap = HashBiMap.create();
 
     @SneakyThrows(Exception.class)
@@ -23,7 +24,7 @@ public abstract class Packet {
     public static void registerPacket(int id, Class<? extends Packet> clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) throw new IllegalArgumentException("Cannot register abstract packet class: " + clazz.getName());
         if (packetMap.containsKey(id)) throw new RuntimeException("Packet ID already in use: " + id);
-        if (packetMap.inverse().containsKey(clazz)) throw new RuntimeException("Packet class already registered: " + clazz.getName());
+        if (packetMap.containsValue(clazz)) throw new RuntimeException("Packet class already registered: " + clazz.getName());
         packetMap.put(id, clazz);
     }
 
@@ -32,7 +33,15 @@ public abstract class Packet {
     public abstract void processClient(NetHandler handler);
     public abstract void processServer(NetHandler handler);
 
-    public int getId() {
+    public final void process(NetHandler handler) {
+        if (handler.isServer()) {
+            this.processServer(handler);
+        } else {
+            this.processClient(handler);
+        }
+    }
+
+    public final Integer getID() {
         return packetMap.inverse().get(this.getClass());
     }
 

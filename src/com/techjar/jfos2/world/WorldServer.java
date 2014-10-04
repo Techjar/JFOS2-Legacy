@@ -12,6 +12,7 @@ import java.util.Iterator;
 public class WorldServer extends World {
     @Override
     public void update(float delta) {
+        super.update(delta);
         Iterator<Entity> it = entityList.iterator();
         Entity entity;
         while (it.hasNext()) {
@@ -19,8 +20,14 @@ public class WorldServer extends World {
             if (entity.isDead()) {
                 it.remove();
             } else {
-                entity.update(delta);
-                entity.updateServer(delta);
+                if (entity.getWorldChange() != null) {
+                    it.remove();
+                    entity.getWorldChange().internalAddEntity(entity);
+                    entity.setWorldChange(null);
+                } else {
+                    entity.update(delta);
+                    entity.updateServer(delta);
+                }
             }
         }
 
@@ -37,10 +44,5 @@ public class WorldServer extends World {
                 }
             }
         }
-    }
-
-    @Override
-    public void render() {
-        throw new UnsupportedOperationException("Not a renderable world.");
     }
 }

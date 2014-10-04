@@ -1,6 +1,8 @@
 package com.techjar.jfos2.util;
 
 import com.techjar.jfos2.util.logging.LogHelper;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -8,6 +10,7 @@ import com.techjar.jfos2.util.logging.LogHelper;
  */
 public class ArgumentParser {
     public static void parse(String[] args, Argument... objects) {
+        List<Argument> used = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             boolean found = false;
             argloop: for (Argument obj : objects) {

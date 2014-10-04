@@ -11,6 +11,7 @@ import com.techjar.jfos2.network.PacketBuffer;
 import com.techjar.jfos2.player.Player;
 import com.techjar.jfos2.util.ObjectType;
 import com.techjar.jfos2.util.Vector2;
+import com.techjar.jfos2.world.World;
 import java.lang.reflect.Modifier;
 import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
@@ -25,6 +26,8 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
     private static int nextId;
     private static final BiMap<Integer, Class<? extends Entity>> entityMap = HashBiMap.create();
     protected final int id;
+    protected World world;
+    protected World worldChange;
     protected Vector2 position = new Vector2();
     protected Vector2 velocity = new Vector2();
     protected float angle;
@@ -42,12 +45,14 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
 
     @SneakyThrows(Exception.class)
     public static Entity generateEntity(int type) {
-        return entityMap.get(type).newInstance();
+        Class<? extends Entity> clazz = entityMap.get(type);
+        return clazz == null ? null : clazz.newInstance();
     }
 
     @SneakyThrows(Exception.class)
     public static Entity generateEntity(int type, int id) {
-        return entityMap.get(type).getConstructor(int.class).newInstance(id);
+        Class<? extends Entity> clazz = entityMap.get(type);
+        return clazz == null ? null : clazz.getConstructor(int.class).newInstance(id);
     }
 
     public static void registerEntity(int type, Class<? extends Entity> clazz) {
@@ -93,6 +98,27 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
 
     public int getRenderPriority() {
         return 0;
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    /**
+     * Sets the world that this entity is in. Do not call this to change the entity's world, use {@link #setWorldChange} instead!
+     *
+     * @param world world to be set
+     */
+    public void setWorld(World world) {
+        this.world = world;
+    }
+
+    public World getWorldChange() {
+        return worldChange;
+    }
+
+    public void setWorldChange(World world) {
+        this.worldChange = world;
     }
 
     public Vector2 getPosition() {
