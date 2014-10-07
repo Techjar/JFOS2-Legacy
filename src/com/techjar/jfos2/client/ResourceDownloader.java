@@ -29,12 +29,9 @@ public class ResourceDownloader {
     private static volatile String status = "";
     private static volatile float progress;
     private static volatile boolean completed;
-    private static Runnable runnable = new Runnable() {
-        @Override
-        public void run() {
-            
-        }
-    };
+
+    private ResourceDownloader() {
+    }
 
     public static void checkAndDownload() {
         try {

@@ -123,12 +123,21 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
         this.world = world;
     }
 
+    /**
+     * Gets world the entity is changing to.
+     */
     public World getWorldChange() {
         return worldChange;
     }
 
+    /**
+     * Marks this entity to change to the specified world next tick. If world is not null, it will be treated as {@link #setDead dead} for the remainder of the current tick.
+     * Has no effect if this entity is already dead for another reason.
+     */
     public void setWorldChange(World world) {
-        this.worldChange = world;
+        if (dead && worldChange == null) return;
+        worldChange = world;
+        dead = world != null;
     }
 
     public Vector2 getPosition() {
@@ -187,38 +196,65 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
         velocity.setY(y);
     }
 
+    /**
+     * Gets the angle in degrees.
+     */
     public float getAngle() {
         return angle;
     }
 
+    /**
+     * Sets the angle in degrees.
+     */
     public void setAngle(float angle) {
         this.angle = angle;
     }
 
+    /**
+     * Gets the angular velocity in degrees per second.
+     */
     public float getAngularVelocity() {
         return angularVelocity;
     }
 
+    /**
+     * Sets the angular velocity in degrees per second.
+     */
     public void setAngularVelocity(float angularVelocity) {
         this.angularVelocity = angularVelocity;
     }
 
+    /**
+     * See {@link #setDead()}
+     */
     public boolean isDead() {
         return dead;
     }
 
+    /**
+     * Marks this entity for removal next tick.
+     */
     public void setDead() {
         dead = true;
     }
 
+    /**
+     * Should this entity entirely skip collision checks?
+     */
     public boolean isInert() {
         return false;
     }
 
+    /**
+     * Can this entity collide with the specified entity?
+     */
     public boolean canCollide(Entity other) {
         return true;
     }
 
+    /**
+     * Called to process collision.
+     */
     public void onCollide(Entity other) {
     }
 

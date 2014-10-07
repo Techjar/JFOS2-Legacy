@@ -141,6 +141,11 @@ public class FieldWatcher implements Watcher {
     }
 
     @Override
+    public Class getValueType(int id) {
+        return getFieldType(id);
+    }
+
+    @Override
     public void setValue(WatcherValue value) {
         setField(value.getId(), value.getValue());
     }

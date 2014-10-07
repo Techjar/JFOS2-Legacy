@@ -1,6 +1,5 @@
 package com.techjar.jfos2.util.logging;
 
-import com.techjar.jfos2.util.Constants;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

@@ -19,15 +19,13 @@ public class WorldServer extends World {
             entity = it.next();
             if (entity.isDead()) {
                 it.remove();
-            } else {
                 if (entity.getWorldChange() != null) {
-                    it.remove();
                     entity.getWorldChange().internalAddEntity(entity);
                     entity.setWorldChange(null);
-                } else {
-                    entity.update(delta);
-                    entity.updateServer(delta);
                 }
+            } else {
+                entity.update(delta);
+                entity.updateServer(delta);
             }
         }
 

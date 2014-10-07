@@ -1,7 +1,6 @@
 
 package com.techjar.jfos2.util.logging;
 
-import com.techjar.jfos2.util.Constants;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -20,6 +19,9 @@ public final class LogHelper {
     @Getter private static PrintStream realSystemOut;
     @Getter private static PrintStream realSystemErr;
     @Getter private static File directory;
+
+    private LogHelper() {
+    }
 
     public static void init(File dir) {
         if (logger != null) throw new IllegalStateException("Already initialized!");

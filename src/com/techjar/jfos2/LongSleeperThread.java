@@ -8,7 +8,8 @@ package com.techjar.jfos2;
 public class LongSleeperThread extends Thread {
     private static boolean started;
     
-    private LongSleeperThread() {}
+    private LongSleeperThread() {
+    }
 
     @Override
     public void run() {

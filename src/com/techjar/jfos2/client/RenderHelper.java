@@ -15,6 +15,9 @@ import org.newdawn.slick.opengl.Texture;
 public final class RenderHelper {
     private static final Stack<Rectangle> scissorStack = new Stack<>();
 
+    private RenderHelper() {
+    }
+
     public static void setGlColor(Color color) {
         glColor4ub(color.getRedByte(), color.getGreenByte(), color.getBlueByte(), color.getAlphaByte());
     }

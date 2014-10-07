@@ -117,8 +117,8 @@ public class Vector2 implements Marshallable {
     }
 
     public static Vector2 direction(float angle) {
-        angle = (float)Math.toRadians(angle);
-        return new Vector2((float)Math.cos(angle), (float)Math.sin(angle));
+        double angle2 = Math.toRadians(angle);
+        return new Vector2((float)Math.cos(angle2), (float)Math.sin(angle2));
     }
 
     @Override
@@ -149,7 +149,7 @@ public class Vector2 implements Marshallable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Vector2 other = (Vector2) obj;
+        final Vector2 other = (Vector2)obj;
         if (Float.floatToIntBits(this.x) != Float.floatToIntBits(other.x)) {
             return false;
         }

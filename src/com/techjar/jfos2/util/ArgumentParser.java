@@ -9,6 +9,9 @@ import java.util.List;
  * @author Techjar
  */
 public class ArgumentParser {
+    private ArgumentParser() {
+    }
+
     public static void parse(String[] args, Argument... objects) {
         List<Argument> used = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {

@@ -7,24 +7,14 @@ package com.techjar.jfos2;
  * @author Techjar
  */
 public final class TickCounter {
-    private int tickRate;
+    private final int tickRate;
     private long ticks;
-
-
-    /**
-     * Constructs a new TickCounter with the default tick rate of 60.
-     */
-    public TickCounter() {
-        this.ticks = 0;
-        this.tickRate = 60;
-    }
 
     /**
      * Constructs a new TickCounter with the specified tick rate.
      * @param tickRate number of ticks per second
      */
     public TickCounter(int tickRate) {
-        this.ticks = 0;
         this.tickRate = tickRate;
     }
     
@@ -34,14 +24,6 @@ public final class TickCounter {
      */
     public final int getTickRate() {
         return this.tickRate;
-    }
-
-    /**
-     * Sets the tick rate for this TickCounter.
-     * @param tickRate new tick rate
-     */
-    public final void setTickRate(int tickRate) {
-        this.tickRate = tickRate;
     }
 
     /**

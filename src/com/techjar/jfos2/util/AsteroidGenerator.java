@@ -15,6 +15,9 @@ public class AsteroidGenerator {
     private static final Random random = new Random();
     private static final ExponentialRandom expRandom = new ExponentialRandom(1.1D, random);
 
+    private AsteroidGenerator() {
+    }
+
     public static float[] generatePoints(int baseRadius, int maxDeviation, int maxDifference, int minIncrement, int maxIncrement) {
         List<Float> points = new ArrayList<>();
         int deviation = 0;

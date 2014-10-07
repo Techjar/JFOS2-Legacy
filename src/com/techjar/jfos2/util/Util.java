@@ -2,6 +2,7 @@ package com.techjar.jfos2.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -12,6 +13,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterOutputStream;
 import lombok.Cleanup;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Rectangle;
@@ -104,6 +108,28 @@ public final class Util {
 
     public static String getFileMD5(String file) throws IOException, NoSuchAlgorithmException {
         return getFileMD5(new File(file));
+    }
+
+    /**
+     * Compresses the byte array using deflate algorithm.
+     */
+    public static byte[] compresssBytes(byte[] bytes) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (DeflaterOutputStream dos = new DeflaterOutputStream(out)) {
+            dos.write(bytes);
+        }
+        return out.toByteArray();
+    }
+
+    /**
+     * Decompresses the byte array using deflate algorithm.
+     */
+    public static byte[] decompresssBytes(byte[] bytes) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (InflaterOutputStream dos = new InflaterOutputStream(out)) {
+            dos.write(bytes);
+        }
+        return out.toByteArray();
     }
 
     public static long microTime() {
