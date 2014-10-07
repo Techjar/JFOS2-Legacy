@@ -7,9 +7,6 @@ package com.techjar.jfos2.entity;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.client.Client;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.opengl.Texture;
 

@@ -18,9 +18,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import lombok.SneakyThrows;
 
 /**
@@ -36,6 +34,7 @@ public class Server {
     protected ConfigManager config;
     protected List<Entity> entities = new ArrayList<>();
     protected TickCounter tick;
+    protected static int nextObjectId;
     protected boolean shutdownRequested;
 
     public Server(boolean local) {
@@ -70,7 +69,6 @@ public class Server {
 
                 // End Game Logic
                 tick.incTicks();
-                if (tick.getTicks() % Constants.TICK_RATE == 0) System.out.println(tick.getTicks() + " " + (System.nanoTime() % 1000000000L) / 1000000);
             }
         } catch (Exception ex) {
             ex.printStackTrace(); // TODO: Better error handling.
@@ -82,6 +80,7 @@ public class Server {
     public static void startThread(final boolean local) {
         if (instance != null) throw new IllegalStateException("Server already running!");
         LongSleeperThread.startSleeper();
+        nextObjectId = 0;
         instance = new Server(local);
         instance.start();
         final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("Server Thread").build());
@@ -135,5 +134,9 @@ public class Server {
 
     public boolean isLocal() {
         return local;
+    }
+
+    public static int getNextObjectId() {
+        return nextObjectId++;
     }
 }

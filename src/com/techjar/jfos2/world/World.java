@@ -77,17 +77,17 @@ public abstract class World {
     }
 
     protected void internalAddEntity(Entity entity) {
-        if (entityMap.containsKey(entity.getID())) throw new IllegalArgumentException("Entity ID already in use!");
+        if (entityMap.containsKey(entity.getId())) throw new IllegalArgumentException("Entity ID already in use!");
         entity.setWorld(this);
-        entityMap.put(entity.getID(), entity);
+        entityMap.put(entity.getId(), entity);
         entityList.add(entity);
     }
 
     public void removeEntity(Entity entity) {
-        if (!entityMap.containsKey(entity.getID())) return;
+        if (!entityMap.containsKey(entity.getId())) return;
         entity.setWorld(null);
-        entityMap.remove(entity.getID());
-        entityList.remove(entity.getID());
+        entityMap.remove(entity.getId());
+        entityList.remove(entity.getId());
     }
 
     public void removeEntity(int id) {
@@ -97,7 +97,7 @@ public abstract class World {
         Entity entity;
         while (it.hasNext()) {
             entity = it.next();
-            if (entity.getID() == id) {
+            if (entity.getId() == id) {
                 entity.setWorld(null);
                 it.remove();
                 break;

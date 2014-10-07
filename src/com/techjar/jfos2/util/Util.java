@@ -24,6 +24,9 @@ import org.newdawn.slick.geom.Vector2f;
 public final class Util {
     public static final Gson GSON = new GsonBuilder().create();
 
+    private Util() {
+    }
+
     public static boolean isValidCharacter(char ch) {
         return ch >= 32 && ch <= 126;
     }
@@ -68,15 +71,15 @@ public final class Util {
 
     public static IPInfo parseIPAddress(String str) throws UnknownHostException {
         String ip; int port = 0; boolean ipv6 = false;
-        if (str.indexOf(":") != -1) {
-            if (str.indexOf("[") != -1 && str.indexOf("]") != -1) {
-                ip = str.substring(1, str.indexOf("]"));
-                port = Integer.parseInt(str.substring(str.indexOf("]") + 2));
+        if (str.indexOf(':') != -1) {
+            if (str.indexOf('[') != -1 && str.indexOf(']') != -1) {
+                ip = str.substring(1, str.indexOf(']'));
+                port = Integer.parseInt(str.substring(str.indexOf(']') + 2));
                 ipv6 = true;
             }
-            else if (str.indexOf(":") == str.lastIndexOf(":")) {
-                ip = str.substring(0, str.indexOf(":"));
-                port = Integer.parseInt(str.substring(str.indexOf(":") + 1));
+            else if (str.indexOf(':') == str.lastIndexOf(':')) {
+                ip = str.substring(0, str.indexOf(':'));
+                port = Integer.parseInt(str.substring(str.indexOf(':') + 1));
             }
             else ip = str;
         }

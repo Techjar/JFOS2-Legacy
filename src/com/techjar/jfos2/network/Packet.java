@@ -32,6 +32,7 @@ public abstract class Packet {
     public abstract void writeData(PacketBuffer buffer);
     public abstract void processClient(NetHandler handler);
     public abstract void processServer(NetHandler handler);
+    public abstract ConnectionState getConnectionState();
 
     public final void process(NetHandler handler) {
         if (handler.isServer()) {
@@ -41,7 +42,7 @@ public abstract class Packet {
         }
     }
 
-    public final Integer getID() {
+    public final Integer getId() {
         return packetMap.inverse().get(this.getClass());
     }
 

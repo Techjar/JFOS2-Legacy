@@ -9,6 +9,7 @@ import com.techjar.jfos2.network.codec.PacketLengthDecoder;
 import com.techjar.jfos2.network.codec.PacketLengthEncoder;
 import com.techjar.jfos2.network.handler.NetHandler;
 import com.techjar.jfos2.util.ChatMessage;
+import com.techjar.jfos2.util.logging.LogHelper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -22,6 +23,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.TimeoutException;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.net.InetAddress;
 import java.net.SocketAddress;
@@ -36,6 +38,7 @@ import lombok.Setter;
  */
 public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     public static final NioEventLoopGroup eventLoops = new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Client IO #%d").setDaemon(true).build());
+    public static final AttributeKey attrKeyConnectionState = AttributeKey.valueOf("state");
     @Getter private final boolean client;
     @Getter @Setter private NetHandler handler;
     private Queue<Packet> recieveQueue = Queues.newConcurrentLinkedQueue();
@@ -43,6 +46,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     @Getter private Channel channel;
     @Getter private SocketAddress socketAddress;
     @Getter private ChatMessage shutdownReason;
+    ConnectionState connectionState;
 
     public NetworkManager(boolean client) {
         this.client = client;
@@ -53,6 +57,13 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
         super.channelActive(context);
         this.channel = context.channel();
         this.socketAddress = this.channel.remoteAddress();
+        this.setConnectionState(ConnectionState.HANDSHAKE);
+    }
+
+    public void setConnectionState(ConnectionState connectionState) {
+        this.connectionState = (ConnectionState)channel.attr(attrKeyConnectionState).getAndSet(connectionState);
+        channel.config().setAutoRead(true);
+        LogHelper.fine("Enabled auto read");
     }
 
     @Override
@@ -91,12 +102,25 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     }
 
     private void dispatchPacket(final Packet packet, final GenericFutureListener[] listeners) {
+        final ConnectionState channelConnectionState = (ConnectionState)channel.attr(attrKeyConnectionState).get();
+        final ConnectionState packetConnectionState = packet.getConnectionState();
+        if (channelConnectionState != packetConnectionState) {
+            channel.config().setAutoRead(false);
+            LogHelper.fine("Disabled auto read");
+        }
+        
         if (channel.eventLoop().inEventLoop()) {
+            if (channelConnectionState != packetConnectionState) {
+                setConnectionState(packetConnectionState);
+            }
             channel.writeAndFlush(packet).addListeners(listeners).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
         } else {
             channel.eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {
+                    if (channelConnectionState != packetConnectionState) {
+                        setConnectionState(packetConnectionState);
+                    }
                     channel.writeAndFlush(packet).addListeners(listeners).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
                 }
             });
@@ -113,6 +137,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     }
 
     public void processRecieveQueue() {
+        flushSendQueue();
+        ConnectionState channelConnectionState = (ConnectionState)channel.attr(attrKeyConnectionState).get();
+        if (connectionState != channelConnectionState) {
+            if (connectionState != null) {
+                handler.onStateTransition(connectionState, channelConnectionState);
+            }
+            connectionState = channelConnectionState;
+        }
+
         if (handler != null) {
             for (int i = 0; !recieveQueue.isEmpty() && i < 1000; i++) {
                 recieveQueue.poll().process(handler);

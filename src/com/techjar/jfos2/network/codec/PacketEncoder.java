@@ -15,7 +15,7 @@ import java.io.IOException;
 public class PacketEncoder extends MessageToByteEncoder<Packet> {
     @Override
     protected void encode(ChannelHandlerContext context, Packet packet, ByteBuf out) throws IOException {
-        Integer id = packet.getID();
+        Integer id = packet.getId();
         if (id == null) {
             throw new IOException("Can't encode unregistered packet: " + packet.getClass().getSimpleName());
         }

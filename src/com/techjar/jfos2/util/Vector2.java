@@ -1,11 +1,14 @@
 
 package com.techjar.jfos2.util;
 
+import com.techjar.jfos2.network.Marshallable;
+import com.techjar.jfos2.network.PacketBuffer;
+
 /**
  *
  * @author Techjar
  */
-public class Vector2 {
+public class Vector2 implements Marshallable {
     public static final Vector2 ZERO = new Vector2();
     public static final Vector2 ONE = new Vector2(1, 1);
 
@@ -116,6 +119,18 @@ public class Vector2 {
     public static Vector2 direction(float angle) {
         angle = (float)Math.toRadians(angle);
         return new Vector2((float)Math.cos(angle), (float)Math.sin(angle));
+    }
+
+    @Override
+    public void readData(PacketBuffer buffer) {
+        x = buffer.readFloat();
+        y = buffer.readFloat();
+    }
+
+    @Override
+    public void writeData(PacketBuffer buffer) {
+        buffer.writeFloat(x);
+        buffer.writeFloat(y);
     }
 
     @Override

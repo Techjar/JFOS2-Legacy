@@ -6,13 +6,14 @@ package com.techjar.jfos2.entity;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.techjar.jfos2.network.NetworkedObject;
-import com.techjar.jfos2.network.PacketBuffer;
-import com.techjar.jfos2.player.Player;
-import com.techjar.jfos2.util.ObjectType;
+import com.techjar.jfos2.network.watcher.FieldWatcher;
+import com.techjar.jfos2.network.watcher.Watchable;
+import com.techjar.jfos2.network.watcher.Watcher;
+import com.techjar.jfos2.server.Server;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.world.World;
 import java.lang.reflect.Modifier;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Point;
@@ -22,8 +23,7 @@ import org.newdawn.slick.geom.Shape;
  *
  * @author Techjar
  */
-public abstract class Entity implements NetworkedObject, Comparable<Entity> {
-    private static int nextId;
+public abstract class Entity implements Watchable, Comparable<Entity> {
     private static final BiMap<Integer, Class<? extends Entity>> entityMap = HashBiMap.create();
     protected final int id;
     protected World world;
@@ -33,14 +33,20 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
     protected float angle;
     protected float angularVelocity;
     protected boolean dead;
-    protected boolean needsSync;
+    protected FieldWatcher watcher;
 
     public Entity() {
-        this(nextId++);
+        this(Server.getNextObjectId());
     }
 
     public Entity(int id) {
         this.id = id;
+        watcher = new FieldWatcher(this, id);
+        watcher.watchField(0, "position", false);
+        watcher.watchField(1, "velocity", true);
+        watcher.watchField(2, "angle", false);
+        watcher.watchField(3, "angularVelocity", true);
+        watcher.watchField(4, "dead", true);
     }
 
     @SneakyThrows(Exception.class)
@@ -58,7 +64,7 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
     public static void registerEntity(int type, Class<? extends Entity> clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) throw new IllegalArgumentException("Cannot register abstract entity class: " + clazz.getName());
         if (entityMap.containsKey(type)) throw new RuntimeException("Entity type already in use: " + type);
-        if (entityMap.inverse().containsKey(clazz)) throw new RuntimeException("Entity class already registered: " + clazz.getName());
+        if (entityMap.containsValue(clazz)) throw new RuntimeException("Entity class already registered: " + clazz.getName());
         entityMap.put(type, clazz);
     }
 
@@ -96,6 +102,10 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
         return entityMap.inverse().get(this.getClass());
     }
 
+    public final int getId() {
+        return id;
+    }
+
     public int getRenderPriority() {
         return 0;
     }
@@ -125,7 +135,7 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
         return position.copy();
     }
 
-    public void setPosition(Vector2 position) {
+    public void setPosition(@NonNull Vector2 position) {
         this.position.set(position);
     }
 
@@ -153,9 +163,8 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
         return velocity.copy();
     }
 
-    public void setVelocity(Vector2 velocity) {
+    public void setVelocity(@NonNull Vector2 velocity) {
         this.velocity.set(velocity);
-        needsSync = true;
     }
 
     public void setVelocity(float x, float y) {
@@ -192,7 +201,6 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
 
     public void setAngularVelocity(float angularVelocity) {
         this.angularVelocity = angularVelocity;
-        needsSync = true;
     }
 
     public boolean isDead() {
@@ -215,48 +223,8 @@ public abstract class Entity implements NetworkedObject, Comparable<Entity> {
     }
 
     @Override
-    public void readSyncData(PacketBuffer buffer) {
-        position.setX(buffer.readFloat());
-        position.setY(buffer.readFloat());
-        velocity.setX(buffer.readFloat());
-        velocity.setY(buffer.readFloat());
-        angle = buffer.readFloat();
-        angularVelocity = buffer.readFloat();
-    }
-
-    @Override
-    public void writeSyncData(PacketBuffer buffer) {
-        buffer.writeFloat(position.getX());
-        buffer.writeFloat(position.getY());
-        buffer.writeFloat(velocity.getX());
-        buffer.writeFloat(velocity.getY());
-        buffer.writeFloat(angle);
-        buffer.writeFloat(angularVelocity);
-    }
-
-    @Override
-    public boolean isSynced() {
-        return !needsSync;
-    }
-
-    @Override
-    public void markSynced() {
-        needsSync = false;
-    }
-
-    @Override
-    public int getID() {
-        return id;
-    }
-
-    @Override
-    public ObjectType getObjectType() {
-        return ObjectType.ENTITY;
-    }
-
-    @Override
-    public boolean shouldSendToPlayer(Player player) {
-        return true;
+    public Watcher getWatcher() {
+        return watcher;
     }
 
     @Override

@@ -19,8 +19,8 @@ import java.nio.charset.Charset;
  * @author Techjar
  */
 public class PacketBuffer extends ByteBuf {
+    private static final int STRING_MAX_LENGTH = 32767;
     private final ByteBuf buffer;
-    private final int maxStringLength = 32767;
 
     public PacketBuffer(ByteBuf buffer) {
         this.buffer = buffer;
@@ -160,23 +160,23 @@ public class PacketBuffer extends ByteBuf {
 
     public String readString() throws IOException {
         int length = this.readVarInt();
-        if (length > maxStringLength * 4) {
-            throw new IOException("Recieved string bytes larger than maximum allowed (" + length + " > " + maxStringLength * 4 + ")");
+        if (length > STRING_MAX_LENGTH * 4) {
+            throw new IOException("Recieved string bytes larger than maximum allowed (" + length + " > " + STRING_MAX_LENGTH * 4 + ")");
         }
         if (length < 0) {
             throw new IOException("Recieved string bytes less than zero! Something broke!");
         }
 
         String str = new String(readBytes(length).array(), Charsets.UTF_8);
-        if (str.length() > maxStringLength) {
-            throw new IOException("Recieved string length longer than maximum allowed (" + length + " > " + maxStringLength + ")");
+        if (str.length() > STRING_MAX_LENGTH) {
+            throw new IOException("Recieved string length longer than maximum allowed (" + length + " > " + STRING_MAX_LENGTH + ")");
         }
         return str;
     }
 
     public ByteBuf writeString(String value) throws IOException {
-        if (value.length() > maxStringLength) {
-            throw new IOException("String length longer than maximum allowed (" + value.length() + " > " + maxStringLength + ")");
+        if (value.length() > STRING_MAX_LENGTH) {
+            throw new IOException("String length longer than maximum allowed (" + value.length() + " > " + STRING_MAX_LENGTH + ")");
         }
         byte[] bytes = value.getBytes(Charsets.UTF_8);
         this.writeVarInt(bytes.length);
