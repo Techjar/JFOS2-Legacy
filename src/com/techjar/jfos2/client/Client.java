@@ -26,17 +26,24 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import lombok.SneakyThrows;
 import lombok.Value;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Controller;
@@ -102,6 +109,7 @@ public class Client {
     // Some State Junk
     private boolean resourcesDone;
     private boolean offline;
+    private boolean screenshot;
     
     
     public Client() throws LWJGLException {
@@ -602,6 +610,10 @@ public class Client {
             for (Screen screen : screenList)
                 if (screen.isVisible() && screen.isEnabled() && !screen.processKeyboardEvent()) continue toploop;
             if (world != null && !world.processKeyboardEvent()) continue;
+            if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F2) { // TODO: Implement key binding system
+                screenshot = true;
+                continue;
+            }
             //if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_F11) setFullscreen(!fullscreen);
         }
     }
@@ -650,6 +662,7 @@ public class Client {
         if (world != null) world.update(delta);
     }
 
+    @SneakyThrows(Exception.class)
     private void render() {
         checkGLError("Pre render");
         if (antiAliasing) glBindFramebuffer(GL_DRAW_FRAMEBUFFER, multisampleFBO);
@@ -664,15 +677,6 @@ public class Client {
                 resourcesDone = true;
                 preloadData();
                 initIntro();
-            }
-        }
-
-        //glColor3f(1, 1, 1);
-        Texture tex = textureManager.getTexture("alientest.png", GL_NEAREST);
-        tex.bind();
-        for (int x = 0; x < displayMode.getWidth(); x += tex.getImageWidth()) {
-            for (int y = 0; y < displayMode.getHeight(); y += tex.getImageHeight()) {
-                RenderHelper.drawSquare(x, y, tex.getImageWidth(), tex.getImageHeight(), tex);
             }
         }
 
@@ -694,6 +698,28 @@ public class Client {
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampleFBO);
             glBlitFramebuffer(0, 0, displayMode.getWidth(), displayMode.getHeight(), 0, 0, displayMode.getWidth(), displayMode.getHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        }
+        if (screenshot) {
+            screenshot = false;
+            ByteBuffer buffer = BufferUtils.createByteBuffer(displayMode.getWidth() * displayMode.getHeight() * 3);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+            glReadPixels(0, 0, displayMode.getWidth(), displayMode.getHeight(), GL_RGB, GL_UNSIGNED_BYTE, buffer);
+            BufferedImage image = new BufferedImage(displayMode.getWidth(), displayMode.getHeight(), BufferedImage.TYPE_INT_RGB);
+            buffer.rewind();
+            for (int y = 0; y < displayMode.getHeight(); y++) {
+                for (int x = 0; x < displayMode.getWidth(); x++) {
+                    image.setRGB(x, displayMode.getHeight() - y - 1, (buffer.get() & 0xFF) << 16 | (buffer.get() & 0xFF) << 8 | (buffer.get() & 0xFF));
+                }
+            }
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+            File screenshotDir = new File(Constants.DATA_DIRECTORY, "screenshots");
+            screenshotDir.mkdirs();
+            File file = new File(screenshotDir, dateFormat.format(Calendar.getInstance().getTime()) + ".png");
+            for (int i = 2; file.exists(); i++) {
+                file = new File(screenshotDir, dateFormat.format(Calendar.getInstance().getTime()) + "_" + i + ".png");
+            }
+            ImageIO.write(image, "png", file);
         }
         checkGLError("Post render");
     }
