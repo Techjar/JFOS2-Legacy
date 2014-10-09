@@ -3,7 +3,8 @@ package com.techjar.jfos2.client;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.util.Util;
-import java.util.Stack;
+import java.util.Deque;
+import java.util.LinkedList;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.opengl.Texture;
@@ -13,7 +14,7 @@ import org.newdawn.slick.opengl.Texture;
  * @author Techjar
  */
 public final class RenderHelper {
-    private static final Stack<Rectangle> scissorStack = new Stack<>();
+    private static final Deque<Rectangle> scissorStack = new LinkedList<>();
 
     private RenderHelper() {
     }
@@ -62,9 +63,10 @@ public final class RenderHelper {
     }
     
     public static void beginScissor(Rectangle rect, boolean clipToPrevious) {
-        if (scissorStack.empty()) glEnable(GL_SCISSOR_TEST);
+        if (scissorStack.isEmpty()) glEnable(GL_SCISSOR_TEST);
         else if (clipToPrevious) rect = Util.clipRectangle(rect, scissorStack.peek());
-        performScissor(scissorStack.push(rect));
+        scissorStack.push(rect);
+        performScissor(rect);
     }
 
     public static void beginScissor(Rectangle rect) {
@@ -72,14 +74,14 @@ public final class RenderHelper {
     }
     
     public static void endScissor() {
-        if (!scissorStack.empty()) {
+        if (!scissorStack.isEmpty()) {
             performScissor(scissorStack.pop());
-            if (scissorStack.empty()) glDisable(GL_SCISSOR_TEST);
+            if (scissorStack.isEmpty()) glDisable(GL_SCISSOR_TEST);
         }
     }
 
     public static Rectangle getPreviousScissor() {
-        if (!scissorStack.empty()) {
+        if (!scissorStack.isEmpty()) {
             Rectangle prev = scissorStack.peek();
             return new Rectangle(prev.getX(), prev.getY(), prev.getWidth(), prev.getHeight());
         }

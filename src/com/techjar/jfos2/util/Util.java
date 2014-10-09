@@ -13,7 +13,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterOutputStream;
 import lombok.Cleanup;
@@ -73,22 +72,23 @@ public final class Util {
         return 0;
     }
 
+    /**
+     * Will parse a valid IPv4/IPv6 address and port, may return garbage for invalid address formats. If no port was parsed it will be -1.
+     */
     public static IPInfo parseIPAddress(String str) throws UnknownHostException {
-        String ip; int port = 0; boolean ipv6 = false;
+        String ip;
+        int port = -1;
+        boolean ipv6 = false;
         if (str.indexOf(':') != -1) {
             if (str.indexOf('[') != -1 && str.indexOf(']') != -1) {
                 ip = str.substring(1, str.indexOf(']'));
                 port = Integer.parseInt(str.substring(str.indexOf(']') + 2));
                 ipv6 = true;
-            }
-            else if (str.indexOf(':') == str.lastIndexOf(':')) {
+            } else if (str.indexOf(':') == str.lastIndexOf(':')) {
                 ip = str.substring(0, str.indexOf(':'));
                 port = Integer.parseInt(str.substring(str.indexOf(':') + 1));
-            }
-            else ip = str;
-        }
-        else ip = str;
-
+            } else ip = str;
+        } else ip = str;
         return new IPInfo(InetAddress.getByName(ip), port, ipv6);
     }
 
@@ -167,18 +167,18 @@ public final class Util {
     }
 
     public static final class IPInfo {
-        private InetAddress ip;
+        private InetAddress address;
         private int port;
         private boolean ipv6;
 
-        public IPInfo(InetAddress ip, int port, boolean ipv6) {
-            this.ip = ip;
+        private IPInfo(InetAddress address, int port, boolean ipv6) {
+            this.address = address;
             this.port = port;
             this.ipv6 = ipv6;
         }
 
-        public InetAddress getIp() {
-            return ip;
+        public InetAddress getAddress() {
+            return address;
         }
 
         public int getPort() {
@@ -190,11 +190,6 @@ public final class Util {
         }
 
         @Override
-        public String toString() {
-            return ipv6 ? "[" + ip.getHostAddress() + "]:" + port : ip.getHostAddress() + ":" + port;
-        }
-
-        @Override
         public boolean equals(Object obj) {
             if (obj == null) {
                 return false;
@@ -202,14 +197,11 @@ public final class Util {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            final IPInfo other = (IPInfo) obj;
-            if (this.ip != other.ip && (this.ip == null || !this.ip.equals(other.ip))) {
+            final IPInfo other = (IPInfo)obj;
+            if (this.address != other.address && (this.address == null || !this.address.equals(other.address))) {
                 return false;
             }
             if (this.port != other.port) {
-                return false;
-            }
-            if (this.ipv6 != other.ipv6) {
                 return false;
             }
             return true;
@@ -218,10 +210,14 @@ public final class Util {
         @Override
         public int hashCode() {
             int hash = 5;
-            hash = 67 * hash + (this.ip != null ? this.ip.hashCode() : 0);
+            hash = 67 * hash + (this.address != null ? this.address.hashCode() : 0);
             hash = 67 * hash + this.port;
-            hash = 67 * hash + (this.ipv6 ? 1 : 0);
             return hash;
+        }
+
+        @Override
+        public String toString() {
+            return port < 0 ? address.getHostAddress() : ipv6 ? '[' + address.getHostAddress() + "]:" + port : address.getHostAddress() + ':' + port;
         }
     }
 }
