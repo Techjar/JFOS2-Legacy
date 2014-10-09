@@ -1,8 +1,6 @@
 package com.techjar.jfos2.client;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.Value;
 import org.lwjgl.input.Controller;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -11,7 +9,7 @@ import org.lwjgl.input.Mouse;
  *
  * @author Techjar
  */
-@Getter @AllArgsConstructor @EqualsAndHashCode
+@Value
 public class InputInfo {
     private Type type;
     private int button;

@@ -14,13 +14,19 @@ import java.util.List;
  * @author Techjar
  */
 public class PacketDecoder extends ByteToMessageDecoder {
+    private final boolean server;
+
+    public PacketDecoder(boolean server) {
+        this.server = server;
+    }
+
     @Override
     protected void decode(ChannelHandlerContext context, ByteBuf in, List<Object> out) throws IOException {
         int length = in.readableBytes();
         if (length > 0) {
             PacketBuffer buffer = new PacketBuffer(in);
             int id = buffer.readVarInt();
-            Packet packet = Packet.generatePacket(id);
+            Packet packet = Packet.generatePacket(id, server);
             if (packet == null) {
                 throw new IOException("Invalid packet ID: " + id);
             }

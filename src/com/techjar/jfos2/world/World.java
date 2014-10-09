@@ -2,6 +2,7 @@
 package com.techjar.jfos2.world;
 
 import com.techjar.jfos2.entity.Entity;
+import com.techjar.jfos2.network.NetworkSynchronizer;
 import com.techjar.jfos2.util.Vector2;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,8 @@ public abstract class World {
     protected List<Entity> entityList = new ArrayList<>();
     protected List<Entity> toAddEntityList = new LinkedList<>();
     protected Map<Integer, Entity> entityMap = new HashMap<>();
+    protected NetworkSynchronizer networkSynchronizer; // TODO: Assign this!
+
     public void update(float delta) {
         if (toAddEntityList.size() > 0) {
             for (Entity entity : toAddEntityList) {
@@ -72,6 +75,10 @@ public abstract class World {
         return entityMap.get(id);
     }
 
+    public boolean hasEntity(Entity entity) {
+        return entityList.contains(entity);
+    }
+
     public void addEntity(Entity entity) {
         toAddEntityList.add(entity);
     }
@@ -103,5 +110,9 @@ public abstract class World {
                 break;
             }
         }
+    }
+
+    public NetworkSynchronizer getNetworkSynchronizer() {
+        return networkSynchronizer;
     }
 }

@@ -9,6 +9,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import lombok.Getter;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.Color;
 import org.newdawn.slick.geom.Circle;
@@ -26,18 +27,18 @@ import org.newdawn.slick.opengl.Texture;
 public class Asteroid {
     private static final Random random = new Random();
     private Shape[] shapes;
-    private Shape[] minimalShapes;
+    @Getter private Circle[] craters;
     private Shape collisionBox;
     private int vertexVBO;
     private int colorVBO;
     private int indices;
     private VBOData data;
-    private float colorMult = -1;
+    @Getter private float colorMult = -1;
 
     public Asteroid(Polygon body, Circle[] craters, float colorMult) {
         this.colorMult = colorMult;
+        this.craters = craters;
         shapes = new Shape[craters.length * 2 + 2];
-        minimalShapes = new Shape[craters.length + 1];
         body.setCenterX(0);
         body.setCenterY(0);
         Shape scaled = body.transform(Transform.createScaleTransform((body.getWidth() + 6) / body.getWidth(), (body.getHeight() + 6) / body.getHeight()));
@@ -46,12 +47,10 @@ public class Asteroid {
         shapes[0] = scaled;
         shapes[1] = body;
         for (int i = 0; i < craters.length; i++) {
-            Circle scaledCrater = new Circle(craters[i].getCenterX(), craters[i].getCenterY(), craters[i].getRadius() - 2);
-            shapes[i * 2 + 2] = craters[i];
-            shapes[i * 2 + 3] = scaledCrater;
+            Circle crater = craters[i];
+            shapes[i * 2 + 2] = crater;
+            shapes[i * 2 + 3] = new Circle(crater.getCenterX(), crater.getCenterY(), crater.getRadius() - 2);
         }
-        minimalShapes[0] = body;
-        System.arraycopy(craters, 0, minimalShapes, 1, craters.length);
     }
 
     public Asteroid(Polygon body, Circle[] craters) {
@@ -67,8 +66,8 @@ public class Asteroid {
         return collisionBox;
     }
 
-    public Shape[] getMinimalShapes() {
-        return minimalShapes;
+    public Shape getBody() {
+        return shapes[0];
     }
 
     public void setupVBO() {
@@ -98,8 +97,8 @@ public class Asteroid {
                         float[] point = triangles.getTrianglePoint(j, k % 3);
                         floatList.add(point[0]);
                         floatList.add(point[1]);
-                        floatList.add((point[0] - sh.getMinX()) / tex.getWidth());
-                        floatList.add((point[1] - sh.getMinY()) / tex.getHeight());
+                        floatList.add(point[0] / tex.getImageWidth());
+                        floatList.add(point[1] / tex.getImageHeight());
                         byteList.add(color.getRedByte());
                         byteList.add(color.getGreenByte());
                         byteList.add(color.getBlueByte());

@@ -38,7 +38,7 @@ import lombok.Setter;
  */
 public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     public static final NioEventLoopGroup eventLoops = new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Client IO #%d").setDaemon(true).build());
-    public static final AttributeKey attrKeyConnectionState = AttributeKey.valueOf("state");
+    public static final AttributeKey<ConnectionState> attrKeyConnectionState = AttributeKey.valueOf("state");
     @Getter private final boolean client;
     @Getter @Setter private NetHandler handler;
     private Queue<Packet> recieveQueue = Queues.newConcurrentLinkedQueue();
@@ -61,7 +61,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     }
 
     public void setConnectionState(ConnectionState connectionState) {
-        this.connectionState = (ConnectionState)channel.attr(attrKeyConnectionState).getAndSet(connectionState);
+        this.connectionState = channel.attr(attrKeyConnectionState).getAndSet(connectionState);
         channel.config().setAutoRead(true);
         LogHelper.fine("Enabled auto read");
     }
@@ -102,7 +102,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
     }
 
     private void dispatchPacket(final Packet packet, final GenericFutureListener[] listeners) {
-        final ConnectionState channelConnectionState = (ConnectionState)channel.attr(attrKeyConnectionState).get();
+        final ConnectionState channelConnectionState = channel.attr(attrKeyConnectionState).get();
         final ConnectionState packetConnectionState = packet.getConnectionState();
         if (channelConnectionState != packetConnectionState) {
             channel.config().setAutoRead(false);
@@ -138,7 +138,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
 
     public void processRecieveQueue() {
         flushSendQueue();
-        ConnectionState channelConnectionState = (ConnectionState)channel.attr(attrKeyConnectionState).get();
+        ConnectionState channelConnectionState = channel.attr(attrKeyConnectionState).get();
         if (connectionState != channelConnectionState) {
             if (connectionState != null) {
                 handler.onStateTransition(connectionState, channelConnectionState);
@@ -179,7 +179,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
             protected void initChannel(Channel channel) throws Exception {
                 channel.config().setOption(ChannelOption.IP_TOS, 24);
                 channel.config().setOption(ChannelOption.TCP_NODELAY, true);
-                channel.pipeline().addLast("timeout", new ReadTimeoutHandler(20)).addLast("length_decoder", new PacketLengthDecoder()).addLast("decoder", new PacketDecoder()).addLast("length_encoder", new PacketLengthEncoder()).addLast("encoder", new PacketEncoder()).addLast("handler", manager);
+                channel.pipeline().addLast("timeout", new ReadTimeoutHandler(20)).addLast("length_decoder", new PacketLengthDecoder()).addLast("decoder", new PacketDecoder(false)).addLast("length_encoder", new PacketLengthEncoder()).addLast("encoder", new PacketEncoder()).addLast("handler", manager);
             }
         }).channel(NioSocketChannel.class).connect(address, port).syncUninterruptibly();
         return manager;

@@ -6,6 +6,7 @@ import com.techjar.jfos2.util.ConfigManager;
 import com.techjar.jfos2.util.Constants;
 import com.techjar.jfos2.TickCounter;
 import com.techjar.jfos2.entity.Entity;
+import com.techjar.jfos2.network.NetworkSynchronizer;
 import com.techjar.jfos2.util.ArgumentParser;
 import com.techjar.jfos2.util.logging.LogHelper;
 import java.io.File;

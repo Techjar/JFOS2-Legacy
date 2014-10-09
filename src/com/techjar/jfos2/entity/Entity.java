@@ -9,6 +9,7 @@ import com.google.common.collect.HashBiMap;
 import com.techjar.jfos2.network.watcher.FieldWatcher;
 import com.techjar.jfos2.network.watcher.Watchable;
 import com.techjar.jfos2.network.watcher.Watcher;
+import com.techjar.jfos2.player.Player;
 import com.techjar.jfos2.server.Server;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.world.World;
@@ -102,6 +103,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
         return entityMap.inverse().get(this.getClass());
     }
 
+    @Override
     public final int getId() {
         return id;
     }
@@ -146,6 +148,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
 
     public void setPosition(@NonNull Vector2 position) {
         this.position.set(position);
+        watcher.forceSyncField("position");
     }
 
     public void setPosition(float x, float y) {
@@ -158,6 +161,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
 
     public void setX(float x) {
         position.setX(x);
+        watcher.forceSyncField("position");
     }
 
     public float getY() {
@@ -166,6 +170,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
 
     public void setY(float y) {
         position.setY(y);
+        watcher.forceSyncField("position");
     }
 
     public Vector2 getVelocity() {
@@ -208,6 +213,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
      */
     public void setAngle(float angle) {
         this.angle = angle;
+        watcher.forceSyncField("angle");
     }
 
     /**
@@ -261,6 +267,11 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     @Override
     public Watcher getWatcher() {
         return watcher;
+    }
+
+    @Override
+    public Player[] getExcludedPlayers() {
+        return new Player[0];
     }
 
     @Override

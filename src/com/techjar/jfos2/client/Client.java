@@ -15,8 +15,11 @@ import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
 import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.client.gui.screen.ScreenIntro;
+import com.techjar.jfos2.network.NetworkSynchronizer;
 import com.techjar.jfos2.world.WorldClient;
 import com.techjar.jfos2.util.ArgumentParser;
+import com.techjar.jfos2.util.Asteroid;
+import com.techjar.jfos2.util.AsteroidGenerator;
 import com.techjar.jfos2.util.Vector2;
 import com.techjar.jfos2.util.logging.LogHelper;
 import java.awt.BorderLayout;
@@ -38,6 +41,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
@@ -67,7 +71,6 @@ import org.newdawn.slick.opengl.Texture;
  */
 public class Client {
     private static Client instance;
-    private final File dataDir = OperatingSystem.getDataDirectory("jfos2");
     private JFrame frame;
     private Canvas canvas;
     private Point mouseHitbox = new Point(0, 0);
@@ -105,6 +108,7 @@ public class Client {
     public boolean renderDebug = true;
     private Map<String, Integer> validControllers = new HashMap<>();
     private WorldClient world;
+    private NetworkSynchronizer networkSynchronizer;
 
     // Some State Junk
     private boolean resourcesDone;
@@ -367,7 +371,7 @@ public class Client {
     }
 
     private void initConfig() {
-        config = new ConfigManager(new File(dataDir, "options.yml"));
+        config = new ConfigManager(new File(Constants.DATA_DIRECTORY, "options.yml"));
         config.load();
         config.defaultProperty("display.width", displayMode.getWidth());
         config.defaultProperty("display.height", displayMode.getHeight());
@@ -933,6 +937,10 @@ public class Client {
         return frame;
     }
 
+    public NetworkSynchronizer getNetworkSynchronizer() {
+        return networkSynchronizer;
+    }
+
     public PixelFormat getPixelFormat() {
         return pixelFormat;
     }
@@ -966,10 +974,6 @@ public class Client {
         Keyboard.destroy();
         Mouse.destroy();
         Display.destroy();
-    }
-    
-    public File getDataDirectory() {
-        return dataDir;
     }
 
     @Value private class ScreenHolder {

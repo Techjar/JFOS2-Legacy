@@ -56,8 +56,9 @@ public class AsteroidGenerator {
 
     public static Asteroid generate(double baseMult, double minMult, double maxMult) {
         double mult = MathHelper.clamp(expRandom.nextDouble() * baseMult, minMult, maxMult);
-        Polygon shape = new Polygon(AsteroidGenerator.generatePoints((int)(30 * mult), (int)(10 * mult), (int)(5 * mult), 10, 30));
-        return new Asteroid(shape, AsteroidGenerator.generateCraters(shape, (int)(10 * mult), (int)(5 * mult), (int)(200 * mult)));
+        Polygon shape = new Polygon(generatePoints((int)(30 * mult), (int)(10 * mult), (int)(5 * mult), 10, 30));
+        Circle[] craters = generateCraters(shape, (int)(10 * mult), (int)(5 * mult), (int)(200 * mult));
+        return new Asteroid(shape, craters);
     }
 
     public static Asteroid generate() {

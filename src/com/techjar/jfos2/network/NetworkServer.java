@@ -6,9 +6,11 @@ import com.techjar.jfos2.network.codec.PacketDecoder;
 import com.techjar.jfos2.network.codec.PacketEncoder;
 import com.techjar.jfos2.network.codec.PacketLengthDecoder;
 import com.techjar.jfos2.network.codec.PacketLengthEncoder;
+import com.techjar.jfos2.player.Player;
 import com.techjar.jfos2.server.Server;
 import com.techjar.jfos2.util.ChatMessage;
 import com.techjar.jfos2.util.logging.LogHelper;
+import com.techjar.jfos2.world.World;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -34,8 +36,8 @@ import java.util.List;
  */
 public class NetworkServer {
     private static final NioEventLoopGroup eventLoops = new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty IO #%d").setDaemon(true).build());
-    private final List<ChannelFuture> endpoints = Collections.synchronizedList(new ArrayList());
-    private final List<NetworkManager> managers = Collections.synchronizedList(new ArrayList());
+    private final List<ChannelFuture> endpoints = Collections.synchronizedList(new ArrayList<ChannelFuture>());
+    private final List<NetworkManager> managers = Collections.synchronizedList(new ArrayList<NetworkManager>());
     private final Server server;
     private volatile boolean alive = true;
 
@@ -50,7 +52,7 @@ public class NetworkServer {
                 protected void initChannel(Channel channel) throws Exception {
                     channel.config().setOption(ChannelOption.IP_TOS, 24);
                     channel.config().setOption(ChannelOption.TCP_NODELAY, true);
-                    channel.pipeline().addLast("timeout", new ReadTimeoutHandler(20)).addLast("length_decoder", new PacketLengthDecoder()).addLast("decoder", new PacketDecoder()).addLast("length_encoder", new PacketLengthEncoder()).addLast("encoder", new PacketEncoder());
+                    channel.pipeline().addLast("timeout", new ReadTimeoutHandler(20)).addLast("length_decoder", new PacketLengthDecoder()).addLast("decoder", new PacketDecoder(true)).addLast("length_encoder", new PacketLengthEncoder()).addLast("encoder", new PacketEncoder());
                     NetworkManager manager = new NetworkManager(false);
                     manager.setHandler(null); // TODO
                     managers.add(manager);
@@ -104,7 +106,7 @@ public class NetworkServer {
                         } else {
                             LogHelper.error("Error handling packet for " + manager.getSocketAddress(), ex);
                             final ChatMessage message = /*new ChatMessage("#disconnect.error")*/new ChatMessage(); // TODO
-                            manager.sendPacket(null, new GenericFutureListener() {
+                            manager.sendPacket(null, new GenericFutureListener() { // TODO
                                 @Override
                                 public void operationComplete(Future future) throws Exception {
                                     manager.shutdown(message);
@@ -116,5 +118,53 @@ public class NetworkServer {
                 }
             }
         }
+    }
+
+    public void sendPacketToAll(Packet packet, GenericFutureListener... listeners) {
+        synchronized (managers) {
+            for (NetworkManager manager : managers) {
+                manager.sendPacket(packet, listeners);
+            }
+        }
+    }
+
+    public void sendPacketToAllExcluding(Packet packet, Player[] excludes, GenericFutureListener... listeners) {
+        synchronized (managers) {
+            outer: for (NetworkManager manager : managers) {
+                for (Player player : excludes) {
+                    if (player.getNetworkManager() == manager) continue outer;
+                }
+                manager.sendPacket(packet, listeners);
+            }
+        }
+    }
+
+    public void sendPacketToAllExcluding(Packet packet, Player exclude, GenericFutureListener... listeners) {
+        sendPacketToAllExcluding(packet, new Player[]{exclude}, listeners);
+    }
+
+    public void sendPacketToAllInWorld(Packet packet, World world, GenericFutureListener... listeners) {
+        synchronized (managers) {
+            for (NetworkManager manager : managers) {
+                if (manager.getHandler().getPlayer().getWorld() != world) continue;
+                manager.sendPacket(packet, listeners);
+            }
+        }
+    }
+
+    public void sendPacketToAllInWorldExcluding(Packet packet, World world, Player[] excludes, GenericFutureListener... listeners) {
+        synchronized (managers) {
+            outer: for (NetworkManager manager : managers) {
+                if (manager.getHandler().getPlayer().getWorld() != world) continue;
+                for (Player player : excludes) {
+                    if (player.getNetworkManager() == manager) continue outer;
+                }
+                manager.sendPacket(packet, listeners);
+            }
+        }
+    }
+
+    public void sendPacketToAllInWorldExcluding(Packet packet, World world, Player exclude, GenericFutureListener... listeners) {
+        sendPacketToAllInWorldExcluding(packet, world, new Player[]{exclude}, listeners);
     }
 }

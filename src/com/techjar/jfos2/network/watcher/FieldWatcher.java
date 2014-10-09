@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.SneakyThrows;
 
 /**
@@ -104,6 +106,18 @@ public class FieldWatcher implements Watcher {
         return field.getField().getType();
     }
 
+    public void forceSyncField(int id) {
+        WatchedField field = fields.get(id);
+        if (field == null) throw new IllegalArgumentException("No such field ID: " + id);
+        field.setForceSynced(true);
+    }
+
+    public void forceSyncField(String fieldName) {
+        WatchedField field = findField(fieldName);
+        if (field == null) throw new IllegalArgumentException("No such field: " + fieldName);
+        field.setForceSynced(true);
+    }
+
     protected WatchedField findField(String fieldName) {
         for (Map.Entry<Integer, WatchedField> entry : fields.entrySet()) {
             if (fieldName.equals(entry.getValue().getName())) {
@@ -129,11 +143,14 @@ public class FieldWatcher implements Watcher {
         List<WatcherValue> list = new ArrayList<>();
         for (Map.Entry<Integer, WatchedField> entry : fields.entrySet()) {
             WatchedField field = entry.getValue();
-            if (field.isSynced()) {
+            if (field.isSynced() || field.isForceSynced()) {
                 Object value = field.getField().get(watchedObject);
                 if (!value.equals(field.getLastValue())) {
                     list.add(new WatcherValue(entry.getKey(), value));
-                    if (markUpdated) field.setLastValue(value);
+                    if (markUpdated) {
+                        field.setLastValue(value);
+                        field.setForceSynced(false);
+                    }
                 }
             }
         }
@@ -150,26 +167,14 @@ public class FieldWatcher implements Watcher {
         setField(value.getId(), value.getValue());
     }
 
-    @Override
-    public int getId() {
-        return id;
-    }
-
-    /*@Override
-    @SneakyThrows(IOException.class)
-    public void readValueData(PacketBuffer buffer) {
-        while (buffer.isReadable()) {
-            int id = buffer.readUnsignedByte();
-            Object value = NetworkUtil.unmarshalObject(getFieldType(id), buffer);
-            setField(id, value);
-        }
-    }*/
-
-    @Data protected class WatchedField {
+    @Getter @Setter
+    @RequiredArgsConstructor
+    protected class WatchedField {
         private final int id;
         private final String name;
         private final boolean synced;
         private final Field field;
         private Object lastValue;
+        private boolean forceSynced;
     }
 }
