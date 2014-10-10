@@ -1,6 +1,7 @@
 
 package com.techjar.jfos2.network.watcher;
 
+import com.techjar.jfos2.util.logging.LogHelper;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,13 +34,15 @@ public class FieldWatcher implements Watcher {
      * @param synced whether this field will be updated regularly, or only sent once
      */
     @SneakyThrows(Exception.class)
-    public void watchField(int id, String fieldName, boolean synced) {
+    public void watchField(Class clazz, int id, String fieldName, boolean synced) {
         if (id < 0 || id > 255) throw new IllegalArgumentException("Invalid field ID: " + id);
         if (fields.containsKey(id)) throw new IllegalArgumentException("Field ID already in use: " + id);
         if (isWatchingField(fieldName)) throw new IllegalArgumentException("Field \"" + fieldName + "\" is already watched!");
-        Field field = watchedObject.getClass().getDeclaredField(fieldName);
+        Field field = clazz.getDeclaredField(fieldName);
         field.setAccessible(true);
-        fields.put(id, new WatchedField(id, fieldName, synced, field)).setLastValue(field.get(watchedObject));
+        WatchedField watchedField = new WatchedField(id, fieldName, synced, field);
+        watchedField.setLastValue(field.get(watchedObject));
+        fields.put(id, watchedField);
     }
     
     public void unwatchField(int id) {

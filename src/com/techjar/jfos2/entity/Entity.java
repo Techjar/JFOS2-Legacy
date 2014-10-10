@@ -43,11 +43,11 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     public Entity(int id) {
         this.id = id;
         watcher = new FieldWatcher(this, id);
-        watcher.watchField(0, "position", false);
-        watcher.watchField(1, "velocity", true);
-        watcher.watchField(2, "angle", false);
-        watcher.watchField(3, "angularVelocity", true);
-        watcher.watchField(4, "dead", true);
+        watcher.watchField(Entity.class, 0, "position", false);
+        watcher.watchField(Entity.class, 1, "velocity", true);
+        watcher.watchField(Entity.class, 2, "angle", false);
+        watcher.watchField(Entity.class, 3, "angularVelocity", true);
+        watcher.watchField(Entity.class, 4, "dead", true);
     }
 
     @SneakyThrows(Exception.class)
@@ -71,7 +71,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
 
     public void update(float delta) {
         position = position.add(velocity.multiply(delta));
-        angle += angularVelocity * delta;
+        angle = (angle + angularVelocity * delta) % 360;
     }
 
     public void updateClient(float delta) {
@@ -212,7 +212,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
      * Sets the angle in degrees.
      */
     public void setAngle(float angle) {
-        this.angle = angle;
+        this.angle = angle % 360;
         watcher.forceSyncField("angle");
     }
 

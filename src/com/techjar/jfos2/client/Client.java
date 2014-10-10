@@ -15,6 +15,8 @@ import com.techjar.jfos2.util.Util;
 import com.techjar.jfos2.client.gui.*;
 import com.techjar.jfos2.client.gui.screen.Screen;
 import com.techjar.jfos2.client.gui.screen.ScreenIntro;
+import com.techjar.jfos2.entity.Entity;
+import com.techjar.jfos2.entity.EntityShip;
 import com.techjar.jfos2.network.NetworkSynchronizer;
 import com.techjar.jfos2.world.WorldClient;
 import com.techjar.jfos2.util.ArgumentParser;
@@ -32,6 +34,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -687,6 +691,18 @@ public class Client {
         if (world != null) world.render();
         for (Screen screen : screenList)
             if (screen.isVisible()) screen.render();
+        if (world == null) {
+            world = new WorldClient();}
+        /*if (world.getEntityCount() < 10000) {
+            Random rand = new Random();
+            for (int i = 0; i < 1000; i++) {
+                Entity ship = new EntityShip();
+                world.addEntity(ship);
+                ship.setPosition(rand.nextInt(displayMode.getWidth()), rand.nextInt(displayMode.getHeight()));
+                //ship.setVelocity(100, 100);
+                ship.setAngularVelocity(rand.nextInt(1000));
+            }
+        }*/
         
         long renderTime = System.nanoTime() - time;
         if (renderDebug) {

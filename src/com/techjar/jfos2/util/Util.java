@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
@@ -93,9 +92,9 @@ public final class Util {
     }
 
     public static String getFileMD5(File file) throws IOException, NoSuchAlgorithmException {
-        @Cleanup InputStream is = new FileInputStream(file);
+        @Cleanup FileInputStream fis = new FileInputStream(file);
         byte[] bytes = new byte[(int)file.length()];
-        is.read(bytes);
+        fis.read(bytes);
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(bytes);
         byte[] digest = md.digest();

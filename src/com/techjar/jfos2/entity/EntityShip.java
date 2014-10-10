@@ -21,22 +21,22 @@ public class EntityShip extends EntityFriendly {
 
     public EntityShip(int id) {
         super(id);
-        angle = 90;
     }
 
     @Override
     public void update(float delta) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        super.update(delta);
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void updateClient(float delta) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void updateServer(float delta) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -47,7 +47,7 @@ public class EntityShip extends EntityFriendly {
         glPushMatrix();
         glTranslatef(position.getX(), position.getY(), 0);
         glRotatef(angle, 0, 0, 1);
-        glTranslatef(-(139 / 2), -(148 / 2), 0);
+        glTranslatef(-(tex.getImageWidth() / 2), -(tex.getImageHeight() / 2), 0);
         glColor3f(1, 1, 1);
         glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(0, 0);

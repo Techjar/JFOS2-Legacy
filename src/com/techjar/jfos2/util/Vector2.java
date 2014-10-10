@@ -9,9 +9,6 @@ import com.techjar.jfos2.network.PacketBuffer;
  * @author Techjar
  */
 public class Vector2 implements Marshallable {
-    public static final Vector2 ZERO = new Vector2();
-    public static final Vector2 ONE = new Vector2(1, 1);
-
     protected float x;
     protected float y;
 
