@@ -24,6 +24,10 @@ public class ExponentialRandom {
         this(lambda, new Random());
     }
 
+    public synchronized void setSeed(long seed) {
+        random.setSeed(seed);
+    }
+
     public double nextDouble() {
         return -(Math.log(random.nextDouble()) / lambda);
     }

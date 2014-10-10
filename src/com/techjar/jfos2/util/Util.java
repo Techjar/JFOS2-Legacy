@@ -2,9 +2,13 @@ package com.techjar.jfos2.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.techjar.jfos2.util.json.ShapeInfo;
+import com.techjar.jfos2.util.logging.LogHelper;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -12,11 +16,20 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterOutputStream;
 import lombok.Cleanup;
+import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
+import org.newdawn.slick.geom.Circle;
+import org.newdawn.slick.geom.Ellipse;
+import org.newdawn.slick.geom.Point;
+import org.newdawn.slick.geom.Polygon;
 import org.newdawn.slick.geom.Rectangle;
+import org.newdawn.slick.geom.RoundedRectangle;
+import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.geom.Vector2f;
 
 /**
@@ -24,6 +37,7 @@ import org.newdawn.slick.geom.Vector2f;
  * @author Techjar
  */
 public final class Util {
+    private static final Map<String, ShapeInfo> shapeCache = new HashMap<>();
     public static final Gson GSON = new GsonBuilder().create();
 
     private Util() {
@@ -107,6 +121,85 @@ public final class Util {
 
     public static String getFileMD5(String file) throws IOException, NoSuchAlgorithmException {
         return getFileMD5(new File(file));
+    }
+
+    @SneakyThrows(FileNotFoundException.class)
+    public static Shape loadShape(String file) {
+        ShapeInfo info = shapeCache.get(file);
+        if (info == null) {
+            info = Util.GSON.fromJson(new FileReader(new File("resources/shapes/" + file + ".shape")), ShapeInfo.class);
+            shapeCache.put(file, info);
+        }
+
+        switch (info.type.toLowerCase()) {
+            case "circle":
+                return new Circle(0, 0, info.radius);
+            case "ellipse":
+                return new Ellipse(0, 0, info.radius1, info.radius2);
+            case "point":
+                return new Point(0, 0);
+            case "polygon":
+                if (info.points.length % 2 != 0) throw new IllegalArgumentException("Invalid point array, must have even number of elements");
+                float[] points = new float[info.points.length];
+                for (int i = 0; i < points.length; i += 2) {
+                    points[i] = info.points[i] + info.pointOffsetX;
+                    points[i + 1] = info.points[i + 1] + info.pointOffsetY;
+                }
+                Vector2 pos = findMinimumPoint(points);
+                Polygon poly = new Polygon(points);
+                poly.setX(pos.getX());
+                poly.setY(pos.getY());
+                return poly;
+            case "rectangle":
+                Rectangle rect = new Rectangle(0, 0, info.width, info.height);
+                rect.setCenterX(0);
+                rect.setCenterY(0);
+                return rect;
+            case "roundedrectangle":
+                if (info.cornerFlags != null) {
+                    int flags = 0;
+                    for (String flag : info.cornerFlags) {
+                        switch (flag.toUpperCase()) {
+                            case "TOP_LEFT":
+                                flags |= RoundedRectangle.TOP_LEFT;
+                                break;
+                            case "TOP_RIGHT":
+                                flags |= RoundedRectangle.TOP_RIGHT;
+                                break;
+                            case "BOTTOM_LEFT":
+                                flags |= RoundedRectangle.BOTTOM_LEFT;
+                                break;
+                            case "BOTTOM_RIGHT":
+                                flags |= RoundedRectangle.BOTTOM_RIGHT;
+                                break;
+                            case "ALL":
+                                flags = RoundedRectangle.ALL;
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Invalid corner flag: " + flag);
+                        }
+                    }
+                    rect = new RoundedRectangle(0, 0, info.width, info.height, info.cornerRadius, 25, flags);
+                } else {
+                    rect = new RoundedRectangle(0, 0, info.width, info.height, info.cornerRadius);
+                }
+                rect.setCenterX(0);
+                rect.setCenterY(0);
+                return rect;
+            default:
+                throw new IllegalArgumentException("Invalid shape type: " + info.type);
+        }
+    }
+
+    private static Vector2 findMinimumPoint(float[] points) {
+        if (points.length == 0) return new Vector2();
+        float minX = points[0];
+        float minY = points[1];
+        for (int i = 0; i < points.length; i += 2) {
+            minX = Math.min(points[i], minX);
+            minY = Math.min(points[i + 1], minY);
+        }
+        return new Vector2(minX, minY);
     }
 
     /**

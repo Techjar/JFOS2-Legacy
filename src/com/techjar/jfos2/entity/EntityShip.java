@@ -7,6 +7,7 @@ package com.techjar.jfos2.entity;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.techjar.jfos2.client.Client;
+import com.techjar.jfos2.util.Util;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.opengl.Texture;
 
@@ -17,30 +18,32 @@ import org.newdawn.slick.opengl.Texture;
 public class EntityShip extends EntityFriendly {
     public EntityShip() {
         super();
+        boundingBox = Util.loadShape("ship");
     }
 
     public EntityShip(int id) {
         super(id);
+        boundingBox = Util.loadShape("ship");
     }
 
     @Override
     public void update(float delta) {
         super.update(delta);
-        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void updateClient(float delta) {
-        //throw new UnsupportedOperationException("Not supported yet.");
+        super.updateClient(delta);
     }
 
     @Override
     public void updateServer(float delta) {
-        //throw new UnsupportedOperationException("Not supported yet.");
+        super.updateServer(delta);
     }
 
     @Override
     public void render() {
+        super.render();
         Texture tex = Client.getInstance().getTextureManager().getTexture("ship.png");
         tex.bind();
         

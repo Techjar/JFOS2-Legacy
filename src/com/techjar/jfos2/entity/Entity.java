@@ -19,6 +19,7 @@ import lombok.SneakyThrows;
 import org.lwjgl.input.Controller;
 import org.newdawn.slick.geom.Point;
 import org.newdawn.slick.geom.Shape;
+import org.newdawn.slick.geom.Transform;
 
 /**
  *
@@ -34,6 +35,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     protected float angle;
     protected float angularVelocity;
     protected boolean dead;
+    protected Shape boundingBox = new Point(0, 0);
     protected FieldWatcher watcher;
 
     public Entity() {
@@ -70,8 +72,17 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     }
 
     public void update(float delta) {
+        Vector2 lastPos = position;
+        float lastAngle = angle;
         position = position.add(velocity.multiply(delta));
         angle = (angle + angularVelocity * delta) % 360;
+        if (!position.equals(lastPos)) {
+            Vector2 posOffset = position.subtract(lastPos);
+            boundingBox = boundingBox.transform(Transform.createTranslateTransform(posOffset.getX(), posOffset.getY()));
+        }
+        if (Float.floatToIntBits(angle) != Float.floatToIntBits(lastAngle)) {
+            boundingBox = boundingBox.transform(Transform.createRotateTransform((float)Math.toRadians(angle - lastAngle), position.getX(), position.getY()));
+        }
     }
 
     public void updateClient(float delta) {
@@ -96,7 +107,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     }
 
     public Shape getBoundingBox() {
-        return new Point(position.getX(), position.getY());
+        return boundingBox;
     }
 
     public final int getEntityType() {
@@ -147,7 +158,10 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     }
 
     public void setPosition(@NonNull Vector2 position) {
+        Vector2 lastPos = this.position.copy();
         this.position.set(position);
+        Vector2 posOffset = this.position.subtract(lastPos);
+        boundingBox = boundingBox.transform(Transform.createTranslateTransform(posOffset.getX(), posOffset.getY()));
         watcher.forceSyncField("position");
     }
 
@@ -160,8 +174,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     }
 
     public void setX(float x) {
-        position.setX(x);
-        watcher.forceSyncField("position");
+        setPosition(x, position.getY());
     }
 
     public float getY() {
@@ -169,8 +182,7 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
     }
 
     public void setY(float y) {
-        position.setY(y);
-        watcher.forceSyncField("position");
+        setPosition(position.getX(), y);
     }
 
     public Vector2 getVelocity() {
@@ -212,8 +224,12 @@ public abstract class Entity implements Watchable, Comparable<Entity> {
      * Sets the angle in degrees.
      */
     public void setAngle(float angle) {
+        float lastAngle = this.angle;
         this.angle = angle % 360;
-        watcher.forceSyncField("angle");
+        if (Float.floatToIntBits(this.angle) != Float.floatToIntBits(lastAngle)) {
+            watcher.forceSyncField("angle");
+            boundingBox = boundingBox.transform(Transform.createRotateTransform(this.angle - lastAngle, position.getX(), position.getY()));
+        }
     }
 
     /**

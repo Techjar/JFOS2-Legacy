@@ -1,10 +1,14 @@
 
 package com.techjar.jfos2.world;
 
+import static org.lwjgl.opengl.GL11.*;
+
+import com.techjar.jfos2.client.Client;
 import com.techjar.jfos2.entity.Entity;
 import java.util.Collections;
 import java.util.Iterator;
 import org.lwjgl.input.Controller;
+import org.newdawn.slick.geom.ShapeRenderer;
 
 /**
  *
@@ -30,7 +34,13 @@ public class WorldClient extends World {
     @Override
     public void render() {
         for (Entity entity : entityList)
-            if (!entity.isDead()) entity.render();
+            if (!entity.isDead()) {
+                entity.render();
+                if (Client.getInstance().renderBoundingBoxes) {
+                    glColor3f(1, 1, 1);
+                    ShapeRenderer.draw(entity.getBoundingBox());
+                }
+            }
     }
 
     @Override

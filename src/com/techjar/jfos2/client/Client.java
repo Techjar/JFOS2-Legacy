@@ -109,7 +109,8 @@ public class Client {
     private int antiAliasingSamples;
     private boolean running;
     private boolean renderBackground;
-    public boolean renderDebug = true;
+    public boolean renderDebug;
+    public boolean renderBoundingBoxes;
     private Map<String, Integer> validControllers = new HashMap<>();
     private WorldClient world;
     private NetworkSynchronizer networkSynchronizer;
@@ -149,6 +150,16 @@ public class Client {
                         @Override
                         public void runAction(String paramater) {
                             LogHelper.setLevel(Level.parse(paramater));
+                        }
+                    }, new ArgumentParser.Argument(false, "--debug") {
+                        @Override
+                        public void runAction(String paramater) {
+                            instance.renderDebug = true;
+                        }
+                    }, new ArgumentParser.Argument(false, "--render-bounding-boxes") {
+                        @Override
+                        public void runAction(String paramater) {
+                            instance.renderBoundingBoxes = true;
                         }
                     });
                     instance.start();
@@ -691,18 +702,17 @@ public class Client {
         if (world != null) world.render();
         for (Screen screen : screenList)
             if (screen.isVisible()) screen.render();
-        if (world == null) {
-            world = new WorldClient();}
-        /*if (world.getEntityCount() < 10000) {
+        if (world == null) world = new WorldClient();
+        if (world.getEntityCount() < 100) {
             Random rand = new Random();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 1; i++) {
                 Entity ship = new EntityShip();
                 world.addEntity(ship);
                 ship.setPosition(rand.nextInt(displayMode.getWidth()), rand.nextInt(displayMode.getHeight()));
                 //ship.setVelocity(100, 100);
                 ship.setAngularVelocity(rand.nextInt(1000));
             }
-        }*/
+        }
         
         long renderTime = System.nanoTime() - time;
         if (renderDebug) {
