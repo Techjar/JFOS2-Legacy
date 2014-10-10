@@ -36,7 +36,7 @@ public class WorldServer extends World {
                 if (entity1 != entity2 && !entity2.isInert() && !entity2.isDead() && entity1.canCollide(entity2)) {
                     float distance = entity1.getPosition().distanceSquared(entity2.getPosition());
                     float combinedRadius = entity1.getBoundingBox().getBoundingCircleRadius() + entity2.getBoundingBox().getBoundingCircleRadius();
-                    if (combinedRadius * combinedRadius <= distance && entity1.getBoundingBox().intersects(entity2.getBoundingBox())) {
+                    if (distance <= combinedRadius * combinedRadius && entity1.getBoundingBox().intersects(entity2.getBoundingBox())) {
                         entity1.onCollide(entity2);
                     }
                 }

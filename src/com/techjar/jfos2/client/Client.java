@@ -65,7 +65,9 @@ import org.lwjgl.util.Color;
 import org.lwjgl.util.Dimension;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.UnicodeFont;
+import org.newdawn.slick.geom.Circle;
 import org.newdawn.slick.geom.Point;
+import org.newdawn.slick.geom.Rectangle;
 import org.newdawn.slick.geom.Shape;
 import org.newdawn.slick.opengl.Texture;
 
@@ -119,6 +121,7 @@ public class Client {
     private boolean resourcesDone;
     private boolean offline;
     private boolean screenshot;
+    private long updateTime;
     
     
     public Client() throws LWJGLException {
@@ -658,6 +661,7 @@ public class Client {
     }
 
     private void update() {
+        long time = System.nanoTime();
         float delta = getDelta();
 
         textureManager.update(delta);
@@ -679,6 +683,8 @@ public class Client {
         screensToAdd.clear();
 
         if (world != null) world.update(delta);
+
+        updateTime = System.nanoTime() - time;
     }
 
     @SneakyThrows(Exception.class)
@@ -705,7 +711,7 @@ public class Client {
         if (world == null) world = new WorldClient();
         if (world.getEntityCount() < 100) {
             Random rand = new Random();
-            for (int i = 0; i < 1; i++) {
+            for (int i = 0; i < 2; i++) {
                 Entity ship = new EntityShip();
                 world.addEntity(ship);
                 ship.setPosition(rand.nextInt(displayMode.getWidth()), rand.nextInt(displayMode.getHeight()));
@@ -720,8 +726,9 @@ public class Client {
             UnicodeFont debugFont = fontManager.getFont("batmfa_", 20, false, false).getUnicodeFont();
             debugFont.drawString(5, 5, "FPS: " + fpsRender, org.newdawn.slick.Color.yellow);
             debugFont.drawString(5, 25, "Memory: " + Util.bytesToMBString(runtime.totalMemory() - runtime.freeMemory()) + " / " + Util.bytesToMBString(runtime.maxMemory()), org.newdawn.slick.Color.yellow);
-            debugFont.drawString(5, 45, "Render time: " + (renderTime / 1000000D), org.newdawn.slick.Color.yellow);
-            debugFont.drawString(5, 65, "Entities: " + (world != null ? world.getEntityCount() : 0), org.newdawn.slick.Color.yellow);
+            debugFont.drawString(5, 45, "Update time: " + (updateTime / 1000000D), org.newdawn.slick.Color.yellow);
+            debugFont.drawString(5, 65, "Render time: " + (renderTime / 1000000D), org.newdawn.slick.Color.yellow);
+            debugFont.drawString(5, 85, "Entities: " + (world != null ? world.getEntityCount() : 0), org.newdawn.slick.Color.yellow);
         }
         
         if (antiAliasing) {
@@ -923,6 +930,17 @@ public class Client {
 
     public int getBitsPerPixel() {
         return displayMode.getBitsPerPixel();
+    }
+
+    public Rectangle getScreenBounds() {
+        return new Rectangle(0, 0, displayMode.getWidth(), displayMode.getHeight());
+    }
+
+    public boolean isShapeWithinScreen(Shape shape) {
+        Rectangle bounds = getScreenBounds();
+        //Circle circle = new Circle(shape.getCenterX(), shape.getCenterY(), shape.getBoundingCircleRadius());
+        //if (!circle.intersects(bounds) && !bounds.contains(circle)) return false;
+        return shape.intersects(bounds) || bounds.contains(shape);
     }
     
     public List<Screen> getScreenList() {

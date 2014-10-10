@@ -98,11 +98,11 @@ public class Vector2 implements Marshallable {
     }
 
     public float distance(Vector2 other) {
-        return (float)Math.sqrt((other.x - x) * (other.x - x) + (other.y - y) * (other.y - y));
+        return other.subtract(this).length();
     }
 
     public float distanceSquared(Vector2 other) {
-        return (other.x - x) * (other.x - x) + (other.y - y) * (other.y - y);
+        return other.subtract(this).lengthSquared();
     }
 
     public Vector2 normalize() {
